@@ -8,13 +8,14 @@
 
 	/** Browser-style workspace tabs. Static for now — no open/close state yet. */
 	const tabs = [
-		{ href: '/', label: 'Overview' },
+		{ href: '/dashboard', label: 'Overview' },
 		{ href: '/transactions', label: 'Transactions' },
 		{ href: '/insights', label: 'Insights' }
 	];
 
+	// Exact match or a nested path — '/cards' must not match '/cardsomething'.
 	const isActive = (href: string) =>
-		href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+		page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 
 	const activeIndex = $derived(tabs.findIndex((t) => isActive(t.href)));
 

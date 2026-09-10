@@ -9,8 +9,8 @@ layer, no auth, no business logic yet.
 | ------------ | ------------------------------- | -------------------------------------------- |
 | Framework    | SvelteKit 2 + Svelte 5 (runes)  | Runes forced on outside `node_modules`       |
 | Styling      | Tailwind CSS 4                  | OKLCH tokens in `src/app.css`, light + dark  |
-| Animation    | Motion                          | Scroll reveals — `use:reveal`                |
-| Animation    | GSAP                            | Number tweens — `use:countUp`                |
+| Animation    | Motion                          | `use:reveal`, `use:spring`, tab surface       |
+| Animation    | GSAP                            | `use:countUp`, the signup entrance timeline   |
 | Positioning  | Floating UI                     | Bespoke overlays — `use:anchor`              |
 | Primitives   | bits-ui                         | Accessible headless components               |
 | Server state | TanStack Query v6               | Per-request client, wired but unused         |
@@ -35,6 +35,15 @@ so it is not part of the UI.
 
 Surfaces (`window`, `canvas`, `card`, `sunken`) and `hairline` are theme-swapped;
 the four brand colours are constant across light and dark.
+
+**Layout: grids of cards that fill their cells.** Every route composes its
+content as cards in a grid — equal heights, the shared `gap-4` gutter, edges
+aligned with their neighbours — so pages read as one homogeneous flow. No
+content-sized boxes centred in empty space: when a card holds less than its
+cell, keep the card full-size and anchor inside it (a header row on top — title
+left, action right, like the dashboard cards — content at the bottom), and cap
+line length with `max-w-*` rather than shrinking the card. `/dashboard` and
+`/signup` are the reference layouts.
 
 **Fonts.** The reference uses PP Formula + Lufga, both commercial. The closest
 Google Fonts equivalents are in use, self-hosted via Fontsource (no external
@@ -64,6 +73,20 @@ Two constraints keep the slide clean, and both will bite if changed:
   when inactive) precisely so a width change mid-slide can't reflow the strip
   and fight the animation.
 
+### Logo
+
+`Logo.svelte` inlines the mark from `src/lib/assets/monfly-logo.svg`, which is
+kept untouched as the master. Every colour in the component derives from the
+brand tokens: the master's mint becomes `--lime`, its violet-blue `--blue`, the
+middle bands a blue/violet mix and the shadow slices that mix sunk into ink.
+
+- **Mix the blue → lime midpoint in oklab.** oklch keeps full chroma and clips
+  to a neon cyan stripe between the two; oklab fades through a pale tone, like
+  the `Blob` gradients.
+- **Gradient ids come from `$props.id()`, one set per instance.** Clone the
+  rendered SVG or paste the markup twice and the ids collide: every copy then
+  paints from the first copy's `<defs>`, silently.
+
 ## Commands
 
 ```bash
@@ -71,6 +94,8 @@ pnpm dev          # dev server on :5173
 pnpm build        # production build
 pnpm preview      # preview the build
 pnpm check        # svelte-check (types + a11y)
+pnpm db:pull      # introspect the shared DB into drizzle/ (read-only)
+pnpm db:studio    # Drizzle Studio — it can edit rows: shared DB, careful
 ```
 
 ## Layout
@@ -79,24 +104,130 @@ pnpm check        # svelte-check (types + a11y)
 src/
   app.css                    design tokens — edit the palette here
   lib/
-    actions/                 reveal (Motion), countUp (GSAP), anchor (Floating UI)
+    actions/                 reveal + spring (Motion), countUp (GSAP), anchor (Floating UI)
     components/
-      ui/                    Card, Meter, DottedRing, Blob, Sparkle, Caret,
+      ui/                    Logo, Card, Meter, DottedRing, Blob, Sparkle, Caret,
                              PillButton, IconButton, Figure, Tooltip, ThemeToggle
       layout/                AppShell, TopBar, TabStrip, PagePlaceholder
       dashboard/             ExpensesDial, AccountBlock, CategoryChip,
                              IncomeBars, TipCard
     utils/                   cn, formatters, motion helpers
+    server/auth/             session + route guard (server-only via $lib/server)
+    server/db/               Drizzle client, schema, relations (server-only)
+  hooks.server.ts            attaches the session, guards protected groups
   routes/
-    +layout.ts               per-request QueryClient
-    +layout.svelte           providers + AppShell
-    +page.svelte             stack showcase — replace this
+    +layout.svelte           global only: fonts, tokens, theme
+    (marketing)/             public — the landing, at /
+    (auth)/                  public — signup page, /login, /auth/callback, /auth/logout
+    (app)/                   protected — every route inside needs a session
+      +layout.server.ts      user for the shell; forces a server round-trip
+      +layout.ts             per-request QueryClient
+      +layout.svelte         QueryClientProvider + AppShell
+      dashboard/ …           /dashboard, /transactions, /insights, …
 ```
+
+## Routing and auth
+
+Route groups split the app by audience. They shape layouts, never URLs.
+
+| Group         | Access    | URLs                             |
+| ------------- | --------- | -------------------------------- |
+| `(marketing)` | public    | `/`                              |
+| `(auth)`      | public    | `/signup`, `/login`, `/auth/*`   |
+| `(app)`       | protected | `/dashboard`, `/transactions`, … |
+
+**The guard lives in `hooks.server.ts`,** not in a layout: hooks run before every
+load, form action and endpoint, and SvelteKit turns a redirect thrown there into
+a JSON redirect for the `__data.json` requests behind client-side navigation. It
+matches the route *group* — `event.route.id` starts with `/(app)/` — so a page
+added anywhere inside `(app)` is protected with no extra code.
+
+**Auth is Auth0,** through its official server SDK, `@auth0/auth0-server-js`.
+Sign-up and login happen on Auth0's Universal Login; the session comes back as
+an encrypted httpOnly cookie that the guard reads on the server. Until the
+`AUTH0_*` variables are set, `resolveSession` falls back to a placeholder
+session **in dev only** — a production build without them resolves none, so
+`(app)` fails closed.
+
+- **Keep a server load in `(app)/+layout.server.ts`.** It is what makes entering
+  the group round-trip through the server even by client-side navigation; with a
+  purely universal layout chain the shell renders without asking the server and
+  the guard never runs.
+- **`(app)/+layout.ts` must spread `data`.** A universal load replaces the server
+  load's result rather than merging with it.
+- **`redirectTo` always goes through `safeRedirect`.** It is parsed with browser
+  URL rules and kept only if it stays on this origin, so `//evil.com`,
+  `/\evil.com` and tab tricks fall back to `/dashboard`.
+
+### Auth0 setup
+
+1. Auth0 Dashboard → Applications → Create → **Regular Web Application**
+   (not SPA: the session must be readable on the server).
+2. Allowed Callback URLs `http://localhost:5173/auth/callback`, Allowed Logout
+   URLs `http://localhost:5173/` — plus the production origin when it exists.
+3. Fill `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` and
+   `AUTH0_SECRET` (`openssl rand -hex 32`) in `.env`.
+
+`/signup` opens Universal Login on its sign-up screen (`screen_hint=signup`);
+`/login` opens it on login. The form itself is Auth0's — brand it under
+Branding → Universal Login. Logging out is a POST to `/auth/logout`.
+
+### Existing v1 users
+
+The 6 v1 accounts were imported into Auth0 on 2026-09-10 with their bcrypt hashes
+(`custom_password_hash`) and their v1 ids preserved: they log in with their old
+password, and Auth0 names them `auth0|<User.id>`.
+
+`locals.getMonflyUser()` links a session to its `User` row, lazily and once per
+request — by that id first, then by email (case-insensitive, and only if it
+matches exactly one row) **only when Auth0 marks it verified**
+(an unverified email could belong to anyone). New Auth0 users have no row yet;
+v2 will create it with `password` null. The column is optional since v1's
+migration `20260910190000_make_user_password_optional` and kept only for v1's
+legacy login, which refuses rows without a hash — so v1 must be deployed with
+that guard before v2 creates any. Password changes made in v1 after the import
+do not reach Auth0.
+
+**Query owned data with `profile.email`** — the stored value — never the Auth0
+email. One of the six v1 emails is mixed-case, and the `userEmail` foreign keys
+compare case-sensitively: with the Auth0 spelling, that user sees an empty account.
+
+## Database
+
+Drizzle ORM on Neon Postgres, over Neon's HTTP driver. **The database is shared
+with monfly-v1, and Prisma owns its migrations.**
+
+| File                             | Role                                           |
+| -------------------------------- | ---------------------------------------------- |
+| `src/lib/server/db/schema.ts`    | tables, curated from `db:pull`                 |
+| `src/lib/server/db/relations.ts` | relations for `db.query.*`, named after Prisma |
+| `src/lib/server/db/index.ts`     | the `db` client — server-only via `$lib/server` |
+| `drizzle.config.ts`              | drizzle-kit, used for introspection only       |
+
+- **Never run `drizzle-kit push` or `migrate` against this database** while v1
+  is live: they reconcile the database to the schema with ALTERs and DROPs.
+  There are no scripts for them on purpose.
+- **When v1's schema changes,** `pnpm db:pull` writes the database's current
+  shape to `drizzle/` (gitignored); port the change into `schema.ts` by hand.
+- **Two Neon branches** (project `monfly`): `production` is what this app's
+  `.env` and v1's `.env.local` point to; v1's `.env` points to `develop`.
+  Prisma's CLI reads only `.env`, so a bare `prisma migrate deploy` in v1
+  migrates `develop`. Rehearse there, then deploy to production with
+  `DATABASE_URL` set to its direct host (`-pooler` removed), and check the host
+  in Prisma's `Datasource` line before trusting the result.
+- **Prisma generated some values client-side,** so the schema recreates them:
+  ids through `$defaultFn`, `updatedAt` through `$onUpdate`. Without them an
+  insert from v2 fails (no id) and `updatedAt` never moves.
+- **Ownership is `userEmail` → `User.email`,** not the id — v1's design, kept.
+- **The HTTP driver can't hold an interactive transaction.** Use `db.batch()`
+  for atomic multi-statement writes — v1's loan and balance mutations will
+  need it — or `drizzle-orm/neon-serverless` where a flow needs `db.transaction()`.
+- Money is `double precision` (v1 debt; the plan is integer cents).
 
 ## Conventions carried over from v1
 
 - **Never hoist the QueryClient to module scope.** On the server that shares one
-  cache across every visitor. It is created in `+layout.ts`.
+  cache across every visitor. It is created in `(app)/+layout.ts`.
 - Charts, when they land, aggregate in the database — not by loading rows into JS.
 
 ## Gotchas
@@ -113,3 +244,8 @@ src/
 - mode-watcher defers the theme class swap to `requestAnimationFrame`, so in a
   background tab the toggle appears to do nothing until the tab is focused. That
   is throttling, not a bug — pass `synchronousModeChanges` if it ever matters.
+- **`[data-anim]` elements start hidden whenever JS runs** (`app.html` adds `.js`
+  before first paint; see `.js [data-anim]` in `app.css`). That avoids a flash of
+  the final state before hydration, but it means the script that owns them must
+  reveal them — animate `autoAlpha`, and set them visible in the reduced-motion
+  branch and on failure, as `signup/+page.svelte` does.

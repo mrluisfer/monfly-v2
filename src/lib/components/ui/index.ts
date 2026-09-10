@@ -4,6 +4,7 @@ export { default as Card } from './Card.svelte';
 export { default as DottedRing } from './DottedRing.svelte';
 export { default as Figure } from './Figure.svelte';
 export { default as IconButton } from './IconButton.svelte';
+export { default as Logo } from './Logo.svelte';
 export { default as Meter } from './Meter.svelte';
 export { default as PillButton } from './PillButton.svelte';
 export { default as Sparkle } from './Sparkle.svelte';

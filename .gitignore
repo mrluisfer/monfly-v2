@@ -21,3 +21,7 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Drizzle introspection output (pnpm db:pull). Prisma owns this database's
+# migrations for now; the curated schema lives in src/lib/server/db.
+/drizzle/

@@ -175,6 +175,12 @@
 	}
 }
 
+/* Scripted entrances (GSAP) start hidden, but only once JS is known to run —
+   app.html adds .js before first paint — so no-JS visitors see everything. */
+.js [data-anim] {
+	visibility: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,

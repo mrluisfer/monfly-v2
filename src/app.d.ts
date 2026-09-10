@@ -3,7 +3,15 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			/** Set on every request by hooks.server.ts; null when signed out. */
+			session: import('$lib/server/auth').Session | null;
+			/**
+			 * The Monfly `User` row behind the session, or null (signed out, or a new
+			 * Auth0 user with no row yet). Lazy and memoised per request.
+			 */
+			getMonflyUser: () => Promise<import('$lib/server/auth').MonflyUser | null>;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
