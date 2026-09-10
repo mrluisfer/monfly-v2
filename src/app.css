@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+
+/* mode-watcher toggles `.dark` on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Palette from the reference: white top bar over a grey canvas, with blue,
+   lime and violet accents on near-black ink.                               */
+
+:root {
+	/* Brand constants — identical in both themes */
+	--blue: #495bff;
+	--violet: #ac49ff;
+	--lime: #b0ff09;
+	--ink: #050f1c;
+
+	/* Surfaces */
+	--window: #ffffff; /* top bar                   */
+	--canvas: #f2f2f4; /* page background            */
+	--card: #ffffff;
+	--sunken: #f6f6f8; /* inset chips, inactive tabs */
+
+	--line: #e6e6ea;
+	--line-strong: #d3d3da;
+	--hairline: rgb(5 15 28 / 0.55); /* the thin 1px outlines in the mockup */
+
+	/* Text */
+	--fg: var(--ink);
+	--fg-muted: rgb(5 15 28 / 0.55);
+	--fg-subtle: rgb(5 15 28 / 0.35);
+
+	--positive: #3fa93f;
+	--negative: #e0484d;
+
+	--ring: rgb(73 91 255 / 0.45);
+	--hatch: rgb(5 15 28 / 0.13);
+}
+
+.dark {
+	--window: #0b0f1d;
+	--canvas: #0f1424;
+	--card: #151b2d;
+	--sunken: #1b2236;
+
+	--line: #232b40;
+	--line-strong: #313a52;
+	--hairline: rgb(255 255 255 / 0.5);
+
+	--fg: #f2f4f8;
+	--fg-muted: rgb(242 244 248 / 0.58);
+	--fg-subtle: rgb(242 244 248 / 0.36);
+
+	--positive: #6fdc6f;
+	--negative: #ff7a7f;
+
+	--ring: rgb(122 138 255 / 0.55);
+	--hatch: rgb(255 255 255 / 0.12);
+}
+
+@theme inline {
+	--color-blue: var(--blue);
+	--color-violet: var(--violet);
+	--color-lime: var(--lime);
+	--color-ink: var(--ink);
+
+	--color-window: var(--window);
+	--color-canvas: var(--canvas);
+	--color-card: var(--card);
+	--color-sunken: var(--sunken);
+
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+	--color-hairline: var(--hairline);
+
+	--color-fg: var(--fg);
+	--color-fg-muted: var(--fg-muted);
+	--color-fg-subtle: var(--fg-subtle);
+
+	--color-positive: var(--positive);
+	--color-negative: var(--negative);
+
+	/* Space Grotesk stands in for PP Formula — geometric, technical numerals.
+	   Outfit stands in for Lufga — geometric UI sans. */
+	--font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Outfit Variable', ui-sans-serif, system-ui, sans-serif;
+
+	--radius-card: 1.5rem;
+	--radius-chip: 1rem;
+
+	--ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@layer base {
+	* {
+		border-color: var(--color-line);
+	}
+
+	html {
+		background-color: var(--canvas);
+		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		background-color: var(--canvas);
+		color: var(--color-fg);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--blue);
+		outline-offset: 2px;
+	}
+
+	::selection {
+		background: var(--lime);
+		color: var(--ink);
+	}
+}
+
+@layer components {
+	/* Browser-style active tab: the two concave shoulders fill the corner
+	   between the tab and the bar, fusing the tab into the canvas below.
+	   Each pseudo-element is a canvas-coloured square with a quarter disc
+	   masked out of its inner corner. */
+	.tab-merge::before,
+	.tab-merge::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		width: 16px;
+		height: 16px;
+		background-color: var(--canvas);
+		pointer-events: none;
+	}
+
+	.tab-merge::before {
+		left: -16px;
+		-webkit-mask-image: radial-gradient(circle 16px at 0 0, transparent 16px, #000 16px);
+		mask-image: radial-gradient(circle 16px at 0 0, transparent 16px, #000 16px);
+	}
+
+	.tab-merge::after {
+		right: -16px;
+		-webkit-mask-image: radial-gradient(circle 16px at 100% 0, transparent 16px, #000 16px);
+		mask-image: radial-gradient(circle 16px at 100% 0, transparent 16px, #000 16px);
+	}
+}
+
+@layer utilities {
+	/* Headings and figures use the display face */
+	.font-display {
+		font-family: var(--font-display);
+	}
+
+	/* Figures never reflow mid-tween */
+	.tabular {
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* The diagonal stripe fill used for "remaining" / empty areas */
+	.hatch {
+		background-image: repeating-linear-gradient(
+			-45deg,
+			var(--hatch) 0 1px,
+			transparent 1px 6px
+		);
+	}
+
+	/* 1px outlines in the mockup are near-black, not gray */
+	.outline-hairline {
+		border-color: var(--hairline);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
