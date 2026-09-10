@@ -19,7 +19,7 @@
 	type="button"
 	class={cn(
 		'inline-flex items-center gap-2.5 rounded-full border border-hairline bg-transparent',
-		'font-sans whitespace-nowrap transition-colors duration-200 hover:bg-sunken',
+		'press font-sans whitespace-nowrap hover:bg-sunken',
 		'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
 		size === 'sm' ? 'h-9 px-4 text-sm' : 'h-11 px-5 text-[0.9375rem]',
 		className

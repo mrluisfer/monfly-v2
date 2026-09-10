@@ -1,15 +1,22 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { Tooltip } from 'bits-ui';
+	import { pop } from '$lib/transitions';
 	import { cn } from '$lib/utils';
 
 	type Side = 'top' | 'right' | 'bottom' | 'left';
 	type TriggerProps = Record<string, unknown>;
 
 	type Props = {
-		label: string;
+		/** A plain-text tip. */
+		label?: string;
+		/** Rich content in place of `label`: several lines, figures. */
+		content?: Snippet;
 		side?: Side;
 		delay?: number;
+		/** Points the tip at this element instead of the trigger — a meter's pin, say. */
+		anchor?: HTMLElement | null;
+		class?: string;
 		/**
 		 * Receives the trigger props — spread them onto your own focusable
 		 * element. bits-ui renders no wrapper, so no nested-button markup.
@@ -20,7 +27,15 @@
 		children: Snippet<[{ props: TriggerProps }]>;
 	};
 
-	let { label, side = 'top', delay = 200, children }: Props = $props();
+	let {
+		label,
+		content,
+		side = 'top',
+		delay = 200,
+		anchor = null,
+		class: className,
+		children
+	}: Props = $props();
 </script>
 
 <Tooltip.Provider>
@@ -31,16 +46,32 @@
 			{/snippet}
 		</Tooltip.Trigger>
 		<Tooltip.Portal>
-			<Tooltip.Content
-				{side}
-				sideOffset={8}
-				class={cn(
-					'z-50 rounded-lg border border-border bg-elevated px-2.5 py-1.5',
-					'text-xs font-medium text-fg shadow-lg'
-				)}
-			>
-				<Tooltip.Arrow class="text-border" />
-				{label}
+			<!-- forceMount hands mounting to the {#if}, so the exit plays before
+			     the tip leaves the DOM. It grows from the side facing the anchor. -->
+			<Tooltip.Content {side} sideOffset={8} customAnchor={anchor} forceMount>
+				{#snippet child({ props, wrapperProps, open })}
+					{#if open}
+						<div {...wrapperProps}>
+							<div
+								{...props}
+								in:pop
+								out:pop
+								class={cn(
+									'z-50 origin-(--bits-floating-transform-origin) rounded-lg border border-line bg-card px-2.5 py-1.5',
+									'text-xs font-medium text-fg shadow-lg',
+									className
+								)}
+							>
+								<Tooltip.Arrow class="text-line" />
+								{#if content}
+									{@render content()}
+								{:else}
+									{label}
+								{/if}
+							</div>
+						</div>
+					{/if}
+				{/snippet}
 			</Tooltip.Content>
 		</Tooltip.Portal>
 	</Tooltip.Root>

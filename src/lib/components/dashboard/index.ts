@@ -2,4 +2,6 @@ export { default as AccountBlock } from './AccountBlock.svelte';
 export { default as CategoryChip } from './CategoryChip.svelte';
 export { default as ExpensesDial } from './ExpensesDial.svelte';
 export { default as IncomeBars } from './IncomeBars.svelte';
+export { default as MeterStat } from './MeterStat.svelte';
+export { default as SpentThisMonth } from './SpentThisMonth.svelte';
 export { default as TipCard } from './TipCard.svelte';

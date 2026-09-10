@@ -1,9 +1,11 @@
+export { default as Avatar } from './Avatar.svelte';
 export { default as Blob, BLOB_COLOR, type BlobColor } from './Blob.svelte';
 export { default as Caret } from './Caret.svelte';
 export { default as Card } from './Card.svelte';
 export { default as DottedRing } from './DottedRing.svelte';
 export { default as Figure } from './Figure.svelte';
 export { default as IconButton } from './IconButton.svelte';
+export { default as Kbd } from './Kbd.svelte';
 export { default as Logo } from './Logo.svelte';
 export { default as Meter } from './Meter.svelte';
 export { default as PillButton } from './PillButton.svelte';

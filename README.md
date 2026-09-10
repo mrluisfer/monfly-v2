@@ -1,19 +1,19 @@
 # Monfly v2
 
-Rewrite of Monfly on SvelteKit. This is the **UI foundation only** — no data
-layer, no auth, no business logic yet.
+Rewrite of Monfly on SvelteKit: the UI foundation, Auth0 sign-in, Drizzle on
+the database v1 shares, and the first real dashboard data ("Spent this month").
 
 ## Stack
 
-| Layer        | Choice                          | Notes                                        |
-| ------------ | ------------------------------- | -------------------------------------------- |
-| Framework    | SvelteKit 2 + Svelte 5 (runes)  | Runes forced on outside `node_modules`       |
-| Styling      | Tailwind CSS 4                  | OKLCH tokens in `src/app.css`, light + dark  |
-| Animation    | Motion                          | `use:reveal`, `use:spring`, tab surface       |
-| Animation    | GSAP                            | `use:countUp`, the signup entrance timeline   |
-| Positioning  | Floating UI                     | Bespoke overlays — `use:anchor`              |
-| Primitives   | bits-ui                         | Accessible headless components               |
-| Server state | TanStack Query v6               | Per-request client, wired but unused         |
+| Layer        | Choice                          | Notes                                                        |
+| ------------ | ------------------------------- | ------------------------------------------------------------ |
+| Framework    | SvelteKit 2 + Svelte 5 (runes)  | Runes forced on outside `node_modules`                       |
+| Styling      | Tailwind CSS 4                  | OKLCH tokens in `src/app.css`, light + dark                  |
+| Animation    | Motion                          | `use:reveal`, `use:spring`, tab surface, `pop` transitions   |
+| Animation    | GSAP                            | `use:countUp`, the signup timeline, the theme-toggle morph   |
+| Positioning  | Floating UI                     | Inside bits-ui for tooltips/popovers; `use:anchor` otherwise |
+| Primitives   | bits-ui                         | Accessible headless components                               |
+| Server state | TanStack Query v6               | Per-request client; `$lib/queries` (see Data flow)           |
 | Tables       | TanStack Table v9               | Installed, not yet used                      |
 | Icons        | `@lucide/svelte`                | The Svelte 5 package, not `lucide-svelte`    |
 | Theming      | mode-watcher                    | Toggles `.dark` on `<html>`, no FOUC         |
@@ -73,6 +73,10 @@ Two constraints keep the slide clean, and both will bite if changed:
   when inactive) precisely so a width change mid-slide can't reflow the strip
   and fight the animation.
 
+**Interaction, motion and the rest of the taste live in [`DESIGN.md`](DESIGN.md)**
+— press feedback, the `pop` transition, floating layers, the header, hotkeys,
+with exact timings. Build new UI against it.
+
 ### Logo
 
 `Logo.svelte` inlines the mark from `src/lib/assets/monfly-logo.svg`, which is
@@ -105,15 +109,22 @@ src/
   app.css                    design tokens — edit the palette here
   lib/
     actions/                 reveal + spring (Motion), countUp (GSAP), anchor (Floating UI)
+    transitions/             pop — Svelte in/out transitions animated by Motion
     components/
       ui/                    Logo, Card, Meter, DottedRing, Blob, Sparkle, Caret,
-                             PillButton, IconButton, Figure, Tooltip, ThemeToggle
-      layout/                AppShell, TopBar, TabStrip, PagePlaceholder
-      dashboard/             ExpensesDial, AccountBlock, CategoryChip,
-                             IncomeBars, TipCard
+                             PillButton, IconButton, Figure, Tooltip, ThemeToggle,
+                             Kbd, Avatar
+      layout/                AppShell, TopBar, TabStrip, UserMenu, PagePlaceholder
+      dashboard/             ExpensesDial, AccountBlock, CategoryChip, IncomeBars,
+                             TipCard, MeterStat, SpentThisMonth, BudgetEditor
+    finance/                 money, months, budget and spending types (isomorphic)
+    queries/                 TanStack Query options for our endpoints
+    hotkeys/                 the shortcut registry (the dictionary) and its binder
+    routes.ts                HOME_PATH, shared by client and server
     utils/                   cn, formatters, motion helpers
     server/auth/             session + route guard (server-only via $lib/server)
     server/db/               Drizzle client, schema, relations (server-only)
+    server/finance/          spending and budget queries (server-only)
   hooks.server.ts            attaches the session, guards protected groups
   routes/
     +layout.svelte           global only: fonts, tokens, theme
@@ -223,6 +234,46 @@ with monfly-v1, and Prisma owns its migrations.**
   for atomic multi-statement writes — v1's loan and balance mutations will
   need it — or `drizzle-orm/neon-serverless` where a flow needs `db.transaction()`.
 - Money is `double precision` (v1 debt; the plan is integer cents).
+
+## Data flow
+
+"Spent this month" on the dashboard is the reference path for every feature
+that reads data:
+
+| Layer                 | Where                                                     | Role                                                 |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------------------- |
+| domain (isomorphic)   | `src/lib/finance/`                                        | types, `YYYY-MM` months, money in cents — no I/O     |
+| service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email` |
+| endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                       |
+| endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear     |
+| query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
+| prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
+| widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)      |
+
+- **Every `/api/*` route requires a session.** The hook answers 401 JSON — a
+  fetch can't follow a login redirect. Endpoints then call
+  `requireMonflyUser(locals)` (403 for a session with no `User` row) and send
+  `cache-control: private, no-store`.
+- **Money crosses the wire as integer cents** plus a currency, from
+  `preferredCurrency` (MXN when unset, as in v1). Queries round each
+  `double precision` amount to cents in SQL; `formatMoney` renders it in the
+  currency's home locale.
+- **Months are drawn in the viewer's time zone.** app.html stores it in the
+  `tz` cookie and the hook exposes `locals.timeZone` — UTC until the cookie
+  exists, which is how v1 drew every month. Postgres turns local midnights
+  into UTC bounds with `AT TIME ZONE`.
+- **Transaction `type` is `income` or `expense`; `amount` is always positive.**
+  The `Budget`, `RecurringBill`, `Pot` and `MonthlySummary` tables exist only
+  in the schema: v1 never implemented them, and they hold no rows.
+- **The monthly budget lives on `User.monthlyBudgetCents`** (v1 migration
+  `20260910210000_add_user_monthly_budget`): integer cents, the first money
+  column stored the planned way. `PUT /api/me/budget` sets or clears it
+  (`BudgetEditor`, the pencil); the spending endpoint returns it with the month.
+- **Prefetch in universal loads with SvelteKit's `fetch`.** During SSR it
+  calls the endpoint in-process with the visitor's cookies and inlines the
+  response, so the server renders real figures and hydration doesn't refetch.
+  Widgets read the same cache through `createQuery`; after a write, invalidate
+  by key (`spendingKeys.all`).
 
 ## Conventions carried over from v1
 

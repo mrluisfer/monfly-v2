@@ -16,6 +16,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	return {
 		user: locals.session.user,
 		// null for a new Auth0 user with no v1 row — creating one is still pending.
-		profile: await locals.getMonflyUser()
+		profile: await locals.getMonflyUser(),
+		// Loads compute "this month" in it, identically on server and client.
+		timeZone: locals.timeZone
 	};
 };

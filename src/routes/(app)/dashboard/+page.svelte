@@ -8,16 +8,18 @@
 		CategoryChip,
 		ExpensesDial,
 		IncomeBars,
+		MeterStat,
+		SpentThisMonth,
 		TipCard
 	} from '$lib/components/dashboard';
-	import { Card, Figure, IconButton, Meter, PillButton } from '$lib/components/ui';
+	import { Card, Figure, IconButton, PillButton } from '$lib/components/ui';
 	import { formatCurrency } from '$lib/utils';
 
-	// Placeholder figures — there is no data layer yet.
-	const meters = [
-		{ label: 'Spent this month', cap: 7540, spent: 2000, rest: 5540, value: 0.27, color: 'lime' as const },
-		{ label: 'Savings goal', cap: 13000, spent: 6000, rest: 13000, value: 0.46, color: 'blue' as const }
-	];
+	let { data } = $props();
+
+	// Placeholder figures below until each widget gets its own query, as
+	// "Spent this month" has. Savings goals will come from pots.
+	const savings = { cap: 13000, spent: 6000, rest: 13000, value: 0.46 };
 
 	const categories = [
 		{ label: 'Meals & Food', value: 1456, color: 'violet' as const },
@@ -46,25 +48,15 @@
 		</h1>
 
 		<div class="grid gap-x-12 gap-y-8 sm:grid-cols-2">
-			{#each meters as m (m.label)}
-				<div>
-					<div class="mb-3 flex items-baseline justify-between gap-4">
-						<span class="text-[0.9375rem] text-fg-muted">{m.label}</span>
-						<Figure value={formatCurrency(m.cap)} size="sm" />
-					</div>
-					<Meter value={m.value} color={m.color} />
-					<div class="mt-3 flex items-baseline justify-between gap-4">
-						<div>
-							<Figure value={formatCurrency(m.spent)} size="sm" />
-							<p class="mt-0.5 text-sm text-fg-muted">Committed</p>
-						</div>
-						<div class="text-right">
-							<Figure value={formatCurrency(m.rest)} size="sm" class="text-fg-subtle" />
-							<p class="mt-0.5 text-sm text-fg-muted">Remaining</p>
-						</div>
-					</div>
-				</div>
-			{/each}
+			<SpentThisMonth month={data.month} enabled={data.profile !== null} />
+			<MeterStat
+				label="Savings goal"
+				total={formatCurrency(savings.cap)}
+				value={savings.value}
+				color="blue"
+				start={{ value: formatCurrency(savings.spent), label: 'Committed' }}
+				end={{ value: formatCurrency(savings.rest), label: 'Remaining' }}
+			/>
 		</div>
 	</section>
 

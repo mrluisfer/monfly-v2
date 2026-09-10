@@ -4,7 +4,18 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
-		<script>document.documentElement.classList.add('js');</script>
+		<script>
+			document.documentElement.classList.add('js');
+			// iOS Safari applies :active on touch only once some touchstart listener exists (.press).
+			document.addEventListener('touchstart', function () {}, { passive: true });
+			// The viewer's time zone, so the server draws months where they live (TIME_ZONE_COOKIE).
+			try {
+				document.cookie =
+					'tz=' +
+					encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone) +
+					'; path=/; max-age=31536000; samesite=lax';
+			} catch {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

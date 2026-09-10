@@ -11,6 +11,8 @@ declare global {
 			 * Auth0 user with no row yet). Lazy and memoised per request.
 			 */
 			getMonflyUser: () => Promise<import('$lib/server/auth').MonflyUser | null>;
+			/** The viewer's IANA time zone (the `tz` cookie), or UTC. Set by hooks.server.ts. */
+			timeZone: string;
 		}
 		// interface PageData {}
 		// interface PageState {}

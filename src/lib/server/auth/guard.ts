@@ -1,3 +1,5 @@
+import { HOME_PATH } from '$lib/routes';
+
 /** Where visitors without a session are sent from a protected route. */
 export const LOGIN_PATH = '/login';
 
@@ -15,13 +17,18 @@ export function isProtectedRoute(routeId: string | null): boolean {
 	);
 }
 
+/** JSON endpoints under /api. Every one requires a session unless it opts out here. */
+export function isApiRoute(routeId: string | null): boolean {
+	return routeId === '/api' || (routeId?.startsWith('/api/') ?? false);
+}
+
 /** Login URL that sends the visitor back to where they were headed. */
 export function loginRedirect(url: URL): string {
 	return `${LOGIN_PATH}?redirectTo=${encodeURIComponent(url.pathname + url.search)}`;
 }
 
-/** Where a signed-in visitor lands when no safe `redirectTo` is given. */
-export const HOME_PATH = '/dashboard';
+/** Where a signed-in visitor lands when no safe `redirectTo` is given. Shared with the client. */
+export { HOME_PATH };
 
 /**
  * Returns `target` only when it stays on this origin, else `fallback`.

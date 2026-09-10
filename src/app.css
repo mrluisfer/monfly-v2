@@ -173,6 +173,20 @@
 	.outline-hairline {
 		border-color: var(--hairline);
 	}
+
+	/* Pressable controls: a quick dip to 0.95 on click or touch and a softer
+	   return on release — the feedback lands at once but never feels slow.
+	   Hover colours ease alongside. Owns the element's transitions. */
+	.press {
+		transition-property: color, background-color, border-color, scale;
+		transition-duration: 200ms;
+		transition-timing-function: var(--ease-out-quint);
+	}
+
+	.press:active:not(:disabled) {
+		scale: 0.95;
+		transition-duration: 200ms, 200ms, 200ms, 90ms;
+	}
 }
 
 /* Scripted entrances (GSAP) start hidden, but only once JS is known to run —

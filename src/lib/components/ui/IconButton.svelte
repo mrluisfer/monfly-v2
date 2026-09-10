@@ -20,7 +20,7 @@
 	type="button"
 	class={cn(
 		'inline-grid shrink-0 place-items-center rounded-full border border-hairline',
-		'transition-colors duration-200 hover:bg-sunken',
+		'press hover:bg-sunken',
 		'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
 		'[&_svg]:size-[1.15rem] [&_svg]:stroke-[1.5]',
 		dashed && 'border-dashed',

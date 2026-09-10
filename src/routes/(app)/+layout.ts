@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { QueryClient } from '@tanstack/svelte-query';
+import { ApiError } from '$lib/queries';
 import type { LayoutLoad } from './$types';
 
 /**
@@ -16,7 +17,9 @@ export const load: LayoutLoad = async ({ data }) => {
 			queries: {
 				enabled: browser,
 				staleTime: 60 * 1000,
-				retry: 1
+				// Once, and never for a 4xx: retrying can't fix those.
+				retry: (failures, error) =>
+					failures < 1 && !(error instanceof ApiError && error.status < 500)
 			}
 		}
 	});

@@ -57,7 +57,10 @@ export const user = pgTable(
 		productUpdatesOptIn: boolean().default(true).notNull(),
 		acceptedTermsAt: datetime(),
 		acceptedPrivacyAt: datetime(),
-		avatarSeed: text()
+		avatarSeed: text(),
+		// Set from v2's dashboard (PUT /api/me/budget). Integer cents, null when
+		// unset — the first money column stored the planned way. v1 ignores it.
+		monthlyBudgetCents: integer()
 	},
 	(table) => [uniqueIndex('User_email_key').using('btree', table.email.asc().nullsLast())]
 );
