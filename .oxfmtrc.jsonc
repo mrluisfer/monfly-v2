@@ -16,6 +16,8 @@
 	"ignorePatterns": [
 		"pnpm-lock.yaml",
 		"/static/",
+		// Agent skills, kept exactly as published.
+		".claude/skills/",
 		// Written by release-please.
 		"CHANGELOG.md",
 		".release-please-manifest.json"
