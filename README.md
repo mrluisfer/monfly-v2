@@ -250,6 +250,7 @@ that reads data:
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget) |
 | endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances |
 | endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null |
+| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
 | widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)      |

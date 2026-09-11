@@ -8,13 +8,15 @@
 	import { accountsQuery, colorChoicesQuery, setColorMutation } from '$lib/queries';
 	import AccountBlock from './AccountBlock.svelte';
 	import AccountsEditor from './AccountsEditor.svelte';
+	import AccountsTotal from './AccountsTotal.svelte';
 
 	/**
-	 * The dashboard's two featured accounts — main and secondary as the person
-	 * set them (the pencil), else the two oldest — as two cards that split the
-	 * grid column 50/50. Each block filters by month on its own; each balance
-	 * orb recolours its account (User.colors), main starting lime and secondary
-	 * blue, as the mockup had them. The page prefetches the accounts during SSR.
+	 * The accounts column: an overview card — the header, every account's
+	 * total, this month's movement and a share bar — then the two featured
+	 * accounts, main and secondary as the person set them (the pencil) or the
+	 * two oldest, splitting the rest of the column 50/50. Each account has one
+	 * colour everywhere — orb, sparkle, slice — from User.colors, main starting
+	 * lime and secondary blue. The page prefetches the accounts during SSR.
 	 */
 	type Props = {
 		/** The viewer's zone: it decides which months have passed. */
@@ -38,13 +40,18 @@
 
 	const list = $derived(query.data);
 	const featured = $derived(list ? featuredAccounts(list.accounts) : []);
-	const colors = $derived(
-		assignColors(
-			featured.map((a) => a.id),
-			choices.data?.account,
-			['lime', 'blue']
-		)
+	// Featured first, so main and secondary get the first defaults; the rest follow.
+	const ordered = $derived(
+		list ? [...featured, ...list.accounts.filter((a) => !featured.includes(a))] : []
 	);
+	const colorById = $derived.by(() => {
+		const palette = assignColors(
+			ordered.map((a) => a.id),
+			choices.data?.account,
+			['lime', 'blue', 'violet', 'sky', 'peach', 'mint']
+		);
+		return Object.fromEntries(ordered.map((a, i) => [a.id, palette[i]]));
+	});
 </script>
 
 {#snippet block(i: number)}
@@ -54,26 +61,35 @@
 			{account}
 			currency={list.currency}
 			{timeZone}
-			color={colors[i]}
+			color={colorById[account.id]}
 			onColorChange={(color) => recolor.mutate({ kind: 'account', key: account.id, color })}
 			colorError={refused === account.id ? "Couldn't save this color. Try again." : undefined}
 		/>
-	{:else}
+	{:else if list}
 		<p class="p-7 text-[0.9375rem] text-fg-muted">
-			{list ? (i === 0 ? 'No accounts yet.' : 'A second account shows here once you add one.') : ''}
+			{i === 0 ? 'Add an account to see it here.' : 'A second account shows here once you add one.'}
 		</p>
 	{/if}
 {/snippet}
 
-<!-- flex-1 on a zero basis: the two cards split the column evenly, whatever each holds. -->
-<Card class="flex flex-1 basis-0 flex-col">
-	<div class="flex items-center justify-between gap-4 px-7 pt-7">
+<!-- Overview: its own height, on top -->
+<Card class="shrink-0 p-7">
+	<div class="flex items-center justify-between gap-4">
 		<h2 class="font-display text-2xl font-medium">Accounts</h2>
 		<div class="flex gap-2">
 			<AccountsEditor accounts={list?.accounts ?? []} />
 			<IconButton size="sm" href="/cards" aria-label="Open accounts"><ExternalLink /></IconButton>
 		</div>
 	</div>
+	{#if list && list.accounts.length > 0}
+		<AccountsTotal accounts={list.accounts} colors={colorById} currency={list.currency} class="mt-5" />
+	{:else if list}
+		<p class="mt-4 text-[0.9375rem] text-fg-muted">No accounts yet.</p>
+	{/if}
+</Card>
+
+<!-- flex-1 on a zero basis: the two accounts split what's left evenly, whatever each holds. -->
+<Card class="flex flex-1 basis-0 flex-col">
 	{@render block(0)}
 </Card>
 

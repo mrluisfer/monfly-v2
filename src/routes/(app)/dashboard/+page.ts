@@ -3,6 +3,7 @@ import {
 	accountsQuery,
 	colorChoicesQuery,
 	expenseBreakdownQuery,
+	incomeQuery,
 	monthSpendingQuery
 } from '$lib/queries';
 import type { PageLoad } from './$types';
@@ -22,7 +23,8 @@ export const load: PageLoad = async ({ parent, fetch }) => {
 			queryClient.prefetchQuery(monthSpendingQuery(month, fetch)),
 			queryClient.prefetchQuery(expenseBreakdownQuery(null, fetch)),
 			queryClient.prefetchQuery(colorChoicesQuery(fetch)),
-			queryClient.prefetchQuery(accountsQuery(undefined, fetch))
+			queryClient.prefetchQuery(accountsQuery(undefined, fetch)),
+			queryClient.prefetchQuery(incomeQuery('quarter', fetch))
 		]);
 	}
 	return { month };

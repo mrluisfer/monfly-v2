@@ -3,25 +3,18 @@
 	import {
 		AccountsCard,
 		ExpensesCard,
-		IncomeBars,
+		IncomeCard,
 		MeterStat,
 		SpentThisMonth,
 		TipCard
 	} from '$lib/components/dashboard';
-	import { Card, Figure, PillButton } from '$lib/components/ui';
+	import { Card } from '$lib/components/ui';
 	import { formatCurrency } from '$lib/utils';
 
 	let { data } = $props();
 
-	// Placeholder figures below until each widget gets its own query, as
-	// "Spent this month", Expenses and Accounts have. Savings goals will come from pots.
+	// Placeholder until savings goals (pots) have data; every other widget reads its own query.
 	const savings = { cap: 13000, spent: 6000, rest: 13000, value: 0.46 };
-
-	const bars = [
-		{ label: '$60k', height: 68, color: 'lime' as const },
-		{ label: '$40k', height: 46, color: 'violet' as const },
-		{ label: '$90k', height: 100, color: 'blue' as const }
-	];
 </script>
 
 <div class="flex flex-col gap-4 pb-6 px-4 sm:px-6 lg:px-8">
@@ -58,19 +51,7 @@
 
 		<!-- Income + Tips -->
 		<div class="flex flex-col gap-4" use:reveal={{ delay: 0.15 }}>
-			<Card class="flex flex-col p-7">
-				<div class="flex items-center justify-between gap-4">
-					<h2 class="font-display text-2xl font-medium">Income</h2>
-					<PillButton size="sm" caret>This quarter</PillButton>
-				</div>
-
-				<div class="mt-6">
-					<Figure value={formatCurrency(467121)} accentSymbol="lime" size="lg" />
-					<p class="mt-1.5 text-[0.9375rem] text-fg-muted">This quarter</p>
-				</div>
-
-				<IncomeBars {bars} class="mt-8 h-56" />
-			</Card>
+			<IncomeCard enabled={data.profile !== null} />
 
 			<Card class="flex-1">
 				<TipCard />

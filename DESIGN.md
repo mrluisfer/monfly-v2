@@ -103,10 +103,14 @@ rank colours — blue, violet, lime, sky — skipping any colour a choice alread
 holds, so two of the four only match when someone chose that. A recolour
 eases the wedge and the orb together; the axes are fixed decoration.
 
-**The accounts column** features two accounts, a card each, splitting the
+**The accounts column** opens with an overview card at its own height — the
+"Accounts" header and actions, every active account's total, this month's net
+movement as a tinted chip, and a share bar where each account's slice wears
+its colour. Below it two featured accounts, a card each, split the rest of the
 column 50/50 (`flex-1` on a zero basis) — each block's header sits on top and
 its figures anchor to the bottom, so spare height spreads instead of pooling
-under the second card. They're the accounts marked main and secondary (the
+under the second card. An account has one colour everywhere: orb, sparkle,
+slice. They're the accounts marked main and secondary (the
 pencil opens two `Select`s), else the oldest, in the order they were added.
 Each header's filter shows the account now or as an earlier month of this year
 ended. Each block keeps the mockup — balance and this month's
@@ -114,6 +118,13 @@ spending over orbiting rings that turn opposite ways — and its balance orb is
 the account's colour, worn by its sparkle too: main starts lime, secondary
 blue. "To review" is a link with an arrow that slides in; the header's
 open-accounts button is an `IconButton` with `href`.
+
+**The income chart** keeps the mockup's hatched columns and accent caps on
+real data: this quarter by month (the default), this month by week, this year
+by quarter, all time by year. Bars scale to the tallest one; a past bucket
+with nothing in it keeps a hairline, and one still to come is a dashed empty
+slot with no figure. Hovering or focusing a bar shows its exact income, entry
+count and share. The total keeps its lime symbol while its number counts.
 
 ## Motion
 
@@ -139,6 +150,8 @@ avatar. The specs, so new work matches:
 | Link arrow          | "To review" and links like it           | The arrow slides in on hover or focus (spring), then nudges its way every 1.4 s; always shown on touch. |
 | Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
 | Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
+| Bars grow           | `IncomeBars`, on a new period           | New bars rise from the baseline 60 ms apart (`@starting-style` and a 700 ms height transition), their figures fading up after; bars that stay ease to their new height. |
+| Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). |
 | Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
 | Theme morph         | `ThemeToggle`                           | MorphSVG outline 0.55 s `power3.inOut`; rays `back.out(1.8)`; a −24° twist settling on `back.out(2.2)`. |
 | Gaze                | The header avatar (`Avatar gaze`)       | Breathes and blinks; eyes follow the pointer anywhere on the page, travel 4 viewBox units.       |
@@ -170,6 +183,12 @@ Rules:
 - **Presence pattern:** `forceMount` on the content, then the `child` snippet
   with `{#if open}` around `in:pop out:pop`, and
   `origin-(--bits-floating-transform-origin)` so it grows from its anchor.
+- **Chain, never replace, a trigger's handlers.** bits-ui hands its trigger's
+  element `onpointerenter`, `onpointerleave`, `onfocus`, `onblur`, `onclick`
+  and more through the spread `props`. Writing your own `onpointerleave={…}`
+  after the spread replaces bits-ui's, and the layer never hears the pointer
+  leave: it sticks open and stops responding. Call theirs, then yours — see
+  `chain` in `AccountsTotal` or the `onclick` in `ThemeToggle`.
 - **Surface:** `rounded-[var(--radius-chip)] border border-line bg-card shadow-lg`.
   Tooltips are `rounded-lg px-2.5 py-1.5 text-xs`.
 - **Placement:** open on the side that doesn't cover what the layer explains,

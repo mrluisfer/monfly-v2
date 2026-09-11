@@ -40,6 +40,7 @@ export async function getAccounts(
 					? sql<string>`${current}`
 					: sql<string>`${current} - coalesce(sum(${signed}) filter (where ${transaction.date} >= ${monthEnd}), 0)`,
 			tracked: sql<string>`coalesce(sum(${amountCents}) filter (where ${transaction.type} = ${EXPENSE} and ${inMonth}), 0)`,
+			change: sql<string>`coalesce(sum(${signed}) filter (where ${inMonth}), 0)`,
 			toReview: sql<number>`count(${transaction.id}) filter (where ${transaction.description} is null or btrim(${transaction.description}) = '')::int`,
 			updatedAt: sql<string>`to_char(greatest(${card.updatedAt}, max(${transaction.updatedAt})), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
 			existed: balanceAt === 'now' ? sql<boolean>`true` : sql<boolean>`${card.createdAt} < ${monthEnd}`
@@ -60,6 +61,7 @@ export async function getAccounts(
 			role: isAccountRole(row.role) ? row.role : null,
 			balance: Number(row.balance),
 			tracked: Number(row.tracked),
+			change: Number(row.change),
 			toReview: row.toReview,
 			updatedAt: row.updatedAt,
 			existed: row.existed

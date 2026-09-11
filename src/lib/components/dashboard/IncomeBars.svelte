@@ -1,33 +1,133 @@
 <script lang="ts">
-	import { BLOB_COLOR, type BlobColor } from '$lib/components/ui';
+	import type { Snippet } from 'svelte';
+	import { PALETTE, Tooltip, type PaletteColor } from '$lib/components/ui';
 	import { cn } from '$lib/utils';
 
-	type Bar = { label: string; height: number; color: BlobColor };
+	type Bar = {
+		key: string;
+		/** Under the bar: "Jul", "Q3", "1–7". */
+		label: string;
+		/** Any unit; heights are relative to the tallest bar. */
+		value: number;
+		/** Over the bar: "$60k". */
+		valueLabel: string;
+		color: PaletteColor;
+		/** Still to come: drawn as an empty slot, with no figure. */
+		future?: boolean;
+		/** Read out for the bar: "July: $60,000 from 5 incomes". */
+		description: string;
+	};
 
-	let { bars, class: className }: { bars: Bar[]; class?: string } = $props();
+	type Props = {
+		bars: Bar[];
+		/** The detail shown on hover or focus of a bar that has happened. */
+		tip?: Snippet<[Bar]>;
+		class?: string;
+	};
+
+	let { bars, tip, class: className }: Props = $props();
+
+	const max = $derived(Math.max(...bars.map((b) => b.value), 0));
+	/** A bar's height as a fraction of the tallest; an empty past bar keeps a hairline. */
+	const share = (bar: Bar) => (bar.future || max <= 0 ? 0 : bar.value / max);
 </script>
 
-<div class={cn('flex items-end gap-0', className)}>
-	{#each bars as bar, i (bar.label)}
-		<div class="flex flex-1 flex-col" style="height: {bar.height}%">
-			<span class="font-display tabular mb-1.5 text-sm">{bar.label}</span>
-			<div
-				class={cn(
-					'hatch relative flex-1 border border-hairline',
-					i > 0 && '-ml-px' // shared edges, as in the mockup
-				)}
-			>
-				<!-- Solid accent cap -->
-				<span
-					class="absolute inset-x-0 -top-px block h-[3px]"
-					style="background: {BLOB_COLOR[bar.color]}"
-				></span>
-				<!-- Interior rules -->
-				<span
-					class="absolute inset-0 block"
-					style="background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--hatch) 27px 28px)"
-				></span>
-			</div>
-		</div>
-	{/each}
+<!--
+	Hatched columns with a solid accent cap, sharing edges as in the mockup.
+	New bars grow up from the baseline one after another (@starting-style plus
+	a staggered height transition), and a new value eases each bar to its height.
+-->
+<div class={cn('flex flex-col', className)}>
+	<div class="flex min-h-0 flex-1 items-end">
+		{#each bars as bar, i (bar.key)}
+			{#snippet column(props: Record<string, unknown>)}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex — focus is how keyboard users reach each bar's detail. -->
+				<div
+					{...props}
+					role="img"
+					aria-label={bar.description}
+					tabindex={bar.future ? undefined : 0}
+					class="group flex h-full min-w-0 flex-1 flex-col justify-end outline-none"
+					style="--i: {i}"
+				>
+					<span
+						class={cn(
+							'bar-figure font-display tabular mb-1.5 truncate text-sm',
+							bar.future && 'invisible'
+						)}
+					>
+						{bar.valueLabel}
+					</span>
+					<div
+						class={cn(
+							'bar hatch relative border border-hairline transition-colors duration-200',
+							'group-hover:bg-sunken/60 group-focus-visible:outline-2 group-focus-visible:-outline-offset-2 group-focus-visible:outline-blue',
+							i > 0 && '-ml-px',
+							bar.future && 'border-dashed'
+						)}
+						style="--h: {share(bar)}"
+					>
+						{#if !bar.future}
+							<!-- Solid accent cap -->
+							<span
+								class="absolute inset-x-0 -top-px block h-[3px]"
+								style="background: {PALETTE[bar.color].css}"
+							></span>
+						{/if}
+						<!-- Interior rules -->
+						<span
+							class="absolute inset-0 block"
+							style="background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--hatch) 27px 28px)"
+						></span>
+					</div>
+				</div>
+			{/snippet}
+
+			{#if tip && !bar.future}
+				{#snippet detail()}
+					{@render tip(bar)}
+				{/snippet}
+				<Tooltip content={detail} side="top" delay={80} class="px-3 py-2.5">
+					{#snippet children({ props })}
+						{@render column(props)}
+					{/snippet}
+				</Tooltip>
+			{:else}
+				{@render column({})}
+			{/if}
+		{/each}
+	</div>
+
+	<!-- The axis: what each bar covers -->
+	<div class="mt-2 flex">
+		{#each bars as bar (bar.key)}
+			<span class={cn('min-w-0 flex-1 truncate text-center text-xs', bar.future ? 'text-fg-subtle' : 'text-fg-muted')}>
+				{bar.label}
+			</span>
+		{/each}
+	</div>
 </div>
+
+<style>
+	/* The tallest bar fills the plot below its figure; the rest scale to it. A
+	   bar with nothing in it keeps a hairline, so "none" reads apart from "not yet". */
+	.bar {
+		height: max(calc((100% - 1.75rem) * var(--h)), 2px);
+		transition: height 0.7s var(--ease-out-quint) calc(var(--i) * 60ms);
+
+		@starting-style {
+			height: 0;
+		}
+	}
+
+	.bar-figure {
+		transition:
+			opacity 0.4s var(--ease-out-quint) calc(0.3s + var(--i) * 60ms),
+			translate 0.4s var(--ease-out-quint) calc(0.3s + var(--i) * 60ms);
+
+		@starting-style {
+			opacity: 0;
+			translate: 0 0.25rem;
+		}
+	}
+</style>

@@ -34,6 +34,18 @@ export function addMonths(key: MonthKey, delta: number): MonthKey {
 	return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}` as MonthKey;
 }
 
+/** Today's calendar date as seen from `timeZone`. */
+export function localDate(timeZone: string, now = new Date()): { year: number; month: number; day: number } {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		year: 'numeric',
+		month: 'numeric',
+		day: 'numeric'
+	}).formatToParts(now);
+	const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+	return { year: get('year'), month: get('month'), day: get('day') };
+}
+
 /** The calendar year `now` falls in, as seen from `timeZone`. */
 export function currentYear(timeZone: string, now = new Date()): number {
 	return Number(currentMonth(timeZone, now).slice(0, 4));

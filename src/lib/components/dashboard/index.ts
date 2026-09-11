@@ -4,6 +4,7 @@ export { default as CategoryChip } from './CategoryChip.svelte';
 export { default as ExpensesCard } from './ExpensesCard.svelte';
 export { default as ExpensesDial } from './ExpensesDial.svelte';
 export { default as IncomeBars } from './IncomeBars.svelte';
+export { default as IncomeCard } from './IncomeCard.svelte';
 export { default as MeterStat } from './MeterStat.svelte';
 export { default as SpentThisMonth } from './SpentThisMonth.svelte';
 export { default as TipCard } from './TipCard.svelte';

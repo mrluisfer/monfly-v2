@@ -49,6 +49,42 @@ export function formatMoney(amount: Cents, currency: Currency, { cents = false }
 	return formatter(currency, cents).format(amount / 100);
 }
 
+const compactFormatters = new Map<Currency, Intl.NumberFormat>();
+
+/** Short figures for chart labels: 60,000 → "$60k", 1,250,000 → "$1.3M". English suffixes, narrow symbol. */
+export function formatMoneyCompact(amount: Cents, currency: Currency): string {
+	let format = compactFormatters.get(currency);
+	if (!format) {
+		format = new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency,
+			currencyDisplay: 'narrowSymbol',
+			notation: 'compact',
+			maximumFractionDigits: 1
+		});
+		compactFormatters.set(currency, format);
+	}
+	return format.format(amount / 100).replace('K', 'k');
+}
+
+/**
+ * A whole-unit figure split for styling: the symbol, the number, and which
+ * comes first — "$" before "467,121" in MXN, "€" after "7.540" in EUR.
+ */
+export function moneyParts(amount: Cents, currency: Currency) {
+	const parts = formatter(currency, false).formatToParts(amount / 100);
+	const at = parts.findIndex((p) => p.type === 'currency');
+	return {
+		symbol: parts[at]?.value ?? '',
+		number: parts
+			.filter((p) => p.type !== 'currency')
+			.map((p) => p.value)
+			.join('')
+			.trim(),
+		symbolFirst: at < parts.findIndex((p) => p.type === 'integer')
+	};
+}
+
 /** The symbol a currency is written with in its home locale: MXN → "$", EUR → "€". */
 export function currencySymbol(currency: Currency): string {
 	const part = formatter(currency, false)
