@@ -9,7 +9,7 @@
 	import { spring } from '$lib/actions/spring';
 	import Blob from '$lib/components/ui/Blob.svelte';
 	import Card from '$lib/components/ui/Card.svelte';
-	import DottedRing from '$lib/components/ui/DottedRing.svelte';
+	import OrbitRing from '$lib/components/ui/OrbitRing.svelte';
 	import Logo from '$lib/components/ui/Logo.svelte';
 	import Meter from '$lib/components/ui/Meter.svelte';
 	import Sparkle from '$lib/components/ui/Sparkle.svelte';
@@ -150,9 +150,9 @@
 			</div>
 
 			<div data-anim="tile" class="flex items-center gap-4 rounded-[1.25rem] bg-sunken/85 p-5 backdrop-blur-sm">
-				<DottedRing class="w-16 shrink-0" markers={[0.25, 0.75]}>
+				<OrbitRing class="w-16 shrink-0" markers={[0.25, 0.75]}>
 					<div class="relative size-full"><Blob color="blue" blur={6} spread={80} /></div>
-				</DottedRing>
+				</OrbitRing>
 				<div class="min-w-0">
 					<p class="text-sm text-fg-muted">Balance</p>
 					<p

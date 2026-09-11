@@ -5,11 +5,13 @@ import {
 	doublePrecision,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
 	uniqueIndex
 } from 'drizzle-orm/pg-core';
+import type { ColorChoices } from '../../colors';
 
 /*
  * Mirrors the database monfly-v1 created with Prisma: introspected with
@@ -60,7 +62,10 @@ export const user = pgTable(
 		avatarSeed: text(),
 		// Set from v2's dashboard (PUT /api/me/budget). Integer cents, null when
 		// unset — the first money column stored the planned way. v1 ignores it.
-		monthlyBudgetCents: integer()
+		monthlyBudgetCents: integer(),
+		// Colours picked in v2 (PATCH /api/me/colors), one JSON document — see
+		// $lib/colors. v1 ignores it.
+		colors: jsonb().$type<ColorChoices>()
 	},
 	(table) => [uniqueIndex('User_email_key').using('btree', table.email.asc().nullsLast())]
 );
@@ -107,9 +112,19 @@ export const card = pgTable(
 		createdAt: createdAt(),
 		updatedAt: updatedAt(),
 		color: text(),
-		status: text().default('active').notNull()
+		status: text().default('active').notNull(),
+		// "main" or "secondary": the accounts the dashboard features, set from
+		// v2. At most one of each per user — the unique index; NULLs never collide.
+		role: text()
 	},
-	(table) => [index('Card_userEmail_idx').using('btree', table.userEmail.asc().nullsLast())]
+	(table) => [
+		index('Card_userEmail_idx').using('btree', table.userEmail.asc().nullsLast()),
+		uniqueIndex('Card_userEmail_role_key').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.role.asc().nullsLast()
+		)
+	]
 );
 
 export const category = pgTable(

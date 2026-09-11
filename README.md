@@ -113,7 +113,7 @@ src/
     components/
       ui/                    Logo, Card, Meter, DottedRing, Blob, Sparkle, Caret,
                              PillButton, IconButton, Figure, Tooltip, ThemeToggle,
-                             Kbd, Avatar
+                             Kbd, Avatar, Orb, Select (+ palette.ts)
       layout/                AppShell, TopBar, TabStrip, UserMenu, PagePlaceholder
       dashboard/             ExpensesDial, AccountBlock, CategoryChip, IncomeBars,
                              TipCard, MeterStat, SpentThisMonth, BudgetEditor
@@ -246,6 +246,10 @@ that reads data:
 | service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email` |
 | endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                       |
 | endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear     |
+| endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time           |
+| endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget) |
+| endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances |
+| endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
 | widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)      |
@@ -269,6 +273,19 @@ that reads data:
   `20260910210000_add_user_monthly_budget`): integer cents, the first money
   column stored the planned way. `PUT /api/me/budget` sets or clears it
   (`BudgetEditor`, the pencil); the spending endpoint returns it with the month.
+- **Colour choices live in `User.colors`** (JSONB, v1 migration
+  `20260910220000_add_user_colors`): `{ "category": { "<name>": "<palette id>" } }`,
+  keyed by names as transactions store them. `PATCH /api/me/colors` changes one
+  key in a single statement, so concurrent edits don't overwrite each other.
+  The Expenses card's chips set them — optimistically, rolled back on error —
+  and the dial's wedges follow.
+- **Featured accounts use `Card.role`** (v1 migration
+  `20260910230000_add_card_role`): `main` or `secondary`, unique per user —
+  NULLs never collide. `PATCH /api/accounts/[id]` moves a role, and the
+  previous holder gives it up in the same transaction (`db.batch`). Unset
+  roles fall back to the oldest accounts, in the order they were added.
+  v1's `Card.color` stays v1's (hex values it draws with); v2's account
+  colours live in `User.colors.account`.
 - **Prefetch in universal loads with SvelteKit's `fetch`.** During SSR it
   calls the endpoint in-process with the visitor's cookies and inlines the
   response, so the server renders real figures and hydration doesn't refetch.

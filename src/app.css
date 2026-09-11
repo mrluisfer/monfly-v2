@@ -57,6 +57,40 @@
 	--hatch: rgb(255 255 255 / 0.12);
 }
 
+/* Pastels a person can give things (Orb, $lib/components/ui/palette.ts): soft
+   on white cards, and a touch deeper and richer on dark ones so they glow
+   instead of washing out. */
+:root {
+	--pastel-sky: oklch(0.8 0.1 235);
+	--pastel-teal: oklch(0.82 0.09 195);
+	--pastel-mint: oklch(0.87 0.11 160);
+	--pastel-lemon: oklch(0.93 0.12 100);
+	--pastel-peach: oklch(0.86 0.09 60);
+	--pastel-coral: oklch(0.8 0.12 35);
+	--pastel-rose: oklch(0.8 0.11 5);
+	--pastel-pink: oklch(0.83 0.1 340);
+	--pastel-lavender: oklch(0.8 0.09 295);
+}
+
+.dark {
+	--pastel-sky: oklch(0.74 0.12 235);
+	--pastel-teal: oklch(0.76 0.11 195);
+	--pastel-mint: oklch(0.8 0.13 160);
+	--pastel-lemon: oklch(0.86 0.14 100);
+	--pastel-peach: oklch(0.8 0.11 60);
+	--pastel-coral: oklch(0.74 0.14 35);
+	--pastel-rose: oklch(0.74 0.13 5);
+	--pastel-pink: oklch(0.77 0.12 340);
+	--pastel-lavender: oklch(0.74 0.11 295);
+}
+
+/* Registered, so a new colour morphs through an orb's gradient instead of snapping. */
+@property --orb-color {
+	syntax: '<color>';
+	inherits: true;
+	initial-value: transparent;
+}
+
 @theme inline {
 	--color-blue: var(--blue);
 	--color-violet: var(--violet);

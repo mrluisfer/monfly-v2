@@ -4,22 +4,7 @@ import { addMonths, type MonthKey } from '../../finance/period';
 import type { MonthSpending } from '../../finance/spending';
 import type { db as appDb } from '../db';
 import { transaction, user } from '../db/schema';
-
-/** v1's `Transaction.type` values are "income" and "expense"; amounts are always positive. */
-const EXPENSE = 'expense';
-
-/**
- * Local midnight on the 1st of `month` in `timeZone`, as the UTC wall-clock
- * timestamp the `date` column stores. Postgres does the zone maths, DST
- * included, and the bound is a constant, so the (userEmail, date) index applies.
- */
-function monthStart(month: MonthKey, timeZone: string) {
-	const localMidnight = `${month}-01 00:00:00`;
-	return sql`((${localMidnight}::timestamp at time zone ${timeZone}) at time zone 'UTC')`;
-}
-
-/** Each stored amount is rounded to cents before summing — integers from here on. */
-const cents = sql`round(${transaction.amount}::numeric * 100)`;
+import { EXPENSE, amountCents, utcMidnight } from './fragments';
 
 type Input = {
 	/** The stored `User.email` — `profile.email`, never the Auth0 spelling. */
@@ -36,7 +21,7 @@ export async function getMonthSpending(
 ): Promise<MonthSpending> {
 	const [row] = await db
 		.select({
-			spent: sql<string>`coalesce(sum(${cents}), 0)`,
+			spent: sql<string>`coalesce(sum(${amountCents}), 0)`,
 			count: sql<number>`count(*)::int`,
 			budget: sql<number | null>`(select ${user.monthlyBudgetCents} from ${user} where ${user.email} = ${userEmail})`
 		})
@@ -45,8 +30,8 @@ export async function getMonthSpending(
 			and(
 				eq(transaction.userEmail, userEmail),
 				eq(transaction.type, EXPENSE),
-				sql`${transaction.date} >= ${monthStart(month, timeZone)}`,
-				sql`${transaction.date} < ${monthStart(addMonths(month, 1), timeZone)}`
+				sql`${transaction.date} >= ${utcMidnight(`${month}-01`, timeZone)}`,
+				sql`${transaction.date} < ${utcMidnight(`${addMonths(month, 1)}-01`, timeZone)}`
 			)
 		);
 

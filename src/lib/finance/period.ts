@@ -34,6 +34,39 @@ export function addMonths(key: MonthKey, delta: number): MonthKey {
 	return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}` as MonthKey;
 }
 
+/** The calendar year `now` falls in, as seen from `timeZone`. */
+export function currentYear(timeZone: string, now = new Date()): number {
+	return Number(currentMonth(timeZone, now).slice(0, 4));
+}
+
+/** This year and the `back` before it, newest first: `[2026, 2025, …, 2021]`. */
+export function recentYears(timeZone: string, back = 5, now = new Date()): number[] {
+	const year = currentYear(timeZone, now);
+	return Array.from({ length: back + 1 }, (_, i) => year - i);
+}
+
+/** This year's months before the current one, newest first: in September, `['2026-08', …, '2026-01']`. */
+export function earlierMonthsThisYear(timeZone: string, now = new Date()): MonthKey[] {
+	const current = currentMonth(timeZone, now);
+	const month = Number(current.slice(5, 7));
+	return Array.from({ length: month - 1 }, (_, i) => addMonths(current, -(i + 1)));
+}
+
+/** A month's name in English: `monthName('2026-08')` → "August". */
+export function monthName(key: MonthKey, style: 'long' | 'short' = 'long'): string {
+	const [year, month] = key.split('-').map(Number);
+	return new Intl.DateTimeFormat('en-US', { month: style, timeZone: 'UTC' }).format(
+		new Date(Date.UTC(year, month - 1, 1))
+	);
+}
+
+/** A `?year=` value: four digits, 1970 to 2999. Null for anything else. */
+export function parseYear(value: string | null): number | null {
+	if (!value || !/^\d{4}$/.test(value)) return null;
+	const year = Number(value);
+	return year >= 1970 && year <= 2999 ? year : null;
+}
+
 /** Days in a month: `daysInMonth('2026-02')` → 28. */
 export function daysInMonth(key: MonthKey): number {
 	const [year, month] = key.split('-').map(Number);

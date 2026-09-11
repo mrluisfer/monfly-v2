@@ -1,5 +1,7 @@
 export { default as AccountBlock } from './AccountBlock.svelte';
+export { default as AccountsCard } from './AccountsCard.svelte';
 export { default as CategoryChip } from './CategoryChip.svelte';
+export { default as ExpensesCard } from './ExpensesCard.svelte';
 export { default as ExpensesDial } from './ExpensesDial.svelte';
 export { default as IncomeBars } from './IncomeBars.svelte';
 export { default as MeterStat } from './MeterStat.svelte';

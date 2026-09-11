@@ -43,6 +43,15 @@ fails silently — the old tooltip rendered transparent that way.
 to be a glyph on white, so it inverts: `bg-lime/30` with the glyph mixed toward
 ink.
 
+**The palette** (`$lib/components/ui/palette.ts`) is every colour a person can
+give something: the brand blue, violet and lime, then nine pastels — sky, teal,
+mint, lemon, peach, coral, rose, pink, lavender. The pastels are OKLCH tokens
+defined per theme in app.css: soft on white cards, a touch deeper and richer on
+dark so they glow instead of washing out. User-chosen colours come from here
+and nowhere else; add a colour by adding a token pair and a palette entry.
+Choices are stored by palette id (`User.colors`), never as a CSS value, so
+retuning a colour updates every place that wears it.
+
 ## Type
 
 - **Space Grotesk (`font-display`)** for headings and figures: light weights,
@@ -76,10 +85,35 @@ ink.
 | `Meter`      | Hatched track, white capsule fill, pin on the boundary. `role="meter"`, optional details tooltip. |
 | `Tooltip`    | A label, or rich `content`; `anchor` points it at something other than its trigger.     |
 | `Kbd`        | Keycaps for a shortcut, read from the hotkey registry.                                  |
+| `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. |
+| `Orb`        | The blurred gradient sphere, in any palette colour. `editable` makes it a button that opens the palette. |
+| `OrbitRing`  | The dashed gauge ring with pointer marks, turning slowly around what it holds (an orb).  |
 | `Avatar`     | A person's blobatar — static, `animated` on hover, or `gaze` (alive, eyes on the pointer). |
 
 Dashboard compositions live in `$lib/components/dashboard` (`MeterStat`,
-`SpentThisMonth`, `BudgetEditor`, …); the shell in `$lib/components/layout`.
+`SpentThisMonth`, `BudgetEditor`, `ExpensesCard`, …); the shell in
+`$lib/components/layout`.
+
+**The expenses dial** is a pie of the whole period: the top four categories
+are wedges of the total, clockwise from 268°, and the hatch is everything
+else — the long tail. Each wedge wears its category's colour, and so does its
+chip: the person picks it from the chip's orb, and it's stored in
+`User.colors` (see `$lib/colors`). Until a category has a choice, it takes the
+rank colours — blue, violet, lime, sky — skipping any colour a choice already
+holds, so two of the four only match when someone chose that. A recolour
+eases the wedge and the orb together; the axes are fixed decoration.
+
+**The accounts column** features two accounts, a card each, splitting the
+column 50/50 (`flex-1` on a zero basis) — each block's header sits on top and
+its figures anchor to the bottom, so spare height spreads instead of pooling
+under the second card. They're the accounts marked main and secondary (the
+pencil opens two `Select`s), else the oldest, in the order they were added.
+Each header's filter shows the account now or as an earlier month of this year
+ended. Each block keeps the mockup — balance and this month's
+spending over orbiting rings that turn opposite ways — and its balance orb is
+the account's colour, worn by its sparkle too: main starts lime, secondary
+blue. "To review" is a link with an arrow that slides in; the header's
+open-accounts button is an `IconButton` with `href`.
 
 ## Motion
 
@@ -97,6 +131,15 @@ avatar. The specs, so new work matches:
 | Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. |
 | Tab surface         | `TabStrip`                              | One shared surface slides (x, width) in 0.45 s, ease-out-quint.                                  |
 | Meter fill          | `Meter`                                 | Width and pin in 700 ms, ease-out-quint; grows in after mount.                                   |
+| Dial morph          | `ExpensesDial`, on a new period         | GSAP: the wedges morph in 0.9 s `power3.inOut` while the dial turns −14° and settles on `back.out(1.7)`. |
+| Deal                | `ExpensesCard` chips, on a new period   | Motion: opacity, y 12→0 px and scale 0.94→1 in 550 ms, 60 ms apart, ease-out-quint.              |
+| Count               | Figures (`use:countUp`)                 | GSAP tweens from the current figure to the new one in 0.8 s, `power3.out`.                       |
+| Recolour            | `Orb`, `Sparkle`                        | The gradient morphs to the new colour in 450 ms (the registered `--orb-color`), and the orb springs back from 0.86 (bounce 0.5). |
+| Orbit               | `OrbitRing`                             | GSAP: one linear turn per 32 s (24 s, the other way, beside it); pointing at it spins it up 6× over 0.8 s and it eases back; paused off screen. |
+| Link arrow          | "To review" and links like it           | The arrow slides in on hover or focus (spring), then nudges its way every 1.4 s; always shown on touch. |
+| Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
+| Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
+| Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
 | Theme morph         | `ThemeToggle`                           | MorphSVG outline 0.55 s `power3.inOut`; rays `back.out(1.8)`; a −24° twist settling on `back.out(2.2)`. |
 | Gaze                | The header avatar (`Avatar gaze`)       | Breathes and blinks; eyes follow the pointer anywhere on the page, travel 4 viewBox units.       |
 | Entrances           | `use:reveal`, `use:countUp`             | Scroll-triggered reveals; figures tween up.                                                       |
