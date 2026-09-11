@@ -3,6 +3,23 @@
 Monfly v2: the SvelteKit rewrite of Monfly (`../monfly-v1` is the legacy React
 app). This file is for coding agents; people start at the [README](README.md).
 
+## Before you code
+
+The full version, including goal-driven execution, lives in
+[karpathy-guidelines](.claude/skills/karpathy-guidelines/SKILL.md).
+
+- **Think first.** Say the assumption you are working from. If the request reads
+  two ways, name both instead of silently picking one. If a simpler route exists,
+  say so. If something is genuinely unclear, stop and ask one question.
+- **Simplest thing that works.** Nothing speculative: no option, abstraction or
+  error branch nobody asked for, and a helper used once stays where it is used.
+- **Surgical changes.** Touch only what the task needs. Don't reformat, rename or
+  refactor code you merely pass through, and follow the style already there
+  (`DESIGN.md` for UI, `docs/decisions` for the why). Clean up what your own
+  change orphaned; mention dead code you find rather than deleting it.
+
+Every changed line should trace back to what was asked.
+
 ## Ground rules
 
 - **UI work:** follow [DESIGN.md](DESIGN.md) — layout, motion specs, floating
