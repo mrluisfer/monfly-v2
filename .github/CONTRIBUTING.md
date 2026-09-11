@@ -11,5 +11,7 @@ Branch, open a PR, keep CI green. That's most of it.
   or `migrate`; schema changes are Prisma migrations in v1. Details in
   [Database](../README.md#database).
 - **UI** follows [DESIGN.md](../DESIGN.md).
+- **Ownership:** Monfly is proprietary; what you contribute belongs to its
+  owner ([LICENSE](../LICENSE)).
 
 Setup and commands: [README](../README.md#commands).
