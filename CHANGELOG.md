@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/mrluisfer/monfly-v2/compare/v1.0.2...v1.0.3) (2026-09-11)
+
+
+### Documentation
+
+* think-before-coding rules, and the karpathy-guidelines skill ([#19](https://github.com/mrluisfer/monfly-v2/issues/19)) ([bdf9e8b](https://github.com/mrluisfer/monfly-v2/commit/bdf9e8bf5fa1bba4a4936f5fd68069ac688b6cba))
+
 ## [1.0.2](https://github.com/mrluisfer/monfly-v2/compare/v1.0.1...v1.0.2) (2026-09-11)
 
 
