@@ -1,6 +1,6 @@
 name: Feature
 description: An idea or an improvement.
-labels: ["type: feature"]
+labels: ['type: feature']
 body:
   - type: textarea
     id: idea

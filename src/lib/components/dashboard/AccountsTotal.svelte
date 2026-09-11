@@ -115,7 +115,8 @@
 	const format = (cents: number) => formatMoney(cents, currency);
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
-	const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 }).format;
+	const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 })
+		.format;
 
 	/** The slice being pointed at or focused: it lifts, the rest dim. */
 	let lit = $state<string | null>(null);
@@ -190,14 +191,18 @@
 	// figure — sliding into place as they fade up (compositor properties only).
 	$effect(() => {
 		if (!words || prefersReducedMotion()) return;
-		const timeline = gsap
-			.timeline({ paused: true })
-			.fromTo(
-				words.children,
-				{ opacity: 0, x: 8 },
-				{ opacity: 1, x: 0, duration: 0.4, ease: 'power3.out', stagger: { each: 0.07, from: 'end' } },
-				0.08
-			);
+		const timeline = gsap.timeline({ paused: true }).fromTo(
+			words.children,
+			{ opacity: 0, x: 8 },
+			{
+				opacity: 1,
+				x: 0,
+				duration: 0.4,
+				ease: 'power3.out',
+				stagger: { each: 0.07, from: 'end' }
+			},
+			0.08
+		);
 		reveal = timeline;
 		return () => {
 			timeline.kill();
@@ -230,7 +235,7 @@
 			</p>
 			<!-- The server writes the figure; countUp takes the node over once mounted. -->
 			<p
-				class="font-display tabular mt-1 text-[2rem] leading-none font-light tracking-tight"
+				class="tabular mt-1 font-display text-[2rem] leading-none font-light tracking-tight"
 				use:countUp={{ value: total, format, whenVisible: true }}
 			>
 				{format(total)}
@@ -245,7 +250,7 @@
 				tabindex="0"
 				data-open={open || undefined}
 				class={cn(
-					'chip rounded-lg cursor-default text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
+					'chip cursor-default rounded-lg text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
 					change > 0 && 'text-positive',
 					change < 0 && 'text-negative',
 					change === 0 && 'flat text-fg-muted'
@@ -262,7 +267,10 @@
 				</span>
 				<span class="reveal">
 					<span class="reveal-clip">
-						<span bind:this={words} class="flex items-center gap-1.5 pr-[0.3125rem] pl-1.5 whitespace-nowrap">
+						<span
+							bind:this={words}
+							class="flex items-center gap-1.5 pr-[0.3125rem] pl-1.5 whitespace-nowrap"
+						>
 							<!-- Counts on mount, not when seen: clipped to a dot it never
 							     enters view, so it would sit at $0 — and be read out so. -->
 							<span class="tabular" use:countUp={{ value: change, format: signed }}>
@@ -279,7 +287,10 @@
 	{#if slices.length > 0}
 		<div class="relative mt-4">
 			<!-- What you see: each slice grown to its account's part of the whole -->
-			<div class="share flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-sunken" aria-hidden="true">
+			<div
+				class="share flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-sunken"
+				aria-hidden="true"
+			>
 				{#each slices as slice, i (slice.line.id)}
 					<span
 						bind:this={bars[slice.line.id]}
@@ -297,7 +308,10 @@
 			<!-- What you point at and press: the same slices, taller and invisible,
 			     each with its amount in a tooltip and a switch for the totals. They
 			     track the visible ones' widths. -->
-			<ul class="absolute inset-x-0 -inset-y-2 flex gap-0.5" aria-label="Accounts in the total balance">
+			<ul
+				class="absolute inset-x-0 -inset-y-2 flex gap-0.5"
+				aria-label="Accounts in the total balance"
+			>
 				{#each slices as slice, i (slice.line.id)}
 					{#snippet amount()}
 						<span class="flex flex-col gap-1 whitespace-nowrap">
@@ -305,7 +319,10 @@
 								{#if slice.line.unknown}
 									<span class="hollow size-2 shrink-0 rounded-full"></span>
 								{:else}
-									<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[slice.color].css}"></span>
+									<span
+										class="size-2 shrink-0 rounded-full"
+										style="background: {PALETTE[slice.color].css}"
+									></span>
 								{/if}
 								<span class="font-normal text-fg-muted">{slice.line.name}</span>
 								<span class="tabular">
@@ -322,12 +339,15 @@
 								{#if unassigned.beforeAccounts > 0}
 									<span class="font-normal text-fg-muted">
 										{unassigned.beforeAccounts} older
-										{unassigned.beforeAccounts === 1 ? 'one is' : 'ones are'} already in your opening balance
+										{unassigned.beforeAccounts === 1 ? 'one is' : 'ones are'} already in your opening
+										balance
 									</span>
 								{/if}
 							{/if}
 							<span class="font-normal text-fg-muted">
-								{slice.off ? 'Left out of the total · click to count it' : 'Click to leave out of the total'}
+								{slice.off
+									? 'Left out of the total · click to count it'
+									: 'Click to leave out of the total'}
 							</span>
 						</span>
 					{/snippet}
@@ -358,7 +378,11 @@
 		<ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted" aria-hidden="true">
 			{#each slices as slice (slice.line.id)}
 				<li
-					class={cn('legend flex min-w-0 items-center gap-1.5', slice.line.unknown && 'unknown', slice.off && 'off')}
+					class={cn(
+						'legend flex min-w-0 items-center gap-1.5',
+						slice.line.unknown && 'unknown',
+						slice.off && 'off'
+					)}
 					style={ink(slice)}
 				>
 					<span class="dot size-2 shrink-0 rounded-full"></span>
@@ -381,7 +405,12 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.6) 50%, transparent 70%);
+		background: linear-gradient(
+			100deg,
+			transparent 30%,
+			rgb(255 255 255 / 0.6) 50%,
+			transparent 70%
+		);
 		mix-blend-mode: soft-light;
 		translate: -100% 0;
 		animation: sheen 7s var(--ease-out-quint) 1.5s infinite;

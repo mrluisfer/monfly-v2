@@ -1,6 +1,6 @@
 name: Bug
 description: Something broke or looks wrong.
-labels: ["type: bug"]
+labels: ['type: bug']
 body:
   - type: textarea
     id: what

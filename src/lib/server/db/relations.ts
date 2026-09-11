@@ -45,6 +45,10 @@ export const relations = defineRelations(schema, (r) => ({
 	category: { user: r.one.user({ from: r.category.userEmail, to: r.user.email, optional: false }) },
 	budget: { user: r.one.user({ from: r.budget.userEmail, to: r.user.email, optional: false }) },
 	pot: { user: r.one.user({ from: r.pot.userEmail, to: r.user.email, optional: false }) },
-	recurringBill: { user: r.one.user({ from: r.recurringBill.userEmail, to: r.user.email, optional: false }) },
-	monthlySummary: { user: r.one.user({ from: r.monthlySummary.userEmail, to: r.user.email, optional: false }) }
+	recurringBill: {
+		user: r.one.user({ from: r.recurringBill.userEmail, to: r.user.email, optional: false })
+	},
+	monthlySummary: {
+		user: r.one.user({ from: r.monthlySummary.userEmail, to: r.user.email, optional: false })
+	}
 }));

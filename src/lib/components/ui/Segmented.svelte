@@ -18,7 +18,12 @@
 
 	let { options, value = $bindable(), onValueChange, label, class: className }: Props = $props();
 
-	const at = $derived(Math.max(0, options.findIndex((o) => o.value === value)));
+	const at = $derived(
+		Math.max(
+			0,
+			options.findIndex((o) => o.value === value)
+		)
+	);
 </script>
 
 <!--

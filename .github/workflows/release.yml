@@ -1,0 +1,24 @@
+# Changelog y releases a partir de los titulos de los PRs (Conventional Commits).
+# release-please mantiene abierto un PR "chore(main): release X.Y.Z" con el
+# CHANGELOG y la version; al mergearlo crea el tag y la release en GitHub.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          release-type: node

@@ -39,7 +39,8 @@
 
 	let trigger = $state<HTMLElement>();
 
-	const cssColor = (tone: PaletteColor | 'none') => (tone === 'none' ? 'transparent' : PALETTE[tone].css);
+	const cssColor = (tone: PaletteColor | 'none') =>
+		tone === 'none' ? 'transparent' : PALETTE[tone].css;
 
 	function choose(next: string) {
 		const tone = next as PaletteColor;
@@ -112,7 +113,9 @@
 												'data-[state=checked]:ring-2 data-[state=checked]:ring-fg'
 											)}
 										>
-											<span class="relative block size-full overflow-hidden rounded-full border border-line bg-card">
+											<span
+												class="relative block size-full overflow-hidden rounded-full border border-line bg-card"
+											>
 												{@render face(tone, 2.5, 82)}
 											</span>
 										</RadioGroup.Item>

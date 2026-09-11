@@ -26,5 +26,5 @@ providers.
 
 ## Automated checks
 
-Every PR runs the type check and build, gitleaks (secrets) and Semgrep (code);
+Every PR runs the type check, lint and build, gitleaks (secrets) and Semgrep (code);
 Dependabot watches the dependencies.

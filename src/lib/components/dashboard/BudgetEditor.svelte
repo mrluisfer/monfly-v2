@@ -53,7 +53,8 @@
 		const amount = parseMoney(draft);
 		if (amount === null) problem = 'Enter an amount, like 7,540.';
 		else if (amount <= 0) problem = 'The budget has to be more than zero.';
-		else if (!isBudget(amount)) problem = `The most it can be is ${formatMoney(MAX_BUDGET, currency)}.`;
+		else if (!isBudget(amount))
+			problem = `The most it can be is ${formatMoney(MAX_BUDGET, currency)}.`;
 		else {
 			problem = null;
 			save(amount);
@@ -100,8 +101,12 @@
 										<Target class="size-4 stroke-[1.75]" />
 									</span>
 									<div class="min-w-0">
-										<label for="{uid}-amount" class="block text-sm font-medium">Monthly budget</label>
-										<p class="text-xs text-fg-muted">What this month's spending is measured against.</p>
+										<label for="{uid}-amount" class="block text-sm font-medium"
+											>Monthly budget</label
+										>
+										<p class="text-xs text-fg-muted">
+											What this month's spending is measured against.
+										</p>
 									</div>
 								</div>
 								<div
@@ -116,7 +121,7 @@
 										placeholder="0"
 										aria-invalid={problem !== null}
 										aria-describedby={message ? `${uid}-message` : undefined}
-										class="min-w-0 flex-1 bg-transparent font-display tabular text-lg outline-none placeholder:text-fg-subtle"
+										class="tabular min-w-0 flex-1 bg-transparent font-display text-lg outline-none placeholder:text-fg-subtle"
 									/>
 									<span class="text-sm text-fg-subtle">{currency}</span>
 								</div>

@@ -11,11 +11,11 @@ version: 2
 updates:
   # ---------------------------------------------------------------- npm/pnpm
   - package-ecosystem: npm
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
       timezone: America/Mexico_City
     # Techo duro de PRs abiertos de Dependabot a la vez.
     open-pull-requests-limit: 5
@@ -29,7 +29,7 @@ updates:
       - dependencies
     commit-message:
       # include: scope añade (deps) o (deps-dev): "chore(deps): …", "chore(deps-dev): …".
-      prefix: "chore"
+      prefix: 'chore'
       include: scope
     groups:
       # Todo lo de runtime que sea minor/patch -> 1 solo PR por semana.
@@ -49,7 +49,7 @@ updates:
   # ------------------------------------------------------------ GitHub Actions
   # Las actions se pinnean por tag y se quedan viejas en silencio; esto las mueve.
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
@@ -57,10 +57,10 @@ updates:
       default-days: 7
     labels:
       - dependencies
-      - "area: ci"
+      - 'area: ci'
     commit-message:
-      prefix: "chore(ci)"
+      prefix: 'chore(ci)'
     groups:
       github-actions:
         patterns:
-          - "*"
+          - '*'

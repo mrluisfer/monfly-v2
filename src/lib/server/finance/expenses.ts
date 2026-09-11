@@ -39,7 +39,11 @@ export async function getExpenseBreakdown(
 		.groupBy(transaction.category)
 		.orderBy(desc(total), transaction.category);
 
-	const categories = rows.map((row) => ({ name: row.name, total: Number(row.total), count: row.count }));
+	const categories = rows.map((row) => ({
+		name: row.name,
+		total: Number(row.total),
+		count: row.count
+	}));
 	return {
 		year,
 		timeZone,

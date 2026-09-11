@@ -124,7 +124,11 @@
 	// Pulling free, the box gives like a drop: squashed a touch, then round.
 	$effect(() => {
 		if (!docked || !shape || untrack(() => !settled) || prefersReducedMotion()) return;
-		animate(shape, { scaleY: [0.82, 1], scaleX: [1.05, 1] }, { type: 'spring', bounce: 0.5, duration: 0.7, delay: 0.1 });
+		animate(
+			shape,
+			{ scaleY: [0.82, 1], scaleX: [1.05, 1] },
+			{ type: 'spring', bounce: 0.5, duration: 0.7, delay: 0.1 }
+		);
 	});
 </script>
 

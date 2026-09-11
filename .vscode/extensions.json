@@ -1,3 +1,10 @@
 {
-	"recommendations": ["svelte.svelte-vscode"]
+	"recommendations": [
+		"svelte.svelte-vscode",
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"bradlc.vscode-tailwindcss",
+		"editorconfig.editorconfig"
+	],
+	"unwantedRecommendations": ["biomejs.biome"]
 }

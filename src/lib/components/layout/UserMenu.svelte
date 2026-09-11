@@ -67,8 +67,7 @@
 	].join(' ');
 	const chip =
 		'grid size-7 shrink-0 place-items-center rounded-lg group-data-disabled:opacity-50 group-data-disabled:grayscale';
-	const glyph =
-		'size-4 stroke-[1.75] transition-transform duration-300 ease-[var(--ease-spring)]';
+	const glyph = 'size-4 stroke-[1.75] transition-transform duration-300 ease-[var(--ease-spring)]';
 </script>
 
 <DropdownMenu.Root>

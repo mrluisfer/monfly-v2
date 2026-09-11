@@ -96,7 +96,10 @@
 			{ label: 'Month gone', value: percent(monthShare) }
 		];
 		if (!progress.over && days.left > 0) {
-			rows.push({ label: 'Left per day', value: money(Math.floor(progress.remaining / days.left)) });
+			rows.push({
+				label: 'Left per day',
+				value: money(Math.floor(progress.remaining / days.left))
+			});
 		}
 		rows.push(daysLeft, expenses);
 

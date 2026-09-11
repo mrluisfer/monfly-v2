@@ -30,7 +30,11 @@ const cookieHandler: CookieHandler<StoreOptions> = {
 		jar(store).set(name, value, { ...options, path: options?.path ?? '/' }),
 	getCookie: (name, store) => jar(store).get(name),
 	getCookies: (store) =>
-		Object.fromEntries(jar(store).getAll().map(({ name, value }) => [name, value])),
+		Object.fromEntries(
+			jar(store)
+				.getAll()
+				.map(({ name, value }) => [name, value])
+		),
 	deleteCookie: (name, store, options) =>
 		jar(store).delete(name, { ...options, path: options?.path ?? '/' })
 };
@@ -47,7 +51,9 @@ function readConfig(): Auth0Config | null {
 
 	if (values.every(Boolean)) {
 		if (AUTH0_SECRET!.length < 32) {
-			console.error('AUTH0_SECRET must be at least 32 characters (openssl rand -hex 32) — Auth0 stays off.');
+			console.error(
+				'AUTH0_SECRET must be at least 32 characters (openssl rand -hex 32) — Auth0 stays off.'
+			);
 		} else {
 			config = {
 				// The SDK wants a bare host; tolerate a pasted https:// URL.

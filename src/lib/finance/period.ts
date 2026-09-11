@@ -35,7 +35,10 @@ export function addMonths(key: MonthKey, delta: number): MonthKey {
 }
 
 /** Today's calendar date as seen from `timeZone`. */
-export function localDate(timeZone: string, now = new Date()): { year: number; month: number; day: number } {
+export function localDate(
+	timeZone: string,
+	now = new Date()
+): { year: number; month: number; day: number } {
 	const parts = new Intl.DateTimeFormat('en-US', {
 		timeZone,
 		year: 'numeric',

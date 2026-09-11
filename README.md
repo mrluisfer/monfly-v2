@@ -5,18 +5,18 @@ the database v1 shares, and the first real dashboard data ("Spent this month").
 
 ## Stack
 
-| Layer        | Choice                          | Notes                                                        |
-| ------------ | ------------------------------- | ------------------------------------------------------------ |
-| Framework    | SvelteKit 2 + Svelte 5 (runes)  | Runes forced on outside `node_modules`                       |
-| Styling      | Tailwind CSS 4                  | OKLCH tokens in `src/app.css`, light + dark                  |
-| Animation    | Motion                          | `use:reveal`, `use:spring`, tab surface, `pop` transitions   |
-| Animation    | GSAP                            | `use:countUp`, the signup timeline, the theme-toggle morph   |
-| Positioning  | Floating UI                     | Inside bits-ui for tooltips/popovers; `use:anchor` otherwise |
-| Primitives   | bits-ui                         | Accessible headless components                               |
-| Server state | TanStack Query v6               | Per-request client; `$lib/queries` (see Data flow)           |
-| Tables       | TanStack Table v9               | Installed, not yet used                      |
-| Icons        | `@lucide/svelte`                | The Svelte 5 package, not `lucide-svelte`    |
-| Theming      | mode-watcher                    | Toggles `.dark` on `<html>`, no FOUC         |
+| Layer        | Choice                         | Notes                                                        |
+| ------------ | ------------------------------ | ------------------------------------------------------------ |
+| Framework    | SvelteKit 2 + Svelte 5 (runes) | Runes forced on outside `node_modules`                       |
+| Styling      | Tailwind CSS 4                 | OKLCH tokens in `src/app.css`, light + dark                  |
+| Animation    | Motion                         | `use:reveal`, `use:spring`, tab surface, `pop` transitions   |
+| Animation    | GSAP                           | `use:countUp`, the signup timeline, the theme-toggle morph   |
+| Positioning  | Floating UI                    | Inside bits-ui for tooltips/popovers; `use:anchor` otherwise |
+| Primitives   | bits-ui                        | Accessible headless components                               |
+| Server state | TanStack Query v6              | Per-request client; `$lib/queries` (see Data flow)           |
+| Tables       | TanStack Table v9              | Installed, not yet used                                      |
+| Icons        | `@lucide/svelte`               | The Svelte 5 package, not `lucide-svelte`                    |
+| Theming      | mode-watcher                   | Toggles `.dark` on `<html>`, no FOUC                         |
 
 ## Design language
 
@@ -98,6 +98,8 @@ pnpm dev          # dev server on :5173
 pnpm build        # production build
 pnpm preview      # preview the build
 pnpm check        # svelte-check (types + a11y)
+pnpm lint         # Prettier + ESLint
+pnpm format       # format the whole repo
 pnpm db:pull      # introspect the shared DB into drizzle/ (read-only)
 pnpm db:studio    # Drizzle Studio — it can edit rows: shared DB, careful
 ```
@@ -151,7 +153,7 @@ Route groups split the app by audience. They shape layouts, never URLs.
 **The guard lives in `hooks.server.ts`,** not in a layout: hooks run before every
 load, form action and endpoint, and SvelteKit turns a redirect thrown there into
 a JSON redirect for the `__data.json` requests behind client-side navigation. It
-matches the route *group* — `event.route.id` starts with `/(app)/` — so a page
+matches the route _group_ — `event.route.id` starts with `/(app)/` — so a page
 added anywhere inside `(app)` is protected with no extra code.
 
 **Auth is Auth0,** through its official server SDK, `@auth0/auth0-server-js`.
@@ -209,12 +211,12 @@ compare case-sensitively: with the Auth0 spelling, that user sees an empty accou
 Drizzle ORM on Neon Postgres, over Neon's HTTP driver. **The database is shared
 with monfly-v1, and Prisma owns its migrations.**
 
-| File                             | Role                                           |
-| -------------------------------- | ---------------------------------------------- |
-| `src/lib/server/db/schema.ts`    | tables, curated from `db:pull`                 |
-| `src/lib/server/db/relations.ts` | relations for `db.query.*`, named after Prisma |
+| File                             | Role                                            |
+| -------------------------------- | ----------------------------------------------- |
+| `src/lib/server/db/schema.ts`    | tables, curated from `db:pull`                  |
+| `src/lib/server/db/relations.ts` | relations for `db.query.*`, named after Prisma  |
 | `src/lib/server/db/index.ts`     | the `db` client — server-only via `$lib/server` |
-| `drizzle.config.ts`              | drizzle-kit, used for introspection only       |
+| `drizzle.config.ts`              | drizzle-kit, used for introspection only        |
 
 - **Never run `drizzle-kit push` or `migrate` against this database** while v1
   is live: they reconcile the database to the schema with ALTERs and DROPs.
@@ -241,21 +243,21 @@ with monfly-v1, and Prisma owns its migrations.**
 "Spent this month" on the dashboard is the reference path for every feature
 that reads data:
 
-| Layer                 | Where                                                     | Role                                                 |
-| --------------------- | --------------------------------------------------------- | ---------------------------------------------------- |
-| domain (isomorphic)   | `src/lib/finance/`                                        | types, `YYYY-MM` months, money in cents — no I/O     |
-| service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email` |
-| endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                       |
-| endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear     |
-| endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time           |
-| endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget) |
+| Layer                 | Where                                                     | Role                                                                                                                         |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| domain (isomorphic)   | `src/lib/finance/`                                        | types, `YYYY-MM` months, money in cents — no I/O                                                                             |
+| service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email`                                                                         |
+| endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                                                                                               |
+| endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear                                                                             |
+| endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                   |
+| endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                        |
 | endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them |
-| endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null |
-| endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one |
-| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month |
-| query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
-| prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
-| widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)      |
+| endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null                                                                         |
+| endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                   |
+| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month                               |
+| query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher                                                                               |
+| prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                                                                                                   |
+| widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)                                                                              |
 
 - **Every `/api/*` route requires a session.** The hook answers 401 JSON — a
   fetch can't follow a login redirect. Endpoints then call

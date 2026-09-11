@@ -56,7 +56,8 @@ export async function findMonflyUser(
 			.where(sql`lower(${user.email}) = ${email.toLowerCase()}`)
 			.limit(2);
 		if (matches.length === 1) return matches[0];
-		if (matches.length > 1) console.warn('Email matches several Monfly users; not linking', { sub: id });
+		if (matches.length > 1)
+			console.warn('Email matches several Monfly users; not linking', { sub: id });
 	}
 
 	return null;

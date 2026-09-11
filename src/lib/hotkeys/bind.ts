@@ -12,7 +12,8 @@ function isTyping(target: EventTarget | null): boolean {
 }
 
 const endsWith = (pressed: string[], keys: readonly string[]) =>
-	pressed.length >= keys.length && keys.every((key, i) => pressed[pressed.length - keys.length + i] === key);
+	pressed.length >= keys.length &&
+	keys.every((key, i) => pressed[pressed.length - keys.length + i] === key);
 
 /**
  * Listens for every shortcut in `HOTKEYS` on `window` and runs its action —
@@ -27,7 +28,8 @@ export function bindHotkeys(actions: Partial<Record<HotkeyId, () => void>> = {})
 	function onKeydown(event: KeyboardEvent) {
 		// Leave modified keys to the browser and anything already handled — an
 		// open menu's typeahead, say.
-		if (event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+		if (event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey)
+			return;
 		if (isTyping(event.target)) return;
 
 		pressed = [...pressed, event.key.toLowerCase()].slice(-3);

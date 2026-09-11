@@ -66,9 +66,20 @@
 								     edges in the border's line, tucked 1px under the border so they join.
 								     bits-ui places and turns it for whichever side the tip opens on. -->
 								<Tooltip.Arrow>
-									<svg width="12" height="7" viewBox="0 0 12 7" class="-mt-px block overflow-visible" aria-hidden="true">
+									<svg
+										width="12"
+										height="7"
+										viewBox="0 0 12 7"
+										class="-mt-px block overflow-visible"
+										aria-hidden="true"
+									>
 										<path d="M0 0 L6 6 L12 0 Z" class="fill-card" />
-										<path d="M0 0.5 L6 6.5 L12 0.5" fill="none" stroke-width="1" class="stroke-line" />
+										<path
+											d="M0 0.5 L6 6.5 L12 0.5"
+											fill="none"
+											stroke-width="1"
+											class="stroke-line"
+										/>
 									</svg>
 								</Tooltip.Arrow>
 								{#if content}

@@ -1,7 +1,3 @@
 export { cn } from './cn';
 export { prefersReducedMotion, EASE_OUT_QUINT } from './motion';
-export {
-	formatCurrency,
-	formatCompact,
-	formatPercent
-} from './format';
+export { formatCurrency, formatCompact, formatPercent } from './format';

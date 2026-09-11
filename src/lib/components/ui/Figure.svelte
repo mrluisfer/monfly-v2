@@ -23,6 +23,8 @@
 	const accent = { lime: 'text-lime', blue: 'text-blue', violet: 'text-violet' };
 </script>
 
-<p class={cn('font-display tabular leading-none font-light tracking-tight', sizes[size], className)}>
+<p
+	class={cn('tabular font-display leading-none font-light tracking-tight', sizes[size], className)}
+>
 	{#if symbol && accentSymbol}<span class={accent[accentSymbol]}>{symbol}</span>{/if}{rest}
 </p>

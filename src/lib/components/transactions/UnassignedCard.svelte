@@ -8,7 +8,12 @@
 	import { accountColors, featuredAccounts } from '$lib/accounts';
 	import { Card, Checkbox, IconButton, PillButton, Select } from '$lib/components/ui';
 	import { DEFAULT_CURRENCY, formatMoney } from '$lib/finance';
-	import { accountsQuery, assignAccountMutation, colorChoicesQuery, unassignedQuery } from '$lib/queries';
+	import {
+		accountsQuery,
+		assignAccountMutation,
+		colorChoicesQuery,
+		unassignedQuery
+	} from '$lib/queries';
 	import { signedAmount, type UnassignedTransaction } from '$lib/transactions';
 	import { cn, prefersReducedMotion } from '$lib/utils';
 
@@ -44,7 +49,9 @@
 	const rows = $derived(query.data?.transactions ?? []);
 	const accounts = $derived(accountList.data?.accounts ?? []);
 	const colors = $derived(accountColors(accounts, choices.data?.account));
-	const options = $derived(accounts.map((a) => ({ value: a.id, label: a.name, color: colors[a.id] })));
+	const options = $derived(
+		accounts.map((a) => ({ value: a.id, label: a.name, color: colors[a.id] }))
+	);
 
 	type Group = {
 		key: 'counted' | 'before';
@@ -140,11 +147,14 @@
 		if (!account) return '';
 		const parts: string[] = [];
 		if (moving !== 0) parts.push(`${signed(moving)} moves into ${account.name}`);
-		if (older > 0) parts.push(`${older} older ${older === 1 ? 'one moves' : 'ones move'} no balance`);
+		if (older > 0)
+			parts.push(`${older} older ${older === 1 ? 'one moves' : 'ones move'} no balance`);
 		return parts.length > 0 ? parts.join(' · ') : 'No balance moves';
 	});
 
-	const dayOf = $derived(new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone }));
+	const dayOf = $derived(
+		new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone })
+	);
 	const yearOf = $derived(new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone }));
 	const thisYear = $derived(yearOf.format(new Date()));
 	const day = (iso: string) => {
@@ -191,18 +201,22 @@
 					checked={all}
 					indeterminate={some}
 					onCheckedChange={(on) => pickGroup(group, on)}
-					label="Pick every one {group.key === 'counted' ? 'counted in your total' : 'from before your first account'}"
+					label="Pick every one {group.key === 'counted'
+						? 'counted in your total'
+						: 'from before your first account'}"
 					class="mt-0.5"
 				/>
 				<div class="min-w-0 flex-1">
 					<h3 id="group-{group.key}" class="text-[0.9375rem] font-medium">
-						{group.title}<span class="tabular ml-1.5 font-normal text-fg-muted">{group.rows.length}</span>
+						{group.title}<span class="tabular ml-1.5 font-normal text-fg-muted"
+							>{group.rows.length}</span
+						>
 					</h3>
 					<p class="mt-0.5 max-w-prose text-sm text-fg-muted">{group.note}</p>
 				</div>
 				{#if group.key === 'counted'}
 					<!-- The same figure as the dashboard's Unknown slice. -->
-					<span class="font-display tabular shrink-0 text-lg">
+					<span class="tabular shrink-0 font-display text-lg">
 						{signed(group.rows.reduce((sum, t) => sum + signedAmount(t), 0))}
 					</span>
 				{/if}
@@ -214,7 +228,7 @@
 						<label
 							for="pick-{row.id}"
 							class={cn(
-								'-mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 select-none transition-colors duration-150',
+								'-mx-3 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 select-none',
 								picked.has(row.id) ? 'bg-blue/8 hover:bg-blue/12' : 'hover:bg-sunken'
 							)}
 						>
@@ -225,9 +239,16 @@
 							/>
 							<span class="tabular min-w-14 shrink-0 text-sm text-fg-muted">{day(row.date)}</span>
 							<span class="min-w-0 flex-1 truncate text-[0.9375rem]">
-								{row.category}<span class="text-fg-muted">{row.description ? ` · ${row.description}` : ''}</span>
+								{row.category}<span class="text-fg-muted"
+									>{row.description ? ` · ${row.description}` : ''}</span
+								>
 							</span>
-							<span class={cn('tabular shrink-0 text-[0.9375rem]', row.type === 'income' && 'text-positive')}>
+							<span
+								class={cn(
+									'tabular shrink-0 text-[0.9375rem]',
+									row.type === 'income' && 'text-positive'
+								)}
+							>
 								{signed(signedAmount(row))}
 							</span>
 						</label>
@@ -250,8 +271,15 @@
 				<p class="text-sm text-fg-muted">{effect}</p>
 			</div>
 			{#if account}
-				<Select label="Account" {options} value={account.id} onValueChange={(id) => (chosenAccount = id)} />
-				<PillButton size="sm" disabled={assign.isPending} onclick={submit}>Give them this account</PillButton>
+				<Select
+					label="Account"
+					{options}
+					value={account.id}
+					onValueChange={(id) => (chosenAccount = id)}
+				/>
+				<PillButton size="sm" disabled={assign.isPending} onclick={submit}
+					>Give them this account</PillButton
+				>
 			{:else}
 				<p class="text-sm text-fg-muted">Add an account first to give them one.</p>
 			{/if}

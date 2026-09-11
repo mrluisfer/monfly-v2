@@ -8,23 +8,36 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "svelte-kit sync || echo '' && husky",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"db:pull": "drizzle-kit pull --config=drizzle.config.ts",
-		"db:studio": "drizzle-kit studio --config=drizzle.config.ts"
+		"db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write ."
 	},
 	"devDependencies": {
+		"@eslint/js": "^10.0.1",
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "4.3.3",
 		"drizzle-kit": "1.0.0-rc.4",
+		"eslint": "^10.10.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.23.0",
+		"globals": "^17.12.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
+		"prettier": "^3.9.6",
+		"prettier-plugin-svelte": "^4.1.1",
+		"prettier-plugin-tailwindcss": "^0.8.1",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "4.3.3",
 		"tsx": "4.23.13",
 		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.70.0",
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
@@ -47,5 +60,12 @@
 		"motion": "13.2.0",
 		"tailwind-merge": "3.6.0",
 		"tailwind-variants": "3.3.1"
+	},
+	"lint-staged": {
+		"*.{js,ts,svelte}": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.{json,md,yml,yaml,css,html}": "prettier --write"
 	}
 }

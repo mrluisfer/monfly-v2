@@ -30,12 +30,14 @@ export const assignAccountMutation = (queryClient: QueryClient) =>
 			const gone = new Set(ids);
 			queryClient.setQueryData<UnassignedList>(
 				transactionKeys.unassigned(),
-				(list) => list && { ...list, transactions: list.transactions.filter((t) => !gone.has(t.id)) }
+				(list) =>
+					list && { ...list, transactions: list.transactions.filter((t) => !gone.has(t.id)) }
 			);
 			return { previous };
 		},
 		onError: (_error, _input, snapshot) => {
-			if (snapshot?.previous) queryClient.setQueryData(transactionKeys.unassigned(), snapshot.previous);
+			if (snapshot?.previous)
+				queryClient.setQueryData(transactionKeys.unassigned(), snapshot.previous);
 		},
 		onSettled: () =>
 			Promise.all([

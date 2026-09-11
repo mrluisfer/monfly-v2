@@ -23,7 +23,9 @@ export async function getMonthSpending(
 		.select({
 			spent: sql<string>`coalesce(sum(${amountCents}), 0)`,
 			count: sql<number>`count(*)::int`,
-			budget: sql<number | null>`(select ${user.monthlyBudgetCents} from ${user} where ${user.email} = ${userEmail})`
+			budget: sql<
+				number | null
+			>`(select ${user.monthlyBudgetCents} from ${user} where ${user.email} = ${userEmail})`
 		})
 		.from(transaction)
 		.where(
@@ -35,5 +37,12 @@ export async function getMonthSpending(
 			)
 		);
 
-	return { month, timeZone, currency, spent: Number(row.spent), budget: row.budget, count: row.count };
+	return {
+		month,
+		timeZone,
+		currency,
+		spent: Number(row.spent),
+		budget: row.budget,
+		count: row.count
+	};
 }

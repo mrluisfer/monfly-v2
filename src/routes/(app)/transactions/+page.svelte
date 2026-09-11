@@ -7,8 +7,11 @@
 
 <svelte:head><title>Transactions · Monfly</title></svelte:head>
 
-<div class="flex flex-col gap-4 pb-6 px-4 sm:px-6 lg:px-8">
-	<h1 class="font-display py-8 text-6xl leading-none font-light tracking-tight xl:text-7xl" use:reveal>
+<div class="flex flex-col gap-4 px-4 pb-6 sm:px-6 lg:px-8">
+	<h1
+		class="py-8 font-display text-6xl leading-none font-light tracking-tight xl:text-7xl"
+		use:reveal
+	>
 		Transactions
 	</h1>
 	<div use:reveal={{ delay: 0.05 }}>

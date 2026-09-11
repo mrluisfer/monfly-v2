@@ -11,7 +11,10 @@
 </script>
 
 <!-- Keycaps: one per key of the sequence, with a pressed-in bottom edge. -->
-<span class={cn('inline-flex items-center gap-1', className)} aria-label="Shortcut: {keys.join(' then ')}">
+<span
+	class={cn('inline-flex items-center gap-1', className)}
+	aria-label="Shortcut: {keys.join(' then ')}"
+>
 	{#each keys as key, i (i)}
 		<kbd
 			aria-hidden="true"

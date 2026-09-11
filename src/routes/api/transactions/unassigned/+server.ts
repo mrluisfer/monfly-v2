@@ -31,7 +31,10 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		error(415, 'Send the ids and the account as JSON');
 	}
 	const body: unknown = await request.json().catch(() => undefined);
-	const { ids, accountId } = (typeof body === 'object' && body !== null ? body : {}) as Record<string, unknown>;
+	const { ids, accountId } = (typeof body === 'object' && body !== null ? body : {}) as Record<
+		string,
+		unknown
+	>;
 	const isId = (value: unknown): value is string =>
 		typeof value === 'string' && value.length > 0 && value.length <= 64;
 	if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_ASSIGN || !ids.every(isId)) {

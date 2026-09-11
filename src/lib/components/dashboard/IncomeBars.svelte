@@ -86,7 +86,7 @@
 							<!-- The figure rides the bar's top edge. -->
 							<span
 								class={cn(
-									'bar-figure font-display tabular absolute inset-x-0 bottom-full mb-1.5 truncate',
+									'bar-figure tabular absolute inset-x-0 bottom-full mb-1.5 truncate font-display',
 									dense ? 'text-[0.6875rem]' : 'text-sm'
 								)}
 							>

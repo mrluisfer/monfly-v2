@@ -33,8 +33,15 @@ const now = () => new Date();
 /** Prisma's `DateTime`: timestamp(3) without time zone, holding UTC. */
 const datetime = () => timestamp({ precision: 3 });
 const id = () => text().primaryKey().$defaultFn(uuid);
-const createdAt = () => datetime().default(sql`CURRENT_TIMESTAMP`).notNull();
-const updatedAt = () => datetime().default(sql`CURRENT_TIMESTAMP`).notNull().$onUpdate(now);
+const createdAt = () =>
+	datetime()
+		.default(sql`CURRENT_TIMESTAMP`)
+		.notNull();
+const updatedAt = () =>
+	datetime()
+		.default(sql`CURRENT_TIMESTAMP`)
+		.notNull()
+		.$onUpdate(now);
 
 /** Ownership goes through the user's email, not the id — v1's design. */
 const userEmail = () =>
@@ -89,13 +96,36 @@ export const transaction = pgTable(
 		})
 	},
 	(table) => [
-		index('Transaction_appliedToLoanId_idx').using('btree', table.appliedToLoanId.asc().nullsLast()),
-		index('Transaction_cardId_date_idx').using('btree', table.cardId.asc().nullsLast(), table.date.asc().nullsLast()),
-		index('Transaction_userEmail_cardId_idx').using('btree', table.userEmail.asc().nullsLast(), table.cardId.asc().nullsLast()),
-		index('Transaction_userEmail_createdAt_idx').using('btree', table.userEmail.asc().nullsLast(), table.createdAt.asc().nullsLast()),
-		index('Transaction_userEmail_date_idx').using('btree', table.userEmail.asc().nullsLast(), table.date.asc().nullsLast()),
+		index('Transaction_appliedToLoanId_idx').using(
+			'btree',
+			table.appliedToLoanId.asc().nullsLast()
+		),
+		index('Transaction_cardId_date_idx').using(
+			'btree',
+			table.cardId.asc().nullsLast(),
+			table.date.asc().nullsLast()
+		),
+		index('Transaction_userEmail_cardId_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.cardId.asc().nullsLast()
+		),
+		index('Transaction_userEmail_createdAt_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.createdAt.asc().nullsLast()
+		),
+		index('Transaction_userEmail_date_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.date.asc().nullsLast()
+		),
 		index('Transaction_userEmail_idx').using('btree', table.userEmail.asc().nullsLast()),
-		index('Transaction_userEmail_type_idx').using('btree', table.userEmail.asc().nullsLast(), table.type.asc().nullsLast())
+		index('Transaction_userEmail_type_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.type.asc().nullsLast()
+		)
 	]
 );
 
@@ -149,7 +179,9 @@ export const loan = pgTable(
 		amount: doublePrecision().notNull(),
 		amountPaid: doublePrecision().default(0).notNull(),
 		status: text().default('pending').notNull(),
-		issuedAt: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+		issuedAt: datetime()
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
 		dueAt: datetime(),
 		paidAt: datetime(),
 		notes: text(),
@@ -163,10 +195,22 @@ export const loan = pgTable(
 	},
 	(table) => [
 		index('Loan_transactionId_idx').using('btree', table.transactionId.asc().nullsLast()),
-		index('Loan_userEmail_direction_idx').using('btree', table.userEmail.asc().nullsLast(), table.direction.asc().nullsLast()),
-		index('Loan_userEmail_dueAt_idx').using('btree', table.userEmail.asc().nullsLast(), table.dueAt.asc().nullsLast()),
+		index('Loan_userEmail_direction_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.direction.asc().nullsLast()
+		),
+		index('Loan_userEmail_dueAt_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.dueAt.asc().nullsLast()
+		),
 		index('Loan_userEmail_idx').using('btree', table.userEmail.asc().nullsLast()),
-		index('Loan_userEmail_status_idx').using('btree', table.userEmail.asc().nullsLast(), table.status.asc().nullsLast())
+		index('Loan_userEmail_status_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.status.asc().nullsLast()
+		)
 	]
 );
 
