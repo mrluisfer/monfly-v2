@@ -4,6 +4,9 @@ Branch, open a PR, keep CI green. That's most of it.
 
 - **Setup:** use the Node version in `.nvmrc` (`nvm use`), then `pnpm install` —
   it also installs the git hooks. VS Code suggests the extensions to add.
+- **Secrets** never go in git: `.env` is gitignored and `.env.example` lists what
+  you need. Ask the owner for the values — they are shared through a password
+  manager, not chat or commits.
 - **Branches** come off `main`: `feat/…`, `fix/…`, `chore/…`.
 - **PRs are squash-merged,** so the PR title becomes the commit and the changelog
   entry — write it as one: `feat: …`, `fix: …`
