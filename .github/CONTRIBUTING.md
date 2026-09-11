@@ -2,7 +2,7 @@
 
 Branch, open a PR, keep CI green. That's most of it.
 
-- **Setup:** use the Node version in `.nvmrc` (`nvm use`), then `pnpm install` —
+- **Setup:** Node 24 — use the version in `.nvmrc` (`nvm use`), then `pnpm install` —
   it also installs the git hooks. VS Code suggests the extensions to add.
 - **Secrets** never go in git: `.env` is gitignored and `.env.example` lists what
   you need. Ask the owner for the values — they are shared through a password
