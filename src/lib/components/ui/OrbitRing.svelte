@@ -118,7 +118,8 @@
 				<polygon
 					points="-3.4,-2.6 3.4,-2.6 0,3.4"
 					fill="var(--fg)"
-					transform="translate({50 + R * Math.cos(angle)} {50 + R * Math.sin(angle)}) rotate({at * 360})"
+					transform="translate({50 + R * Math.cos(angle)} {50 + R * Math.sin(angle)}) rotate({at *
+						360})"
 				/>
 			{/each}
 		</g>

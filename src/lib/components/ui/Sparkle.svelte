@@ -91,7 +91,11 @@
 		if (now - last < 700) return;
 		last = now;
 		// A quarter turn of a four-pointed star lands where it started.
-		animate(lift, { scale: [1.35, 1], rotate: [0, 90] }, { type: 'spring', bounce: 0.5, duration: 0.7 });
+		animate(
+			lift,
+			{ scale: [1.35, 1], rotate: [0, 90] },
+			{ type: 'spring', bounce: 0.5, duration: 0.7 }
+		);
 		const reach = (root?.clientWidth ?? 16) * 0.9;
 		sparks.forEach((spark, i) => {
 			const [dx, dy] = POINTS[i];

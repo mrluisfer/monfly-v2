@@ -96,7 +96,12 @@
 		{/if}
 	</div>
 
-	<div class={cn('mt-auto grid grid-cols-[1fr_1fr_auto] gap-6 transition-opacity duration-300', loading && 'opacity-60')}>
+	<div
+		class={cn(
+			'mt-auto grid grid-cols-[1fr_1fr_auto] gap-6 transition-opacity duration-300',
+			loading && 'opacity-60'
+		)}
+	>
 		<!-- Containers, so a big figure fits its column instead of squeezing "To review". -->
 		<div class="@container min-w-0">
 			<p class="text-sm text-fg-muted">Bank balance</p>
@@ -104,14 +109,14 @@
 			{#if shown.existed}
 				<p
 					bind:this={figures[0]}
-					class="fit-figure font-display tabular mt-1 leading-[1.75rem] font-light"
+					class="fit-figure tabular mt-1 font-display leading-[1.75rem] font-light"
 					style="--fit: 1.75rem; --chars: {chars}"
 					use:countUp={{ value: shown.balance, format, whenVisible: true }}
 				>
 					{format(shown.balance)}
 				</p>
 			{:else}
-				<p class="font-display mt-1 text-[1.75rem] leading-none font-light text-fg-subtle">—</p>
+				<p class="mt-1 font-display text-[1.75rem] leading-none font-light text-fg-subtle">—</p>
 			{/if}
 			<OrbitRing class="mt-5 w-24" markers={[0.25, 0.75]} burst={period}>
 				<Orb
@@ -132,14 +137,14 @@
 			{#if shown.existed}
 				<p
 					bind:this={figures[1]}
-					class="fit-figure font-display tabular mt-1 leading-[1.75rem] font-light"
+					class="fit-figure tabular mt-1 font-display leading-[1.75rem] font-light"
 					style="--fit: 1.75rem; --chars: {chars}"
 					use:countUp={{ value: shown.tracked, format, whenVisible: true }}
 				>
 					{format(shown.tracked)}
 				</p>
 			{:else}
-				<p class="font-display mt-1 text-[1.75rem] leading-none font-light text-fg-subtle">—</p>
+				<p class="mt-1 font-display text-[1.75rem] leading-none font-light text-fg-subtle">—</p>
 			{/if}
 			<!-- Turns the other way from its neighbour, a little quicker. -->
 			<OrbitRing class="mt-5 w-20" markers={[0, 0.5]} direction={-1} period={24} burst={period}>
@@ -150,7 +155,9 @@
 		<!-- Leads to the review view to come; for now, the transactions. -->
 		<a href="/transactions" class="review press self-end rounded-lg text-right">
 			<Figure value={String(account.toReview)} size="lg" />
-			<span class="mt-1 flex items-center justify-end gap-1 text-sm whitespace-nowrap text-fg-muted">
+			<span
+				class="mt-1 flex items-center justify-end gap-1 text-sm whitespace-nowrap text-fg-muted"
+			>
 				To review
 				<ArrowRight class="review-arrow size-3.5 stroke-[1.75]" aria-hidden="true" />
 			</span>

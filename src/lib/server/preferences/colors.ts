@@ -9,7 +9,11 @@ export async function getColorChoices(
 	db: Pick<typeof appDb, 'select'>,
 	userId: string
 ): Promise<ColorChoices> {
-	const [row] = await db.select({ colors: user.colors }).from(user).where(eq(user.id, userId)).limit(1);
+	const [row] = await db
+		.select({ colors: user.colors })
+		.from(user)
+		.where(eq(user.id, userId))
+		.limit(1);
 	return row?.colors ?? {};
 }
 

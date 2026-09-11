@@ -33,7 +33,8 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
 	if (typeof key !== 'string' || key.length === 0 || key.length > MAX_COLOR_KEY) {
 		error(400, `key must be 1 to ${MAX_COLOR_KEY} characters`);
 	}
-	if (color !== null && !isPaletteColor(color)) error(400, 'color must be a palette colour or null');
+	if (color !== null && !isPaletteColor(color))
+		error(400, 'color must be a palette colour or null');
 
 	return json(await setColorChoice(db, profile.id, kind, key, color), { headers: NO_STORE });
 };

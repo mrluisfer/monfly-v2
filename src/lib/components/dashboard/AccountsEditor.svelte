@@ -45,7 +45,9 @@
 						>
 							<div class="flex items-start gap-3">
 								<!-- Blue: picking which accounts get a card of their own. -->
-								<span class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue">
+								<span
+									class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue"
+								>
 									<Star class="size-4 stroke-[1.75]" />
 								</span>
 								<div class="min-w-0">

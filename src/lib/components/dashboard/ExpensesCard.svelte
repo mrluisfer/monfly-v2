@@ -61,7 +61,12 @@
 	const data = $derived(query.data);
 	const top = $derived(data?.categories.slice(0, 4) ?? []);
 	// Until the choices load — or if they can't — every colour is by rank.
-	const colors = $derived(assignColors(top.map((c) => c.name), choices.data?.category));
+	const colors = $derived(
+		assignColors(
+			top.map((c) => c.name),
+			choices.data?.category
+		)
+	);
 	const slices = $derived(
 		data ? categoryShares(data, 4).map((share, i) => ({ share, color: colors[i] })) : []
 	);
@@ -86,7 +91,6 @@
 			{ delay: stagger(0.06), duration: 0.55, ease: EASE_OUT_QUINT }
 		);
 	});
-
 </script>
 
 <Card class="flex h-full flex-col p-7">
@@ -121,8 +125,11 @@
 						value={category.total}
 						{currency}
 						color={colors[i]}
-						onColorChange={(color) => recolor.mutate({ kind: 'category', key: category.name, color })}
-						colorError={refused === category.name ? "Couldn't save this color. Try again." : undefined}
+						onColorChange={(color) =>
+							recolor.mutate({ kind: 'category', key: category.name, color })}
+						colorError={refused === category.name
+							? "Couldn't save this color. Try again."
+							: undefined}
 					/>
 				{/each}
 			</div>
@@ -131,7 +138,7 @@
 
 	<div class="mt-8">
 		<p
-			class="font-display tabular text-[3.25rem] leading-none font-light tracking-tight"
+			class="tabular font-display text-[3.25rem] leading-none font-light tracking-tight"
 			use:countUp={{ value: data?.total ?? 0, format, whenVisible: true }}
 		>
 			{data ? format(data.total) : '—'}

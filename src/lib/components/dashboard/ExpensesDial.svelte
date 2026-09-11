@@ -36,7 +36,8 @@
 	/** Where a divider's pin sits: its tip, pointing back at the hub. */
 	const TIP = 50;
 	/** The pin, drawn along +x from its tip: a tag, as in the mockup, its corners rounded by its stroke. */
-	const PIN = 'M0,0 L1.2,-1.45 L4.8,-1.45 Q5.6,-1.45 5.6,-0.65 L5.6,0.65 Q5.6,1.45 4.8,1.45 L1.2,1.45 Z';
+	const PIN =
+		'M0,0 L1.2,-1.45 L4.8,-1.45 Q5.6,-1.45 5.6,-0.65 L5.6,0.65 Q5.6,1.45 4.8,1.45 L1.2,1.45 Z';
 	/** The closest two dividers get, so a small wedge's don't stack their pins. */
 	const MIN_GAP = 14;
 
@@ -49,7 +50,9 @@
 
 	// Gradients belong to slots, not colours, so a recoloured wedge eases
 	// between the two (see .dial-stop) instead of swapping.
-	const colors = $derived(Array.from({ length: SLOTS }, (_, i) => PALETTE[slices[i]?.color ?? 'blue'].css));
+	const colors = $derived(
+		Array.from({ length: SLOTS }, (_, i) => PALETTE[slices[i]?.color ?? 'blue'].css)
+	);
 
 	const point = (deg: number, r = R) => {
 		const a = ((deg - 90) * Math.PI) / 180;
@@ -74,7 +77,8 @@
 	function wedgePath(from: number, sweep: number) {
 		if (sweep <= 0.01) return '';
 		// A single arc can't close on itself: a whole circle takes two halves.
-		if (sweep >= 359.99) return `M${C},${C - R} A${R},${R} 0 1 1 ${C},${C + R} A${R},${R} 0 1 1 ${C},${C - R} Z`;
+		if (sweep >= 359.99)
+			return `M${C},${C - R} A${R},${R} 0 1 1 ${C},${C + R} A${R},${R} 0 1 1 ${C},${C - R} Z`;
 		const [x1, y1] = point(from);
 		const [x2, y2] = point(from + sweep);
 		return `M${C},${C} L${x1},${y1} A${R},${R} 0 ${sweep > 180 ? 1 : 0} 1 ${x2},${y2} Z`;
@@ -190,7 +194,13 @@
 			</filter>
 
 			<!-- Broader than the shared .hatch on purpose: the dial keeps its own wide stripes -->
-			<pattern id="{uid}-hatch" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+			<pattern
+				id="{uid}-hatch"
+				width="4"
+				height="4"
+				patternTransform="rotate(45)"
+				patternUnits="userSpaceOnUse"
+			>
 				<line x1="0" y1="0" x2="0" y2="4" stroke="var(--hatch)" stroke-width="1" />
 			</pattern>
 

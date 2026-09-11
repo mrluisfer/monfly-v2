@@ -207,11 +207,7 @@
 
 	/* The diagonal stripe fill used for "remaining" / empty areas */
 	.hatch {
-		background-image: repeating-linear-gradient(
-			-45deg,
-			var(--hatch) 0 1px,
-			transparent 1px 6px
-		);
+		background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 6px);
 	}
 
 	/* 1px outlines in the mockup are near-black, not gray */

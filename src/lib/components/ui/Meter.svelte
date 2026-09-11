@@ -37,7 +37,8 @@
 		tabindex={details ? 0 : undefined}
 		class={cn(
 			'relative rounded-full',
-			details && 'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue',
+			details &&
+				'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue',
 			className
 		)}
 	>
@@ -75,7 +76,7 @@
 				class="absolute -inset-y-px -left-9 overflow-hidden rounded-full border border-hairline bg-card transition-[width] duration-700 ease-[var(--ease-out-quint)]"
 				style="width: calc({pct}% + 2.25rem)"
 			>
-				<Blob {color} blur={12} spread={90} class="-inset-y-6 left-7 -right-2" />
+				<Blob {color} blur={12} spread={90} class="-inset-y-6 -right-2 left-7" />
 			</div>
 		</div>
 	</div>

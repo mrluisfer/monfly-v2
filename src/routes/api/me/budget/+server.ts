@@ -16,7 +16,8 @@ export const PUT: RequestHandler = async ({ locals, request }) => {
 		error(415, 'Send the budget as JSON');
 	}
 	const body: unknown = await request.json().catch(() => undefined);
-	const budget = typeof body === 'object' && body !== null && 'budget' in body ? body.budget : undefined;
+	const budget =
+		typeof body === 'object' && body !== null && 'budget' in body ? body.budget : undefined;
 	if (budget !== null && !isBudget(budget)) {
 		error(400, `budget must be null or whole cents from 1 to ${MAX_BUDGET}`);
 	}

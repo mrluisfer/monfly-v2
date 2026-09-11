@@ -61,7 +61,8 @@ export async function getAccounts(
 				change: sql<string>`coalesce(sum(${signed}) filter (where ${inMonth}), 0)`,
 				toReview: sql<number>`count(${transaction.id}) filter (where ${transaction.description} is null or btrim(${transaction.description}) = '')::int`,
 				updatedAt: sql<string>`to_char(greatest(${card.updatedAt}, max(${transaction.updatedAt})), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
-				existed: balanceAt === 'now' ? sql<boolean>`true` : sql<boolean>`${card.createdAt} < ${monthEnd}`
+				existed:
+					balanceAt === 'now' ? sql<boolean>`true` : sql<boolean>`${card.createdAt} < ${monthEnd}`
 			})
 			.from(card)
 			.leftJoin(transaction, eq(transaction.cardId, card.id))

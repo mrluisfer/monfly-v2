@@ -74,9 +74,18 @@
 					/>
 				</button>
 			{:else}
-				<PillButton {...props} size="sm" caret aria-label="{label}: {selected?.label ?? 'none'}" class={className}>
+				<PillButton
+					{...props}
+					size="sm"
+					caret
+					aria-label="{label}: {selected?.label ?? 'none'}"
+					class={className}
+				>
 					{#if selected?.color}
-						<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[selected.color].css}"></span>
+						<span
+							class="size-2 shrink-0 rounded-full"
+							style="background: {PALETTE[selected.color].css}"
+						></span>
 					{/if}
 					{selected?.label ?? '—'}
 				</PillButton>
@@ -99,11 +108,14 @@
 									<Select.Item
 										value={option.value}
 										label={option.label}
-										class="flex h-9 cursor-default items-center gap-3 rounded-[0.625rem] px-2.5 text-sm whitespace-nowrap outline-none select-none transition-colors duration-150 data-highlighted:bg-sunken"
+										class="flex h-9 cursor-default items-center gap-3 rounded-[0.625rem] px-2.5 text-sm whitespace-nowrap transition-colors duration-150 outline-none select-none data-highlighted:bg-sunken"
 									>
 										{#snippet children({ selected: chosen })}
 											{#if option.color}
-												<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[option.color].css}"></span>
+												<span
+													class="size-2 shrink-0 rounded-full"
+													style="background: {PALETTE[option.color].css}"
+												></span>
 											{/if}
 											{option.label}
 											<Check

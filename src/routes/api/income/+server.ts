@@ -24,7 +24,8 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	if (!isIncomePeriod(period)) error(400, 'period must be month, quarter, year or all');
 	const units = INCOME_UNITS[period];
 	const unit = url.searchParams.get('by') ?? units[0];
-	if (!isIncomeUnit(period, unit)) error(400, `by must be ${units.join(' or ')} for period=${period}`);
+	if (!isIncomeUnit(period, unit))
+		error(400, `by must be ${units.join(' or ')} for period=${period}`);
 
 	const income = await getIncome(db, {
 		userEmail: profile.email,

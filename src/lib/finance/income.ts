@@ -88,7 +88,11 @@ export function incomeBuckets(
 			const days = daysInMonth(monthKey(year, month));
 			return Array.from({ length: Math.ceil(days / 7) }, (_, i) => {
 				const start = i * 7 + 1;
-				return { key: `w${i}`, label: `${start}–${Math.min(start + 6, days)}`, future: start > day };
+				return {
+					key: `w${i}`,
+					label: `${start}–${Math.min(start + 6, days)}`,
+					future: start > day
+				};
 			});
 		}
 		case 'month': {
@@ -117,7 +121,10 @@ export function incomeRange(period: IncomePeriod, today: Day): { from: string; t
 	const { year, month } = today;
 	switch (period) {
 		case 'month':
-			return { from: `${monthKey(year, month)}-01`, to: `${addMonths(monthKey(year, month), 1)}-01` };
+			return {
+				from: `${monthKey(year, month)}-01`,
+				to: `${addMonths(monthKey(year, month), 1)}-01`
+			};
 		case 'quarter': {
 			const first = monthKey(year, quarterStart(month));
 			return { from: `${first}-01`, to: `${addMonths(first, 3)}-01` };

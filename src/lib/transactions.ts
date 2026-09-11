@@ -41,5 +41,7 @@ export type AssignResult = {
 export const MAX_ASSIGN = 500;
 
 /** A transaction's amount, signed the way it moves a balance. */
-export const signedAmount = ({ type, amount }: Pick<UnassignedTransaction, 'type' | 'amount'>): Cents =>
-	type === 'income' ? amount : -amount;
+export const signedAmount = ({
+	type,
+	amount
+}: Pick<UnassignedTransaction, 'type' | 'amount'>): Cents => (type === 'income' ? amount : -amount);

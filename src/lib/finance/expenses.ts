@@ -16,7 +16,10 @@ export type ExpenseBreakdown = {
 };
 
 /** The first `top` categories as fractions of the whole period's spending; empty when there is none. */
-export function categoryShares(breakdown: Pick<ExpenseBreakdown, 'total' | 'categories'>, top: number): number[] {
+export function categoryShares(
+	breakdown: Pick<ExpenseBreakdown, 'total' | 'categories'>,
+	top: number
+): number[] {
 	if (breakdown.total <= 0) return [];
 	return breakdown.categories.slice(0, top).map((c) => c.total / breakdown.total);
 }

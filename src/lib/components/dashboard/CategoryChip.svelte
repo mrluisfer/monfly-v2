@@ -34,7 +34,7 @@
 	<!-- The server writes the figure; countUp takes the live one over once
 	     mounted. The final figure, invisible beneath it, holds the width, so the
 	     row sizes to it once instead of growing with every tick of the count. -->
-	<p class="font-display tabular mt-0.5 grid text-xl whitespace-nowrap font-light">
+	<p class="tabular mt-0.5 grid font-display text-xl font-light whitespace-nowrap">
 		<span class="invisible col-start-1 row-start-1" aria-hidden="true">{format(value)}</span>
 		<span class="col-start-1 row-start-1" use:countUp={{ value, format, whenVisible: true }}>
 			{format(value)}

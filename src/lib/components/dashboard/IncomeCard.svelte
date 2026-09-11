@@ -83,7 +83,8 @@
 		}))
 	);
 	const number = (cents: number) => moneyParts(cents, currency).number;
-	const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 }).format;
+	const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 })
+		.format;
 </script>
 
 <Card class="flex flex-col p-7">
@@ -97,7 +98,7 @@
 
 	<div class="mt-6">
 		<!-- The symbol keeps its lime; only the number counts. -->
-		<p class="font-display tabular text-[2.75rem] leading-none font-light tracking-tight">
+		<p class="tabular font-display text-[2.75rem] leading-none font-light tracking-tight">
 			{#if parts.symbolFirst}<span class="text-lime">{parts.symbol}</span>{/if}<span
 				use:countUp={{ value: total, format: number, whenVisible: true }}>{parts.number}</span
 			>{#if !parts.symbolFirst}<span class="text-lime">&nbsp;{parts.symbol}</span>{/if}

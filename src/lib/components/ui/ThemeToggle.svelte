@@ -62,10 +62,20 @@
 				},
 				sun ? 0.18 * d : 0
 			)
-			.to(stand, { y: screen ? 0 : -4, opacity: screen ? 1 : 0, duration: 0.35 * d }, screen ? 0.25 * d : 0);
+			.to(
+				stand,
+				{ y: screen ? 0 : -4, opacity: screen ? 1 : 0, duration: 0.35 * d },
+				screen ? 0.25 * d : 0
+			);
 
 		// A small twist as it changes, settling with a little overshoot.
-		if (d) timeline.fromTo(icon, { rotate: -24 }, { rotate: 0, duration: 0.7, ease: 'back.out(2.2)' }, 0);
+		if (d)
+			timeline.fromTo(
+				icon,
+				{ rotate: -24 },
+				{ rotate: 0, duration: 0.7, ease: 'back.out(2.2)' },
+				0
+			);
 	}
 
 	$effect(() => {

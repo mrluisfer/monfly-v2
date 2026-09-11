@@ -17,9 +17,12 @@
 	const savings = { cap: 13000, spent: 6000, rest: 13000, value: 0.46 };
 </script>
 
-<div class="flex flex-col gap-4 pb-6 px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col gap-4 px-4 pb-6 sm:px-6 lg:px-8">
 	<!-- ── Hero band ──────────────────────────────────────────────────── -->
-	<section class="grid items-center gap-8 py-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12" use:reveal>
+	<section
+		class="grid items-center gap-8 py-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12"
+		use:reveal
+	>
 		<h1 class="font-display text-6xl leading-none font-light tracking-tight xl:text-7xl">
 			Overview
 		</h1>

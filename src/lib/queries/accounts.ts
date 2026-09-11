@@ -17,7 +17,8 @@ export const accountKeys = {
 export const accountsQuery = (month?: MonthKey, fetcher: Fetch = fetch) =>
 	queryOptions({
 		queryKey: accountKeys.list(month),
-		queryFn: () => getJson<AccountList>(month ? `/api/accounts?month=${month}` : '/api/accounts', fetcher)
+		queryFn: () =>
+			getJson<AccountList>(month ? `/api/accounts?month=${month}` : '/api/accounts', fetcher)
 	});
 
 type RoleChange = { id: string; role: AccountRole | null };
