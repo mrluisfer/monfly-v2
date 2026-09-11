@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/mrluisfer/monfly-v2/compare/v1.0.1...v1.0.2) (2026-09-11)
+
+
+### Documentation
+
+* add the design-taste-frontend agent skill ([#17](https://github.com/mrluisfer/monfly-v2/issues/17)) ([de24ad9](https://github.com/mrluisfer/monfly-v2/commit/de24ad9f98784291bc982e4b5428922eca484579))
+
 ## [1.0.1](https://github.com/mrluisfer/monfly-v2/compare/v1.0.0...v1.0.1) (2026-09-11)
 
 
