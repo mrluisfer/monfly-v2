@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Pencil from '@lucide/svelte/icons/pencil';
+	import Target from '@lucide/svelte/icons/target';
 	import { Popover } from 'bits-ui';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { IconButton, PillButton } from '$lib/components/ui';
@@ -90,7 +91,19 @@
 							class="z-50 w-[min(20rem,calc(100vw-2rem))] origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-4 shadow-lg"
 						>
 							<form class="flex flex-col gap-3" novalidate onsubmit={submit}>
-								<label for="{uid}-amount" class="text-sm text-fg-muted">Monthly budget</label>
+								<div class="flex items-start gap-3">
+									<!-- Lime, like the meter it sets. Too light for a glyph on white, so there it
+									     inverts; on dark it's light enough to be the glyph itself. -->
+									<span
+										class="grid size-7 shrink-0 place-items-center rounded-lg bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime"
+									>
+										<Target class="size-4 stroke-[1.75]" />
+									</span>
+									<div class="min-w-0">
+										<label for="{uid}-amount" class="block text-sm font-medium">Monthly budget</label>
+										<p class="text-xs text-fg-muted">What this month's spending is measured against.</p>
+									</div>
+								</div>
 								<div
 									class="flex h-11 items-center gap-2 rounded-full border border-hairline px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue"
 								>

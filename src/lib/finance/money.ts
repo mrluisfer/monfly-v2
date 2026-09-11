@@ -14,7 +14,7 @@ export type Currency = (typeof CURRENCIES)[number];
 /** v1's default for users who never picked one. */
 export const DEFAULT_CURRENCY: Currency = 'MXN';
 
-/** Each currency renders in its home locale, as in v1: MXN → "$7,540". */
+/** Each currency renders in its home locale, as in v1: MXN → "$7,540.50". */
 const LOCALE: Record<Currency, string> = {
 	MXN: 'es-MX',
 	USD: 'en-US',
@@ -44,35 +44,44 @@ function formatter(currency: Currency, cents: boolean) {
 	return format;
 }
 
-/** Whole units, as the design's figures; `{ cents: true }` where cents matter (a ledger row). */
-export function formatMoney(amount: Cents, currency: Currency, { cents = false } = {}): string {
-	return formatter(currency, cents).format(amount / 100);
+/** To the cent, always: money shows as it's stored, never rounded to whole units. */
+export function formatMoney(amount: Cents, currency: Currency): string {
+	return formatter(currency, true).format(amount / 100);
 }
 
-const compactFormatters = new Map<Currency, Intl.NumberFormat>();
+const compactFormatters = new Map<string, Intl.NumberFormat>();
 
-/** Short figures for chart labels: 60,000 → "$60k", 1,250,000 → "$1.3M". English suffixes, narrow symbol. */
-export function formatMoneyCompact(amount: Cents, currency: Currency): string {
-	let format = compactFormatters.get(currency);
+/**
+ * Short figures for chart labels: 60,000 → "$60k", 1,250,000 → "$1.3M".
+ * English suffixes, narrow symbol; `{ whole: true }` drops the decimal where
+ * labels are narrow: 25,340 → "$25k".
+ */
+export function formatMoneyCompact(
+	amount: Cents,
+	currency: Currency,
+	{ whole = false } = {}
+): string {
+	const key = `${currency}:${whole}`;
+	let format = compactFormatters.get(key);
 	if (!format) {
 		format = new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency,
 			currencyDisplay: 'narrowSymbol',
 			notation: 'compact',
-			maximumFractionDigits: 1
+			maximumFractionDigits: whole ? 0 : 1
 		});
-		compactFormatters.set(currency, format);
+		compactFormatters.set(key, format);
 	}
 	return format.format(amount / 100).replace('K', 'k');
 }
 
 /**
- * A whole-unit figure split for styling: the symbol, the number, and which
- * comes first — "$" before "467,121" in MXN, "€" after "7.540" in EUR.
+ * A figure split for styling: the symbol, the number to the cent, and which
+ * comes first — "$" before "467,121.50" in MXN, "€" after "7.540,50" in EUR.
  */
 export function moneyParts(amount: Cents, currency: Currency) {
-	const parts = formatter(currency, false).formatToParts(amount / 100);
+	const parts = formatter(currency, true).formatToParts(amount / 100);
 	const at = parts.findIndex((p) => p.type === 'currency');
 	return {
 		symbol: parts[at]?.value ?? '',

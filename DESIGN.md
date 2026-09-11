@@ -41,7 +41,8 @@ fails silently — the old tooltip rendered transparent that way.
 **Tints.** An accent at low opacity makes a chip: `bg-blue/12 text-blue`,
 `bg-violet/12 text-violet`, `bg-negative/12 text-negative`. Lime is too light
 to be a glyph on white, so it inverts: `bg-lime/30` with the glyph mixed toward
-ink.
+ink. On dark surfaces it's light enough to be the glyph again:
+`dark:bg-lime/15 dark:text-lime`.
 
 **The palette** (`$lib/components/ui/palette.ts`) is every colour a person can
 give something: the brand blue, violet and lime, then nine pastels — sky, teal,
@@ -60,8 +61,17 @@ retuning a colour updates every place that wears it.
   through `Figure` (`sm` → `xl`).
 - **Outfit (`font-sans`)** for everything else. Labels `text-[0.9375rem]
   text-fg-muted`; meta `text-sm` / `text-xs`.
-- Money: whole units in the currency's home locale (`formatMoney`), cents only
-  where they matter. Missing values show `—`. UI copy is English, sentence case.
+- Money: always to the cent, in the currency's home locale (`formatMoney`) —
+  never rounded to whole units. Only chart labels go compact ("$24.5k"), and
+  their tooltip gives the exact figure. Missing values show `—`. UI copy is
+  English, sentence case.
+- Figures that can grow never spill or truncate. Where there's room to take,
+  their box grows instead: the category chips widen leftward, over the dial's
+  free space, and keep `text-xl`. Where there isn't, the figure fits its box:
+  the box is a container (`@container`) and the figure `.fit-figure`, with
+  `--fit` the size it wants and `--chars` the figure it's sized for — the
+  longest of a row, so neighbours match (an account's two figures). It keeps
+  its size until the room runs out, then shrinks just enough.
 
 ## Layout
 
@@ -85,9 +95,13 @@ retuning a colour updates every place that wears it.
 | `Meter`      | Hatched track, white capsule fill, pin on the boundary. `role="meter"`, optional details tooltip. |
 | `Tooltip`    | A label, or rich `content`; `anchor` points it at something other than its trigger.     |
 | `Kbd`        | Keycaps for a shortcut, read from the hotkey registry.                                  |
-| `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. |
+| `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. An option may carry a palette colour, drawn as a dot — an account's. |
+| `Checkbox`   | A hairline square that fills blue when checked, its check springing in; a dash when some but not all are (`indeterminate`). Name it with `label`, or a `<label for>` on its `id`. |
+| `Segmented`  | A few short choices side by side in a sunken capsule; one raised surface slides to the chosen one. A radio group: arrow keys move the choice. |
+| `Switch`     | On or off: a hairline capsule, grey off and blue on, whose thumb springs across. Name it with a `<label for>` on its `id`. |
 | `Orb`        | The blurred gradient sphere, in any palette colour. `editable` makes it a button that opens the palette. |
 | `OrbitRing`  | The dashed gauge ring with pointer marks, turning slowly around what it holds (an orb).  |
+| `Sparkle`    | The four-pointed star, in a palette colour. `animated` brings it alive — it breathes and glows on a beat of its own, glints twinkle off it, a shine crosses it — and `burst` (or a pointer) flashes it. Still by default, for lists and bullets. |
 | `Avatar`     | A person's blobatar — static, `animated` on hover, or `gaze` (alive, eyes on the pointer). |
 
 Dashboard compositions live in `$lib/components/dashboard` (`MeterStat`,
@@ -111,12 +125,20 @@ another. Small parts' dividers ease apart to at least 14°, standing a few
 degrees off their edges rather than bending (the soft colour hides the
 degrees; nothing hides a kink), and it all turns and morphs with the wedges.
 The chips may cover part of the dial: their own blur keeps it looking right.
+Their row is at least 62% of the card and widens leftward when its longest
+figure or label needs it; its two columns stay equal, the widest chip setting
+both.
 
 **The accounts column** opens with an overview card at its own height — the
 "Accounts" header and actions, every active account's total, this month's net
 movement as a tinted chip — a dot, where a pointer can hover, until pointed
 at or focused — and a share bar where each account's slice wears
-its colour. Pressing a slice leaves that account out of the total and the
+its colour. What v1's total holds beyond the accounts — money that moved with
+no account, a total typed in by hand — takes one more slice, Unknown: no
+palette colour but the hatch inside a hairline, a ring in the legend, sized by
+how far it swings either way. Its tooltip splits it into money in, money out
+and adjustments, each signed the way it moves the total. Pressing a slice
+leaves that account out of the total and the
 change until it's pressed again — for the visit, not stored — and the label
 says how many are left out. Below it two featured accounts, a card each, split the rest of the
 column 50/50 (`flex-1` on a zero basis) — each block's header sits on top and
@@ -133,10 +155,30 @@ open-accounts button is an `IconButton` with `href`.
 
 **The income chart** keeps the mockup's hatched columns and accent caps on
 real data: this quarter by month (the default), this month by week, this year
-by quarter, all time by year. Bars scale to the tallest one; a past bucket
+by quarter or by month, all time by year. Bars scale to the tallest one; a past bucket
 with nothing in it keeps a hairline, and one still to come is a dashed empty
 slot with no figure. Hovering or focusing a bar shows its exact income, entry
 count and share. The total keeps its lime symbol while its number counts.
+
+The gear left of the period (`IncomeSettings`, a small `IconButton` level
+with the `Select`) opens the chart's settings under a violet chip — violet is
+configuration: **This year by** quarters or months (`Segmented`), then
+**Amounts over bars** and **Still to come** (`Switch`es). Changes apply at
+once. Past eight bars, the figures shrink and drop their decimal ("$25k");
+turning off what's still to come folds those slots away. The settings are
+per browser, in the `income-view` cookie: the dashboard's server load reads
+it so SSR draws the chosen view, and the shared database never sees it.
+
+**The transactions page** starts with what never got an account: one card
+listing every card-less transaction in two groups. *Counted in your total*
+are those dated since the first account — the dashboard's Unknown slice, with
+its figure beside the heading — and giving one an account moves it into that
+account's balance. *Before your first account* are already in the balance it
+was opened with, so an account only records where they came from. Checkboxes
+pick rows (shift-click takes a range; a group's box takes the group, with a
+dash for some), picked rows tint blue, and while any are picked a bar sticks
+to the bottom of the view: how many, what would move where, the account
+(`Select`, each with its colour dot, main first) and the action.
 
 ## Motion
 
@@ -151,7 +193,7 @@ avatar. The specs, so new work matches:
 | Pop with spring     | The header's back button                | Scale 0.5→1 and x 10→0 px on a spring (bounce 0.4, 0.5 s); exit 0.3 s eased.                     |
 | Make room           | Back button's wrapper                   | Svelte `slide` on x, 350 ms `quintOut`, so neighbours glide instead of jumping.                  |
 | Hover reveal        | `MeterStat` action (the budget pencil)  | Opacity in 350 ms; scale 0.85→1 and x 6→0 px in 450 ms, ease-out-quint. Holds its space.         |
-| Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. |
+| Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. The Income card's gear turns the same way on hover, on focus and while its settings are open. |
 | Tab surface         | `TabStrip`                              | One shared surface slides (x, width) in 0.45 s, ease-out-quint.                                  |
 | Tab lift-off        | `TabStrip`, on scroll                   | Past 24 px of scroll (and back under 8, so it doesn't flicker; Motion `scroll()`), the surface's top, bottom and radius ease into the tab's own box and corners (`--radius-chip`) and its shoulders tuck in (CSS on `data-docked`, 450 ms in, 340 ms out); the box squashes and springs round (Motion, bounce 0.5); GSAP drips an ink drop from its underside, a stretched thread (160 ms) that lets go on `elastic.out(1, 0.45)`, drawn back in 1.5× quicker. A page loaded already scrolled is placed without motion. |
 | Meter fill          | `Meter`                                 | Width and pin in 700 ms, ease-out-quint; grows in after mount.                                   |
@@ -160,12 +202,17 @@ avatar. The specs, so new work matches:
 | Count               | Figures (`use:countUp`)                 | GSAP tweens from the current figure to the new one in 0.8 s, `power3.out`.                       |
 | Recolour            | `Orb`, `Sparkle`                        | The gradient morphs to the new colour in 450 ms (the registered `--orb-color`), and the orb springs back from 0.86 (bounce 0.5). |
 | Orbit               | `OrbitRing`                             | GSAP: one linear turn per 32 s (24 s, the other way, beside it); pointing at it spins it up 6× over 0.8 s and it eases back; paused off screen. |
+| Twinkle             | `Sparkle animated`                      | CSS loops on one beat (`period`, 2.8 s), each instance on its own phase (from its id, so SSR agrees): the star breathes (scale 0.92↔1.06, ±4°), a halo in its colour swells with it (opacity 0.1↔0.55), three glints twinkle off its sides one after another (scale 0→1→0 through a quarter turn), and a white shine crosses it every other breath. `burst` or a pointer flashes it (Motion): a quarter-turn spring from 1.35 (bounce 0.5) and a spark off each point (0.65 s). Paused off screen; still under reduced motion. |
 | Link arrow          | "To review" and links like it           | The arrow slides in on hover or focus (spring), then nudges its way every 1.4 s; always shown on touch. |
 | Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
 | Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
 | Bars grow           | `IncomeBars`, on a new period           | New bars rise from the baseline 60 ms apart (`@starting-style` and a 700 ms height transition), their figures fading up after; bars that stay ease to their new height. |
+| Slots fold          | `IncomeBars`, "Still to come" off       | Slots still to come fold sideways (`flex-grow` → 0 in 0.45 s) and fade while the rest widen; back on, they unfold in 0.6 s. Figures turned off sink away (0.3 s, 30 ms apart) as the bars grow into their room. |
+| Segmented slide     | `Segmented`                             | One raised surface slides to the chosen option (translate, 0.45 s, ease-out-quint), as the tab surface does. |
+| Switch              | `Switch`                                | The thumb crosses and turns white in 300 ms on `--ease-spring`; the track turns blue in 200 ms. |
 | Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). Pressing one (click, Enter or Space) leaves its account out of the totals: the slice greys in place through the registered `--vivid` (a `color-mix()` percentage, 600 ms), its legend entry fades and strikes through, the total and the change count to the new sums (GSAP), and the slice squashes and springs back (Motion, bounce 0.55). |
 | Chip reveal         | `AccountsTotal`'s change chip           | Rests as a dot (the arrow) where a pointer can hover; pointing or focus opens it leftward out of a dot-wide slot, so the row never re-wraps. CSS eases a `0fr → 1fr` grid track — 450 ms open, 340 ms closed, ease-out-quint; GSAP brings the words in behind the edge ("this month", then the figure: opacity and x 8→0 px, 0.4 s `power3.out`, 70 ms apart) and runs back 1.35× quicker; Motion leans the arrow 1.5 px the way the money went (spring, bounce 0.5). Open on touch. |
+| Rows fold out       | `UnassignedCard`, on assign             | Assigned rows collapse at once (Svelte `slide`, 280 ms, `quintOut`) and the list closes up; a refused assignment brings them back. The picked bar rises in (y 16→0 px, 320 ms) and drops out quicker (220 ms). |
 | Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
 | Theme morph         | `ThemeToggle`                           | MorphSVG outline 0.55 s `power3.inOut`; rays `back.out(1.8)`; a −24° twist settling on `back.out(2.2)`. |
 | Gaze                | The header avatar (`Avatar gaze`)       | Breathes and blinks; eyes follow the pointer anywhere on the page, travel 4 viewBox units.       |
@@ -205,7 +252,9 @@ Rules:
   leave: it sticks open and stops responding. Call theirs, then yours — see
   `chain` in `AccountsTotal` or the `onclick` in `ThemeToggle`.
 - **Surface:** `rounded-[var(--radius-chip)] border border-line bg-card shadow-lg`.
-  Tooltips are `rounded-lg px-2.5 py-1.5 text-xs`.
+  Tooltips are `rounded-lg px-2.5 py-1.5 text-xs`, and their arrow is part of
+  the surface: filled with the card, its two edges in the border's line,
+  tucked 1px under the border so the two join.
 - **Placement:** open on the side that doesn't cover what the layer explains,
   and anchor to the exact point it describes (the meter's tip points at the
   fill's end, and opens below the bar).
@@ -216,6 +265,10 @@ Rules:
   (settings), lime for what's new (notifications), `negative` for leaving (log
   out). Separators `mx-1 my-1.5 h-px bg-line`; shortcuts right-aligned in `Kbd`;
   disabled items grey their chip and say why ("Soon").
+- **Popovers** open with the same chip beside a title and a one-line note, its
+  accent saying what the layer does: violet configures (Income chart), blue
+  picks accounts (Featured accounts), lime sets the budget — the colour of the
+  meter it moves, inverted as lime always is on white.
 
 ## The header
 

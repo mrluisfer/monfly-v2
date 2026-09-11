@@ -51,7 +51,7 @@
 
 		<!-- Income + Tips -->
 		<div class="flex flex-col gap-4" use:reveal={{ delay: 0.15 }}>
-			<IncomeCard enabled={data.profile !== null} />
+			<IncomeCard enabled={data.profile !== null} view={data.incomeView} />
 
 			<Card class="flex-1">
 				<TipCard />

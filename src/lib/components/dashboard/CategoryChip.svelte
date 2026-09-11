@@ -31,11 +31,13 @@
 		class="mb-6 size-7 border border-line bg-card"
 	/>
 	<p class="truncate text-[0.8125rem] text-fg-muted" title={label}>{label}</p>
-	<!-- The server writes the figure; countUp takes the node over once mounted. -->
-	<p
-		class="font-display tabular mt-0.5 text-xl font-light"
-		use:countUp={{ value, format, whenVisible: true }}
-	>
-		{format(value)}
+	<!-- The server writes the figure; countUp takes the live one over once
+	     mounted. The final figure, invisible beneath it, holds the width, so the
+	     row sizes to it once instead of growing with every tick of the count. -->
+	<p class="font-display tabular mt-0.5 grid text-xl whitespace-nowrap font-light">
+		<span class="invisible col-start-1 row-start-1" aria-hidden="true">{format(value)}</span>
+		<span class="col-start-1 row-start-1" use:countUp={{ value, format, whenVisible: true }}>
+			{format(value)}
+		</span>
 	</p>
 </div>

@@ -194,6 +194,17 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	/* A figure that keeps its size until its box runs out of room, then
+	   shrinks just enough to fit: a big amount never spills or truncates. The
+	   box is a container (`@container`); `--fit` is the size the figure wants,
+	   `--chars` the length it's sized for — the final figure, so a count-up
+	   doesn't jitter, and the longest of a row, so neighbours match. Space
+	   Grotesk's light tabular money runs 0.53–0.55em a character; 0.57 leaves
+	   a hair of room. */
+	.fit-figure {
+		font-size: min(var(--fit), calc(100cqi / (var(--chars) * 0.57)));
+	}
+
 	/* The diagonal stripe fill used for "remaining" / empty areas */
 	.hatch {
 		background-image: repeating-linear-gradient(

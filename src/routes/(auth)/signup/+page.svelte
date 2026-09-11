@@ -94,6 +94,7 @@
 		pending = submitter?.getAttribute('value') === 'login' ? 'login' : 'signup';
 		return async ({ result }) => {
 			// Auth0 lives on another origin; SvelteKit's goto() refuses those.
+			// `pending` stays set while the page leaves — see onpageshow below.
 			if (result.type === 'redirect') {
 				window.location.assign(result.location);
 				return;
@@ -105,6 +106,15 @@
 </script>
 
 <svelte:head><title>Create account · Monfly</title></svelte:head>
+
+<!-- Back from Auth0 restores this page from the back/forward cache exactly as
+     it was left — mid-redirect, both buttons disabled — and runs no code to
+     undo it. So when it comes back that way, it's ready to use again. -->
+<svelte:window
+	onpageshow={(event) => {
+		if (event.persisted) pending = null;
+	}}
+/>
 
 <div bind:this={root} class="grid flex-1 gap-4 lg:grid-cols-[1.15fr_1fr]">
 	<!-- ── Preview: the dashboard's visual language, assembled by GSAP ───── -->
@@ -166,7 +176,7 @@
 		<ul class="relative mt-3 flex flex-wrap gap-2" aria-label="Example categories">
 			{#each chips as chip (chip.label)}
 				<li data-anim="chip" class="inline-flex items-center gap-2 rounded-full border border-hairline bg-card px-3 py-1.5 text-sm">
-					<Sparkle color={chip.color} class="size-3.5" />
+					<Sparkle color={chip.color} animated class="size-3.5" />
 					{chip.label}
 				</li>
 			{/each}
@@ -209,7 +219,7 @@
 				<ul class="mt-8 space-y-3">
 					{#each promises as item (item.text)}
 						<li data-anim="promise" class="flex items-center gap-3 text-[0.9375rem]">
-							<Sparkle color={item.color} class="size-4 shrink-0" />
+							<Sparkle color={item.color} animated class="size-4 shrink-0" />
 							{item.text}
 						</li>
 					{/each}

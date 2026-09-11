@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Pencil from '@lucide/svelte/icons/pencil';
+	import Star from '@lucide/svelte/icons/star';
 	import { Popover } from 'bits-ui';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { featuredAccounts, type Account, type AccountRole } from '$lib/accounts';
@@ -42,10 +43,18 @@
 							out:pop
 							class="z-50 w-[min(19rem,calc(100vw-2rem))] origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-4 shadow-lg outline-none"
 						>
-							<p class="text-sm font-medium">Featured accounts</p>
-							<p class="mt-1 text-xs text-fg-muted">
-								Unset, they're your two oldest accounts, in the order you added them.
-							</p>
+							<div class="flex items-start gap-3">
+								<!-- Blue: picking which accounts get a card of their own. -->
+								<span class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue">
+									<Star class="size-4 stroke-[1.75]" />
+								</span>
+								<div class="min-w-0">
+									<p class="text-sm font-medium">Featured accounts</p>
+									<p class="text-xs text-fg-muted">
+										Unset, they're your two oldest accounts, in the order you added them.
+									</p>
+								</div>
+							</div>
 
 							{#if accounts.length === 0}
 								<p class="mt-4 text-sm text-fg-muted">No accounts yet.</p>

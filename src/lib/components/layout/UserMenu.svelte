@@ -28,7 +28,8 @@
 	const TONE = {
 		blue: 'bg-blue/12 text-blue',
 		violet: 'bg-violet/12 text-violet',
-		lime: 'bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))]',
+		// Lime is too light for a glyph on white, so there it inverts; on dark it's the glyph itself.
+		lime: 'bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime',
 		negative: 'bg-negative/12 text-negative'
 	};
 

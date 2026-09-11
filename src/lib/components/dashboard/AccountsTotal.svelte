@@ -5,49 +5,112 @@
 	import { animate, hover } from 'motion';
 	import { MediaQuery, SvelteSet } from 'svelte/reactivity';
 	import { countUp } from '$lib/actions';
-	import type { Account } from '$lib/accounts';
+	import type { Account, Unassigned } from '$lib/accounts';
 	import { PALETTE, Tooltip, type PaletteColor } from '$lib/components/ui';
-	import { formatMoney, type Currency } from '$lib/finance';
+	import { formatMoney, type Cents, type Currency } from '$lib/finance';
 	import { cn, prefersReducedMotion } from '$lib/utils';
 
 	/**
 	 * Every account at once: the total balance, this month's net movement, and
 	 * a share bar — each account's slice of the whole in its own colour, with
-	 * its amount in a tooltip. The figures count (GSAP), the slices grow (CSS),
-	 * the change chip springs when the numbers move (Motion), and a sheen
-	 * crosses the bar now and then. Where a pointer can hover, the change chip
-	 * rests as a dot and opens into its figure when pointed at or focused.
+	 * its amount in a tooltip. What v1's total holds beyond the accounts — money
+	 * that moved with none, a total typed in by hand — joins them as one
+	 * neutral, hatched line, so together they come to v1's figure. The figures
+	 * count (GSAP), the slices grow (CSS), the change chip springs when the
+	 * numbers move (Motion), and a sheen crosses the bar now and then. Where a
+	 * pointer can hover, the change chip rests as a dot and opens into its
+	 * figure when pointed at or focused.
 	 */
 	type Props = {
 		accounts: Account[];
+		/** What the total holds beyond the accounts, if anything — the "Unknown" line. */
+		unassigned?: Unassigned | null;
 		/** Each account's colour, by id — the one its orb and sparkle wear. */
 		colors: Record<string, PaletteColor>;
 		currency: Currency;
 		class?: string;
 	};
 
-	let { accounts, colors, currency, class: className }: Props = $props();
+	let { accounts, unassigned = null, colors, currency, class: className }: Props = $props();
 
-	/** Accounts left out of the totals by pressing their slice — for this visit only. */
+	/** The id the card-less line answers to. No account can collide: theirs are UUIDs. */
+	const UNKNOWN = 'unknown';
+
+	/** One line of the bar: an account, or the card-less money standing in for one. */
+	type Line = {
+		id: string;
+		name: string;
+		balance: Cents;
+		change: Cents;
+		/** True for the card-less line — no colour of its own, drawn hatched. */
+		unknown: boolean;
+	};
+
+	// The accounts in their own order, then the card-less money last.
+	const lines = $derived<Line[]>([
+		...accounts.map((a) => ({
+			id: a.id,
+			name: a.name,
+			balance: a.balance,
+			change: a.change,
+			unknown: false
+		})),
+		...(unassigned
+			? [
+					{
+						id: UNKNOWN,
+						name: 'Unknown',
+						balance: unassigned.balance,
+						change: unassigned.change,
+						unknown: true
+					}
+				]
+			: [])
+	]);
+
+	/** Lines left out of the totals by pressing their slice — for this visit only. */
 	const off = new SvelteSet<string>();
-	const counted = $derived(accounts.filter((a) => !off.has(a.id)));
-	const leftOut = $derived(accounts.length - counted.length);
+	const counted = $derived(lines.filter((line) => !off.has(line.id)));
+	const leftOut = $derived(lines.length - counted.length);
 
-	const total = $derived(counted.reduce((sum, a) => sum + a.balance, 0));
-	const change = $derived(counted.reduce((sum, a) => sum + a.change, 0));
-	// Shares of what's above zero: an overdrawn account has no slice of the whole.
-	// Every account keeps its slice; one left out greys out in place.
-	const positive = $derived(accounts.reduce((sum, a) => sum + Math.max(a.balance, 0), 0));
+	const total = $derived(counted.reduce((sum, line) => sum + line.balance, 0));
+	const change = $derived(counted.reduce((sum, line) => sum + line.change, 0));
+	/*
+	 * How much of the bar a line takes. An account's slice is what it holds
+	 * above zero — overdrawn, it has none. The unknown line is a gap rather
+	 * than a holding, so it's sized by how far it swings either way: money
+	 * spent with no account behind it still stands between you and the total.
+	 * Every line keeps its slice; one left out greys out in place.
+	 */
+	const weigh = (line: Line) => (line.unknown ? Math.abs(line.balance) : Math.max(line.balance, 0));
+	const whole = $derived(lines.reduce((sum, line) => sum + weigh(line), 0));
 	const slices = $derived(
-		accounts
-			.map((account) => ({
-				account,
-				share: positive > 0 ? Math.max(account.balance, 0) / positive : 0,
-				color: colors[account.id] ?? 'blue',
-				off: off.has(account.id)
+		lines
+			.map((line) => ({
+				line,
+				share: whole > 0 ? weigh(line) / whole : 0,
+				color: colors[line.id] ?? 'blue',
+				off: off.has(line.id)
 			}))
 			.filter((slice) => slice.share > 0)
 	);
+
+	/** A slice's own properties: the unknown line brings no colour to mix. */
+	const ink = (slice: { line: Line; color: PaletteColor }) =>
+		slice.line.unknown ? '' : `--c: ${PALETTE[slice.color].css}; `;
+
+	/**
+	 * The unknown line's parts, for its tooltip: card-less money in and out
+	 * since the first account, then whatever v1's total holds with no
+	 * transaction behind it. Each is signed the way it moves the total, so
+	 * they add up to the line; empty ones are left out.
+	 */
+	const parts = (u: Unassigned) =>
+		[
+			{ label: `In · ${u.income.count}`, amount: u.income.amount, shown: u.income.count > 0 },
+			{ label: `Out · ${u.expense.count}`, amount: -u.expense.amount, shown: u.expense.count > 0 },
+			{ label: 'Adjustments', amount: u.other, shown: u.other !== 0 }
+		].filter((part) => part.shown);
 
 	const format = (cents: number) => formatMoney(cents, currency);
 	const signed = (cents: number) =>
@@ -217,11 +280,16 @@
 		<div class="relative mt-4">
 			<!-- What you see: each slice grown to its account's part of the whole -->
 			<div class="share flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-sunken" aria-hidden="true">
-				{#each slices as slice, i (slice.account.id)}
+				{#each slices as slice, i (slice.line.id)}
 					<span
-						bind:this={bars[slice.account.id]}
-						class={cn('slice h-full min-w-1 rounded-full', lit === slice.account.id && 'lit', slice.off && 'off')}
-						style="--c: {PALETTE[slice.color].css}; --share: {slice.share}; --i: {i}"
+						bind:this={bars[slice.line.id]}
+						class={cn(
+							'slice h-full min-w-1 rounded-full',
+							slice.line.unknown && 'unknown hatch',
+							lit === slice.line.id && 'lit',
+							slice.off && 'off'
+						)}
+						style="{ink(slice)}--share: {slice.share}; --i: {i}"
 					></span>
 				{/each}
 			</div>
@@ -230,14 +298,34 @@
 			     each with its amount in a tooltip and a switch for the totals. They
 			     track the visible ones' widths. -->
 			<ul class="absolute inset-x-0 -inset-y-2 flex gap-0.5" aria-label="Accounts in the total balance">
-				{#each slices as slice, i (slice.account.id)}
+				{#each slices as slice, i (slice.line.id)}
 					{#snippet amount()}
 						<span class="flex flex-col gap-1 whitespace-nowrap">
 							<span class="flex items-center gap-2">
-								<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[slice.color].css}"></span>
-								<span class="font-normal text-fg-muted">{slice.account.name}</span>
-								<span class="tabular">{format(slice.account.balance)}</span>
+								{#if slice.line.unknown}
+									<span class="hollow size-2 shrink-0 rounded-full"></span>
+								{:else}
+									<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[slice.color].css}"></span>
+								{/if}
+								<span class="font-normal text-fg-muted">{slice.line.name}</span>
+								<span class="tabular">
+									{slice.line.unknown ? signed(slice.line.balance) : format(slice.line.balance)}
+								</span>
 							</span>
+							{#if slice.line.unknown && unassigned}
+								<span class="grid grid-cols-[1fr_auto] gap-x-4 font-normal text-fg-muted">
+									{#each parts(unassigned) as part (part.label)}
+										<span>{part.label}</span>
+										<span class="tabular text-right text-fg">{signed(part.amount)}</span>
+									{/each}
+								</span>
+								{#if unassigned.beforeAccounts > 0}
+									<span class="font-normal text-fg-muted">
+										{unassigned.beforeAccounts} older
+										{unassigned.beforeAccounts === 1 ? 'one is' : 'ones are'} already in your opening balance
+									</span>
+								{/if}
+							{/if}
 							<span class="font-normal text-fg-muted">
 								{slice.off ? 'Left out of the total · click to count it' : 'Click to leave out of the total'}
 							</span>
@@ -250,12 +338,14 @@
 									{...props}
 									type="button"
 									aria-pressed={!slice.off}
-									aria-label="Count {slice.account.name} in the total balance: {format(slice.account.balance)}, {percent(slice.share)} of all accounts"
+									aria-label={slice.line.unknown
+										? `Count Unknown in the total balance: ${signed(slice.line.balance)} that sits in none of your accounts`
+										: `Count ${slice.line.name} in the total balance: ${format(slice.line.balance)}, ${percent(slice.share)} of all accounts`}
 									class="size-full cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-									onclick={chain(props.onclick, () => toggle(slice.account.id))}
-									onpointerenter={chain(props.onpointerenter, () => (lit = slice.account.id))}
+									onclick={chain(props.onclick, () => toggle(slice.line.id))}
+									onpointerenter={chain(props.onpointerenter, () => (lit = slice.line.id))}
 									onpointerleave={chain(props.onpointerleave, () => (lit = null))}
-									onfocus={chain(props.onfocus, () => (lit = slice.account.id))}
+									onfocus={chain(props.onfocus, () => (lit = slice.line.id))}
 									onblur={chain(props.onblur, () => (lit = null))}
 								></button>
 							{/snippet}
@@ -266,13 +356,13 @@
 		</div>
 
 		<ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted" aria-hidden="true">
-			{#each slices as slice (slice.account.id)}
+			{#each slices as slice (slice.line.id)}
 				<li
-					class={cn('legend flex min-w-0 items-center gap-1.5', slice.off && 'off')}
-					style="--c: {PALETTE[slice.color].css}"
+					class={cn('legend flex min-w-0 items-center gap-1.5', slice.line.unknown && 'unknown', slice.off && 'off')}
+					style={ink(slice)}
 				>
 					<span class="dot size-2 shrink-0 rounded-full"></span>
-					<span class="struck truncate">{slice.account.name}</span>
+					<span class="struck truncate">{slice.line.name}</span>
 					<span class="struck tabular text-fg">{percent(slice.share)}</span>
 				</li>
 			{/each}
@@ -320,13 +410,28 @@
 		}
 	}
 
-	.slice {
+	/* Every slice but the unknown one wears its account's colour. Scoped off
+	   .unknown on purpose: `.hatch` sits in @layer utilities, so an unlayered
+	   `background` here would paint over its stripes rather than lose to them. */
+	.slice:not(.unknown) {
 		background: linear-gradient(90deg, var(--ink), color-mix(in oklab, var(--ink) 55%, white));
+	}
+
+	.slice {
 		transition:
 			flex-grow 0.9s var(--ease-out-quint) calc(var(--i) * 80ms),
 			opacity 0.25s var(--ease-out-quint),
 			filter 0.25s var(--ease-out-quint),
 			--vivid 0.6s var(--ease-out-quint);
+	}
+
+	/* The unknown line is a gap, not a holding: the hatch inside a hairline, the
+	   same way the Meter draws the part of a budget nothing has claimed. It
+	   takes no palette colour, because it belongs to no account — in one it
+	   would read as an account someone had picked grey for. Stripes and
+	   outline are theme tokens, so it stays neutral on either ground. */
+	.slice.unknown {
+		border: 1px solid var(--color-hairline);
 	}
 
 	/* The slice pointed at stays bright; while one is, the others step back. */
@@ -366,6 +471,21 @@
 
 	.legend .dot {
 		background: var(--ink);
+	}
+
+	/* The unknown line's marks are outlines, not fills — in the legend and in
+	   its tooltip alike, so the same thing reads the same in both places. Too
+	   small for the hatch to survive, so the ring carries it alone. */
+	.legend.unknown .dot,
+	.hollow {
+		background: none;
+		border: 1px solid var(--color-hairline);
+	}
+
+	/* Left out, it fades where a coloured slice would drain to grey: it has no
+	   colour to lose, so opacity is the whole of the change. */
+	.slice.unknown.off {
+		opacity: 0.45;
 	}
 
 	.legend .struck {

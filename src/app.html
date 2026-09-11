@@ -16,6 +16,11 @@
 					'; path=/; max-age=31536000; samesite=lax';
 			} catch {}
 		</script>
+		<!-- Static, not in a Svelte <head>: they stay even if a page fails to hydrate.
+		     The .ico covers browsers that skip SVG icons (and anyone asking for /favicon.ico). -->
+		<link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="32x32" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
