@@ -2,8 +2,7 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
-	import { featuredAccounts } from '$lib/accounts';
-	import { assignColors } from '$lib/colors';
+	import { accountColors, featuredAccounts } from '$lib/accounts';
 	import { Card, IconButton } from '$lib/components/ui';
 	import { accountsQuery, colorChoicesQuery, setColorMutation } from '$lib/queries';
 	import AccountBlock from './AccountBlock.svelte';
@@ -16,7 +15,8 @@
 	 * accounts, main and secondary as the person set them (the pencil) or the
 	 * two oldest, splitting the rest of the column 50/50. Each account has one
 	 * colour everywhere — orb, sparkle, slice — from User.colors, main starting
-	 * lime and secondary blue. The page prefetches the accounts during SSR.
+	 * lime and secondary blue; money that never got an account joins the total
+	 * as one neutral line instead. The page prefetches the accounts during SSR.
 	 */
 	type Props = {
 		/** The viewer's zone: it decides which months have passed. */
@@ -40,18 +40,7 @@
 
 	const list = $derived(query.data);
 	const featured = $derived(list ? featuredAccounts(list.accounts) : []);
-	// Featured first, so main and secondary get the first defaults; the rest follow.
-	const ordered = $derived(
-		list ? [...featured, ...list.accounts.filter((a) => !featured.includes(a))] : []
-	);
-	const colorById = $derived.by(() => {
-		const palette = assignColors(
-			ordered.map((a) => a.id),
-			choices.data?.account,
-			['lime', 'blue', 'violet', 'sky', 'peach', 'mint']
-		);
-		return Object.fromEntries(ordered.map((a, i) => [a.id, palette[i]]));
-	});
+	const colorById = $derived(accountColors(list?.accounts ?? [], choices.data?.account));
 </script>
 
 {#snippet block(i: number)}
@@ -81,8 +70,16 @@
 			<IconButton size="sm" href="/cards" aria-label="Open accounts"><ExternalLink /></IconButton>
 		</div>
 	</div>
-	{#if list && list.accounts.length > 0}
-		<AccountsTotal accounts={list.accounts} colors={colorById} currency={list.currency} class="mt-5" />
+	<!-- Card-less money is reason enough to draw the total: with no accounts at
+	     all it is the whole of what there is to show. -->
+	{#if list && (list.accounts.length > 0 || list.unassigned)}
+		<AccountsTotal
+			accounts={list.accounts}
+			unassigned={list.unassigned}
+			colors={colorById}
+			currency={list.currency}
+			class="mt-5"
+		/>
 	{:else if list}
 		<p class="mt-4 text-[0.9375rem] text-fg-muted">No accounts yet.</p>
 	{/if}

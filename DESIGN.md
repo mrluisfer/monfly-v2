@@ -85,7 +85,8 @@ retuning a colour updates every place that wears it.
 | `Meter`      | Hatched track, white capsule fill, pin on the boundary. `role="meter"`, optional details tooltip. |
 | `Tooltip`    | A label, or rich `content`; `anchor` points it at something other than its trigger.     |
 | `Kbd`        | Keycaps for a shortcut, read from the hotkey registry.                                  |
-| `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. |
+| `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. An option may carry a palette colour, drawn as a dot — an account's. |
+| `Checkbox`   | A hairline square that fills blue when checked, its check springing in; a dash when some but not all are (`indeterminate`). Name it with `label`, or a `<label for>` on its `id`. |
 | `Segmented`  | A few short choices side by side in a sunken capsule; one raised surface slides to the chosen one. A radio group: arrow keys move the choice. |
 | `Switch`     | On or off: a hairline capsule, grey off and blue on, whose thumb springs across. Name it with a `<label for>` on its `id`. |
 | `Orb`        | The blurred gradient sphere, in any palette colour. `editable` makes it a button that opens the palette. |
@@ -118,7 +119,12 @@ The chips may cover part of the dial: their own blur keeps it looking right.
 "Accounts" header and actions, every active account's total, this month's net
 movement as a tinted chip — a dot, where a pointer can hover, until pointed
 at or focused — and a share bar where each account's slice wears
-its colour. Pressing a slice leaves that account out of the total and the
+its colour. What v1's total holds beyond the accounts — money that moved with
+no account, a total typed in by hand — takes one more slice, Unknown: no
+palette colour but the hatch inside a hairline, a ring in the legend, sized by
+how far it swings either way. Its tooltip splits it into money in, money out
+and adjustments, each signed the way it moves the total. Pressing a slice
+leaves that account out of the total and the
 change until it's pressed again — for the visit, not stored — and the label
 says how many are left out. Below it two featured accounts, a card each, split the rest of the
 column 50/50 (`flex-1` on a zero basis) — each block's header sits on top and
@@ -148,6 +154,17 @@ once. Past eight bars, the figures shrink and drop their decimal ("$25k");
 turning off what's still to come folds those slots away. The settings are
 per browser, in the `income-view` cookie: the dashboard's server load reads
 it so SSR draws the chosen view, and the shared database never sees it.
+
+**The transactions page** starts with what never got an account: one card
+listing every card-less transaction in two groups. *Counted in your total*
+are those dated since the first account — the dashboard's Unknown slice, with
+its figure beside the heading — and giving one an account moves it into that
+account's balance. *Before your first account* are already in the balance it
+was opened with, so an account only records where they came from. Checkboxes
+pick rows (shift-click takes a range; a group's box takes the group, with a
+dash for some), picked rows tint blue, and while any are picked a bar sticks
+to the bottom of the view: how many, what would move where, the account
+(`Select`, each with its colour dot, main first) and the action.
 
 ## Motion
 
@@ -180,6 +197,7 @@ avatar. The specs, so new work matches:
 | Switch              | `Switch`                                | The thumb crosses and turns white in 300 ms on `--ease-spring`; the track turns blue in 200 ms. |
 | Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). Pressing one (click, Enter or Space) leaves its account out of the totals: the slice greys in place through the registered `--vivid` (a `color-mix()` percentage, 600 ms), its legend entry fades and strikes through, the total and the change count to the new sums (GSAP), and the slice squashes and springs back (Motion, bounce 0.55). |
 | Chip reveal         | `AccountsTotal`'s change chip           | Rests as a dot (the arrow) where a pointer can hover; pointing or focus opens it leftward out of a dot-wide slot, so the row never re-wraps. CSS eases a `0fr → 1fr` grid track — 450 ms open, 340 ms closed, ease-out-quint; GSAP brings the words in behind the edge ("this month", then the figure: opacity and x 8→0 px, 0.4 s `power3.out`, 70 ms apart) and runs back 1.35× quicker; Motion leans the arrow 1.5 px the way the money went (spring, bounce 0.5). Open on touch. |
+| Rows fold out       | `UnassignedCard`, on assign             | Assigned rows collapse at once (Svelte `slide`, 280 ms, `quintOut`) and the list closes up; a refused assignment brings them back. The picked bar rises in (y 16→0 px, 320 ms) and drops out quicker (220 ms). |
 | Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
 | Theme morph         | `ThemeToggle`                           | MorphSVG outline 0.55 s `power3.inOut`; rays `back.out(1.8)`; a −24° twist settling on `back.out(2.2)`. |
 | Gaze                | The header avatar (`Avatar gaze`)       | Breathes and blinks; eyes follow the pointer anywhere on the page, travel 4 viewBox units.       |

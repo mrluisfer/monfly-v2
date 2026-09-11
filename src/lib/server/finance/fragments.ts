@@ -1,11 +1,26 @@
 import { sql } from 'drizzle-orm';
-import { transaction } from '../db/schema';
+import { card, transaction } from '../db/schema';
 
 /** v1's `Transaction.type` values are "income" and "expense"; amounts are always positive. */
 export const EXPENSE = 'expense';
+export const INCOME = 'income';
 
 /** Each stored amount rounded to cents before summing — integers from here on. */
 export const amountCents = sql`round(${transaction.amount}::numeric * 100)`;
+
+/** An amount signed the way v1 moves a balance: income adds, anything else takes. */
+export const signedCents = sql`case when ${transaction.type} = ${INCOME} then ${amountCents} else -${amountCents} end`;
+
+/**
+ * True for a transaction dated on or after the user's first account was added
+ * — and for every one when they have none. Card-less ones before it are
+ * already in the balance that account was opened with: they aren't among the
+ * unknown line's parts, and giving one an account moves no balance. A deleted
+ * first account takes its date with it (v1 keeps no record), so the next
+ * oldest stands in.
+ */
+export const sinceFirstAccount = (userEmail: string) =>
+	sql`coalesce(${transaction.date} >= (select min(${card.createdAt}) from ${card} where ${card.userEmail} = ${userEmail}), true)`;
 
 /**
  * Local midnight at the start of `localDate` ("2026-09-01") in `timeZone`, as

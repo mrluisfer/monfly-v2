@@ -249,8 +249,9 @@ that reads data:
 | endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear     |
 | endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time           |
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget) |
-| endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances |
+| endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them |
 | endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null |
+| endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one |
 | endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
@@ -288,6 +289,22 @@ that reads data:
   roles fall back to the oldest accounts, in the order they were added.
   v1's `Card.color` stays v1's (hex values it draws with); v2's account
   colours live in `User.colors.account`.
+- **The total balance is v1's `User.totalBalance`.** v1 shows that column as
+  the total and moves it with every transaction, but moves an account's
+  balance only for the transactions on it — and its profile page lets people
+  type the total in by hand. `GET /api/accounts` returns what the total holds
+  beyond the active accounts as `unassigned` (the dashboard's "Unknown" line),
+  split into card-less income and spending since the first account and the
+  rest. Card-less transactions dated before the first account aren't among
+  those parts: the balance it was opened with already held them.
+- **Giving a transaction an account** (`POST /api/transactions/unassigned`,
+  the Transactions page) moves it the way v1 links one: the account's balance
+  takes its signed amount and `User.totalBalance` stays put — v1 counted it
+  when it was recorded. Transactions dated before the first account move no
+  balance: the one it was opened with already holds them, and adding them
+  again would count them twice. It's one SQL statement (data-modifying CTEs),
+  so the balance moves by exactly the rows it updated. Any other v2 write
+  must keep `totalBalance` and the balances in step the same way.
 - **Prefetch in universal loads with SvelteKit's `fetch`.** During SSR it
   calls the endpoint in-process with the visitor's cookies and inlines the
   response, so the server renders real figures and hydration doesn't refetch.

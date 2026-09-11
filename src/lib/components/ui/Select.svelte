@@ -5,9 +5,11 @@
 	import { pop } from '$lib/transitions';
 	import { cn } from '$lib/utils';
 	import Caret from './Caret.svelte';
+	import { PALETTE, type PaletteColor } from './palette';
 	import PillButton from './PillButton.svelte';
 
-	type Option = { value: T; label: string };
+	/** `color` marks an option with its palette dot — an account's, say. */
+	type Option = { value: T; label: string; color?: PaletteColor };
 
 	type Props = {
 		/** The choices, in order. */
@@ -73,6 +75,9 @@
 				</button>
 			{:else}
 				<PillButton {...props} size="sm" caret aria-label="{label}: {selected?.label ?? 'none'}" class={className}>
+					{#if selected?.color}
+						<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[selected.color].css}"></span>
+					{/if}
 					{selected?.label ?? '—'}
 				</PillButton>
 			{/if}
@@ -97,6 +102,9 @@
 										class="flex h-9 cursor-default items-center gap-3 rounded-[0.625rem] px-2.5 text-sm whitespace-nowrap outline-none select-none transition-colors duration-150 data-highlighted:bg-sunken"
 									>
 										{#snippet children({ selected: chosen })}
+											{#if option.color}
+												<span class="size-2 shrink-0 rounded-full" style="background: {PALETTE[option.color].css}"></span>
+											{/if}
 											{option.label}
 											<Check
 												class={cn(
