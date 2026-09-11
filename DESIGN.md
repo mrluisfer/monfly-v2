@@ -41,7 +41,8 @@ fails silently — the old tooltip rendered transparent that way.
 **Tints.** An accent at low opacity makes a chip: `bg-blue/12 text-blue`,
 `bg-violet/12 text-violet`, `bg-negative/12 text-negative`. Lime is too light
 to be a glyph on white, so it inverts: `bg-lime/30` with the glyph mixed toward
-ink.
+ink. On dark surfaces it's light enough to be the glyph again:
+`dark:bg-lime/15 dark:text-lime`.
 
 **The palette** (`$lib/components/ui/palette.ts`) is every colour a person can
 give something: the brand blue, violet and lime, then nine pastels — sky, teal,
@@ -60,8 +61,17 @@ retuning a colour updates every place that wears it.
   through `Figure` (`sm` → `xl`).
 - **Outfit (`font-sans`)** for everything else. Labels `text-[0.9375rem]
   text-fg-muted`; meta `text-sm` / `text-xs`.
-- Money: whole units in the currency's home locale (`formatMoney`), cents only
-  where they matter. Missing values show `—`. UI copy is English, sentence case.
+- Money: always to the cent, in the currency's home locale (`formatMoney`) —
+  never rounded to whole units. Only chart labels go compact ("$24.5k"), and
+  their tooltip gives the exact figure. Missing values show `—`. UI copy is
+  English, sentence case.
+- Figures that can grow never spill or truncate. Where there's room to take,
+  their box grows instead: the category chips widen leftward, over the dial's
+  free space, and keep `text-xl`. Where there isn't, the figure fits its box:
+  the box is a container (`@container`) and the figure `.fit-figure`, with
+  `--fit` the size it wants and `--chars` the figure it's sized for — the
+  longest of a row, so neighbours match (an account's two figures). It keeps
+  its size until the room runs out, then shrinks just enough.
 
 ## Layout
 
@@ -91,6 +101,7 @@ retuning a colour updates every place that wears it.
 | `Switch`     | On or off: a hairline capsule, grey off and blue on, whose thumb springs across. Name it with a `<label for>` on its `id`. |
 | `Orb`        | The blurred gradient sphere, in any palette colour. `editable` makes it a button that opens the palette. |
 | `OrbitRing`  | The dashed gauge ring with pointer marks, turning slowly around what it holds (an orb).  |
+| `Sparkle`    | The four-pointed star, in a palette colour. `animated` brings it alive — it breathes and glows on a beat of its own, glints twinkle off it, a shine crosses it — and `burst` (or a pointer) flashes it. Still by default, for lists and bullets. |
 | `Avatar`     | A person's blobatar — static, `animated` on hover, or `gaze` (alive, eyes on the pointer). |
 
 Dashboard compositions live in `$lib/components/dashboard` (`MeterStat`,
@@ -114,6 +125,9 @@ another. Small parts' dividers ease apart to at least 14°, standing a few
 degrees off their edges rather than bending (the soft colour hides the
 degrees; nothing hides a kink), and it all turns and morphs with the wedges.
 The chips may cover part of the dial: their own blur keeps it looking right.
+Their row is at least 62% of the card and widens leftward when its longest
+figure or label needs it; its two columns stay equal, the widest chip setting
+both.
 
 **The accounts column** opens with an overview card at its own height — the
 "Accounts" header and actions, every active account's total, this month's net
@@ -188,6 +202,7 @@ avatar. The specs, so new work matches:
 | Count               | Figures (`use:countUp`)                 | GSAP tweens from the current figure to the new one in 0.8 s, `power3.out`.                       |
 | Recolour            | `Orb`, `Sparkle`                        | The gradient morphs to the new colour in 450 ms (the registered `--orb-color`), and the orb springs back from 0.86 (bounce 0.5). |
 | Orbit               | `OrbitRing`                             | GSAP: one linear turn per 32 s (24 s, the other way, beside it); pointing at it spins it up 6× over 0.8 s and it eases back; paused off screen. |
+| Twinkle             | `Sparkle animated`                      | CSS loops on one beat (`period`, 2.8 s), each instance on its own phase (from its id, so SSR agrees): the star breathes (scale 0.92↔1.06, ±4°), a halo in its colour swells with it (opacity 0.1↔0.55), three glints twinkle off its sides one after another (scale 0→1→0 through a quarter turn), and a white shine crosses it every other breath. `burst` or a pointer flashes it (Motion): a quarter-turn spring from 1.35 (bounce 0.5) and a spark off each point (0.65 s). Paused off screen; still under reduced motion. |
 | Link arrow          | "To review" and links like it           | The arrow slides in on hover or focus (spring), then nudges its way every 1.4 s; always shown on touch. |
 | Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
 | Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
@@ -237,7 +252,9 @@ Rules:
   leave: it sticks open and stops responding. Call theirs, then yours — see
   `chain` in `AccountsTotal` or the `onclick` in `ThemeToggle`.
 - **Surface:** `rounded-[var(--radius-chip)] border border-line bg-card shadow-lg`.
-  Tooltips are `rounded-lg px-2.5 py-1.5 text-xs`.
+  Tooltips are `rounded-lg px-2.5 py-1.5 text-xs`, and their arrow is part of
+  the surface: filled with the card, its two edges in the border's line,
+  tucked 1px under the border so the two join.
 - **Placement:** open on the side that doesn't cover what the layer explains,
   and anchor to the exact point it describes (the meter's tip points at the
   fill's end, and opens below the bar).
@@ -248,6 +265,10 @@ Rules:
   (settings), lime for what's new (notifications), `negative` for leaving (log
   out). Separators `mx-1 my-1.5 h-px bg-line`; shortcuts right-aligned in `Kbd`;
   disabled items grey their chip and say why ("Soon").
+- **Popovers** open with the same chip beside a title and a one-line note, its
+  accent saying what the layer does: violet configures (Income chart), blue
+  picks accounts (Featured accounts), lime sets the budget — the colour of the
+  meter it moves, inverted as lime always is on white.
 
 ## The header
 

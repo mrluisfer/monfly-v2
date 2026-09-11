@@ -86,6 +86,7 @@
 			{ delay: stagger(0.06), duration: 0.55, ease: EASE_OUT_QUINT }
 		);
 	});
+
 </script>
 
 <Card class="flex h-full flex-col p-7">
@@ -107,9 +108,12 @@
 				No expenses {year === null ? 'recorded yet' : `in ${year}`}.
 			</p>
 		{:else}
+			<!-- At least 62% of the width, and wider — leftward, over the dial's free
+			     space — when a figure or a label needs it, so figures keep their size.
+			     Sized to its content, the two columns stay equal: the widest chip sets both. -->
 			<div
 				bind:this={grid}
-				class="mt-2 grid grid-cols-2 gap-2 sm:absolute sm:right-0 sm:bottom-0 sm:mt-0 sm:w-[62%]"
+				class="mt-2 grid grid-cols-2 gap-2 sm:absolute sm:right-0 sm:bottom-0 sm:mt-0 sm:w-max sm:max-w-full sm:min-w-[62%]"
 			>
 				{#each top as category, i (category.name)}
 					<CategoryChip

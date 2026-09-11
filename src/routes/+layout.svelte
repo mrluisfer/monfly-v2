@@ -4,7 +4,6 @@
 	import '../app.css';
 
 	import { ModeWatcher } from 'mode-watcher';
-	import favicon from '$lib/assets/favicon.svg';
 
 	// Global concerns only — fonts, tokens, theme. Each route group brings its
 	// own chrome, so nothing app-specific loads on the landing.
@@ -12,7 +11,6 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
 	<title>Monfly</title>
 </svelte:head>
 

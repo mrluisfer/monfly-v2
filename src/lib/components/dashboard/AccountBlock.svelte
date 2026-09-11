@@ -59,6 +59,8 @@
 	);
 	const loading = $derived(period !== 'now' && (past.isPending || past.isPlaceholderData));
 	const format = (cents: number) => formatMoney(cents, currency);
+	// Both figures wear one size: the one the longer fits at (.fit-figure).
+	const chars = $derived(Math.max(format(shown.balance).length, format(shown.tracked).length));
 
 	let figures = $state<HTMLElement[]>([]);
 	let settled = false;
@@ -83,7 +85,8 @@
 <div class="flex flex-1 flex-col p-7">
 	<div class="mb-6 flex items-center justify-between gap-4">
 		<div class="flex min-w-0 items-center gap-2.5">
-			<Sparkle {color} class="size-5 shrink-0" />
+			<!-- Alive in the account's colour; a new month flashes it, as it surges the rings. -->
+			<Sparkle {color} animated burst={period} class="size-5 shrink-0" />
 			<span class="truncate font-display text-xl font-medium">{account.name}</span>
 		</div>
 		{#if options.length > 1}
@@ -94,13 +97,15 @@
 	</div>
 
 	<div class={cn('mt-auto grid grid-cols-[1fr_1fr_auto] gap-6 transition-opacity duration-300', loading && 'opacity-60')}>
-		<div>
+		<!-- Containers, so a big figure fits its column instead of squeezing "To review". -->
+		<div class="@container min-w-0">
 			<p class="text-sm text-fg-muted">Bank balance</p>
 			<!-- The server writes the figure; countUp takes the node over once mounted. -->
 			{#if shown.existed}
 				<p
 					bind:this={figures[0]}
-					class="font-display tabular mt-1 text-[1.75rem] leading-none font-light"
+					class="fit-figure font-display tabular mt-1 leading-[1.75rem] font-light"
+					style="--fit: 1.75rem; --chars: {chars}"
 					use:countUp={{ value: shown.balance, format, whenVisible: true }}
 				>
 					{format(shown.balance)}
@@ -122,12 +127,13 @@
 			</OrbitRing>
 		</div>
 
-		<div>
+		<div class="@container min-w-0">
 			<p class="text-sm text-fg-muted">Tracked</p>
 			{#if shown.existed}
 				<p
 					bind:this={figures[1]}
-					class="font-display tabular mt-1 text-[1.75rem] leading-none font-light"
+					class="fit-figure font-display tabular mt-1 leading-[1.75rem] font-light"
+					style="--fit: 1.75rem; --chars: {chars}"
 					use:countUp={{ value: shown.tracked, format, whenVisible: true }}
 				>
 					{format(shown.tracked)}
@@ -144,7 +150,7 @@
 		<!-- Leads to the review view to come; for now, the transactions. -->
 		<a href="/transactions" class="review press self-end rounded-lg text-right">
 			<Figure value={String(account.toReview)} size="lg" />
-			<span class="mt-1 flex items-center justify-end gap-1 text-sm text-fg-muted">
+			<span class="mt-1 flex items-center justify-end gap-1 text-sm whitespace-nowrap text-fg-muted">
 				To review
 				<ArrowRight class="review-arrow size-3.5 stroke-[1.75]" aria-hidden="true" />
 			</span>

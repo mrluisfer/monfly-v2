@@ -1,14 +1,7 @@
 /** Presentation-only helpers. No business rules live here. */
 
-/** Whole-dollar figures, as the design uses throughout. */
+/** To the cent, as every figure in the design: money is never rounded to whole units. */
 const currency = new Intl.NumberFormat('en-US', {
-	style: 'currency',
-	currency: 'USD',
-	maximumFractionDigits: 0
-});
-
-/** Opt in to cents only where they genuinely matter (a ledger row, say). */
-const currencyCents = new Intl.NumberFormat('en-US', {
 	style: 'currency',
 	currency: 'USD',
 	minimumFractionDigits: 2,
@@ -21,6 +14,5 @@ const compact = new Intl.NumberFormat('en-US', {
 });
 
 export const formatCurrency = (value: number) => currency.format(value);
-export const formatCurrencyCents = (value: number) => currencyCents.format(value);
 export const formatCompact = (value: number) => compact.format(value);
 export const formatPercent = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
