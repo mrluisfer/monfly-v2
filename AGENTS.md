@@ -21,6 +21,8 @@ app). This file is for coding agents; people start at the [README](README.md).
 
 ## Commands
 
+Node 24 (`.nvmrc`): run `nvm use` first — `pnpm install` refuses other majors.
+
 ```sh
 pnpm dev       # dev server on :5173
 pnpm check     # svelte-check: types + a11y

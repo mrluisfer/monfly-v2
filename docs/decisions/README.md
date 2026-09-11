@@ -10,6 +10,7 @@ record and mark the old one superseded.
 - [0004. Proprietary code, commercial-friendly dependencies](0004-proprietary-code.md)
 - [0005. Secrets stay out of the repo](0005-secrets-out-of-repo.md)
 - [0006. Oxfmt formats, ESLint lints](0006-oxfmt.md)
+- [0007. Node 24 LTS](0007-node-24.md)
 
 ## Template
 
