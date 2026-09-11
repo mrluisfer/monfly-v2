@@ -113,7 +113,8 @@ src/
     components/
       ui/                    Logo, Card, Meter, DottedRing, Blob, Sparkle, Caret,
                              PillButton, IconButton, Figure, Tooltip, ThemeToggle,
-                             Kbd, Avatar, Orb, Select (+ palette.ts)
+                             Kbd, Avatar, Orb, Select, Segmented, Switch
+                             (+ palette.ts)
       layout/                AppShell, TopBar, TabStrip, UserMenu, PagePlaceholder
       dashboard/             ExpensesDial, AccountBlock, CategoryChip, IncomeBars,
                              TipCard, MeterStat, SpentThisMonth, BudgetEditor
@@ -250,7 +251,7 @@ that reads data:
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget) |
 | endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances |
 | endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null |
-| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all |
+| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher       |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                           |
 | widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)      |
@@ -292,6 +293,11 @@ that reads data:
   response, so the server renders real figures and hydration doesn't refetch.
   Widgets read the same cache through `createQuery`; after a write, invalidate
   by key (`spendingKeys.all`).
+- **Chart settings are per browser, in a cookie.** The Income card's gear
+  writes `income-view` (`$lib/income-view`); the dashboard's `+page.server.ts`
+  reads it, so the prefetch asks for the chosen split and SSR draws the chosen
+  view with nothing shifting on hydration. Keeping them on the account instead
+  would take a v1 migration.
 
 ## Conventions carried over from v1
 

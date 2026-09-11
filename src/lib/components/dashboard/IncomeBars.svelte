@@ -20,24 +20,43 @@
 
 	type Props = {
 		bars: Bar[];
+		/** The figure over each bar that has happened. Off, the bars grow into its room. */
+		figures?: boolean;
+		/** The empty slots of what's still to come. Off, they fold away. */
+		upcoming?: boolean;
+		/** Many narrow bars — a year by month: smaller figures. */
+		dense?: boolean;
 		/** The detail shown on hover or focus of a bar that has happened. */
 		tip?: Snippet<[Bar]>;
 		class?: string;
 	};
 
-	let { bars, tip, class: className }: Props = $props();
+	let {
+		bars,
+		figures = true,
+		upcoming = true,
+		dense = false,
+		tip,
+		class: className
+	}: Props = $props();
 
 	const max = $derived(Math.max(...bars.map((b) => b.value), 0));
 	/** A bar's height as a fraction of the tallest; an empty past bar keeps a hairline. */
 	const share = (bar: Bar) => (bar.future || max <= 0 ? 0 : bar.value / max);
+	/** A slot still to come, while those are hidden. */
+	const folded = (bar: Bar) => !upcoming && !!bar.future;
 </script>
 
 <!--
 	Hatched columns with a solid accent cap, sharing edges as in the mockup.
 	New bars grow up from the baseline one after another (@starting-style plus
 	a staggered height transition), and a new value eases each bar to its height.
+	Hidden, the slots still to come fold away sideways and the rest widen.
 -->
-<div class={cn('flex flex-col', className)}>
+<div
+	class={cn('flex flex-col', !figures && 'no-figures', className)}
+	style="--room: {figures ? '1.75rem' : '0rem'}"
+>
 	<div class="flex min-h-0 flex-1 items-end">
 		{#each bars as bar, i (bar.key)}
 			{#snippet column(props: Record<string, unknown>)}
@@ -46,18 +65,14 @@
 					{...props}
 					role="img"
 					aria-label={bar.description}
+					aria-hidden={folded(bar) || undefined}
 					tabindex={bar.future ? undefined : 0}
-					class="group flex h-full min-w-0 flex-1 flex-col justify-end outline-none"
+					class={cn(
+						'slot group flex h-full min-w-0 flex-col justify-end outline-none',
+						folded(bar) && 'folded'
+					)}
 					style="--i: {i}"
 				>
-					<span
-						class={cn(
-							'bar-figure font-display tabular mb-1.5 truncate text-sm',
-							bar.future && 'invisible'
-						)}
-					>
-						{bar.valueLabel}
-					</span>
 					<div
 						class={cn(
 							'bar hatch relative border border-hairline transition-colors duration-200',
@@ -68,6 +83,15 @@
 						style="--h: {share(bar)}"
 					>
 						{#if !bar.future}
+							<!-- The figure rides the bar's top edge. -->
+							<span
+								class={cn(
+									'bar-figure font-display tabular absolute inset-x-0 bottom-full mb-1.5 truncate',
+									dense ? 'text-[0.6875rem]' : 'text-sm'
+								)}
+							>
+								{bar.valueLabel}
+							</span>
 							<!-- Solid accent cap -->
 							<span
 								class="absolute inset-x-0 -top-px block h-[3px]"
@@ -101,7 +125,14 @@
 	<!-- The axis: what each bar covers -->
 	<div class="mt-2 flex">
 		{#each bars as bar (bar.key)}
-			<span class={cn('min-w-0 flex-1 truncate text-center text-xs', bar.future ? 'text-fg-subtle' : 'text-fg-muted')}>
+			<span
+				aria-hidden={folded(bar) || undefined}
+				class={cn(
+					'slot min-w-0 truncate text-center text-xs',
+					bar.future ? 'text-fg-subtle' : 'text-fg-muted',
+					folded(bar) && 'folded'
+				)}
+			>
 				{bar.label}
 			</span>
 		{/each}
@@ -109,10 +140,11 @@
 </div>
 
 <style>
-	/* The tallest bar fills the plot below its figure; the rest scale to it. A
-	   bar with nothing in it keeps a hairline, so "none" reads apart from "not yet". */
+	/* The tallest bar fills the plot below its figure's room (all of it, with
+	   figures off); the rest scale to it. A bar with nothing in it keeps a
+	   hairline, so "none" reads apart from "not yet". */
 	.bar {
-		height: max(calc((100% - 1.75rem) * var(--h)), 2px);
+		height: max(calc((100% - var(--room)) * var(--h)), 2px);
 		transition: height 0.7s var(--ease-out-quint) calc(var(--i) * 60ms);
 
 		@starting-style {
@@ -129,5 +161,28 @@
 			opacity: 0;
 			translate: 0 0.25rem;
 		}
+	}
+
+	/* Turned off, the figures sink away, quicker than they rose. */
+	.no-figures .bar-figure {
+		opacity: 0;
+		translate: 0 0.25rem;
+		transition-duration: 0.3s;
+		transition-delay: calc(var(--i) * 30ms);
+	}
+
+	/* A bar and its axis label share one width. Folded, a slot still to come
+	   gives its width to the rest and fades — quicker out than back in. */
+	.slot {
+		flex: 1 1 0%;
+		transition:
+			flex-grow 0.6s var(--ease-out-quint),
+			opacity 0.4s var(--ease-out-quint);
+	}
+
+	.slot.folded {
+		flex-grow: 0;
+		opacity: 0;
+		transition-duration: 0.45s, 0.3s;
 	}
 </style>

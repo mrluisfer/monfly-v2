@@ -5,6 +5,7 @@
 	import { Card, Select, type PaletteColor } from '$lib/components/ui';
 	import {
 		DEFAULT_CURRENCY,
+		DEFAULT_INCOME_PERIOD,
 		INCOME_PERIODS,
 		INCOME_PERIOD_LABEL,
 		formatMoney,
@@ -12,24 +13,46 @@
 		moneyParts,
 		type IncomePeriod
 	} from '$lib/finance';
+	import {
+		DEFAULT_INCOME_VIEW,
+		incomeUnit,
+		saveIncomeView,
+		type IncomeView
+	} from '$lib/income-view';
 	import { incomeQuery } from '$lib/queries';
 	import { cn } from '$lib/utils';
 	import IncomeBars from './IncomeBars.svelte';
+	import IncomeSettings from './IncomeSettings.svelte';
 
 	/**
 	 * Income for a period — this quarter by default — as a total with its
 	 * lime symbol and a bar per bucket: this month by week, this quarter by
-	 * month, this year by quarter, all time by year. A new period counts the
-	 * total over (GSAP) and grows the new bars up (CSS). The page prefetches
-	 * this quarter during SSR.
+	 * month, this year by quarter or month, all time by year. The gear sets
+	 * how the chart is drawn, for this browser. A new period counts the total
+	 * over (GSAP) and grows the new bars up (CSS). The page prefetches this
+	 * quarter during SSR.
 	 */
-	let { enabled = true }: { enabled?: boolean } = $props();
+	type Props = {
+		/** False for a session with no Monfly account to read. */
+		enabled?: boolean;
+		/** The chart settings this browser saved, as the server read them from its cookie. */
+		view?: IncomeView;
+	};
+
+	let { enabled = true, view: saved = DEFAULT_INCOME_VIEW }: Props = $props();
 
 	const options = INCOME_PERIODS.map((value) => ({ value, label: INCOME_PERIOD_LABEL[value] }));
-	let period = $state<IncomePeriod>('quarter');
+	let period = $state<IncomePeriod>(DEFAULT_INCOME_PERIOD);
+	// The saved settings, until the gear changes them.
+	let view = $derived(saved);
+
+	function changeView(next: IncomeView) {
+		view = next;
+		saveIncomeView(next);
+	}
 
 	const query = createQuery(() => ({
-		...incomeQuery(period),
+		...incomeQuery(period, incomeUnit(period, view)),
 		enabled: browser && enabled,
 		// The last period stays up while the next loads, so the total counts from it.
 		placeholderData: keepPreviousData
@@ -42,12 +65,15 @@
 	const currency = $derived(data?.currency ?? DEFAULT_CURRENCY);
 	const total = $derived(data?.total ?? 0);
 	const parts = $derived(moneyParts(total, currency));
+	const buckets = $derived(data?.buckets ?? []);
+	// A year by month leaves narrow bars: smaller, whole figures ("$25k", not "$25.3k").
+	const dense = $derived(buckets.filter((b) => view.upcoming || !b.future).length > 8);
 	const bars = $derived(
-		(data?.buckets ?? []).map((b, i) => ({
+		buckets.map((b, i) => ({
 			key: b.key,
 			label: b.label,
 			value: b.total,
-			valueLabel: formatMoneyCompact(b.total, currency),
+			valueLabel: formatMoneyCompact(b.total, currency, { whole: dense }),
 			color: COLORS[i % COLORS.length],
 			future: b.future,
 			description: b.future
@@ -63,7 +89,10 @@
 <Card class="flex flex-col p-7">
 	<div class="flex items-center justify-between gap-4">
 		<h2 class="font-display text-2xl font-medium">Income</h2>
-		<Select label="Period" {options} bind:value={period} />
+		<div class="flex items-center gap-2">
+			<IncomeSettings {view} onChange={changeView} />
+			<Select label="Period" {options} bind:value={period} />
+		</div>
 	</div>
 
 	<div class="mt-6">
@@ -80,7 +109,7 @@
 
 	<!-- Dimmed while the chosen period loads over the last one. -->
 	<div class={cn('mt-8 transition-opacity duration-300', query.isPlaceholderData && 'opacity-60')}>
-		<IncomeBars {bars} class="h-56">
+		<IncomeBars {bars} figures={view.figures} upcoming={view.upcoming} {dense} class="h-56">
 			{#snippet tip(bar)}
 				{@const entry = bars.find((b) => b.key === bar.key)}
 				<div class="grid w-44 gap-2 font-normal">

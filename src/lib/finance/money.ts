@@ -49,20 +49,29 @@ export function formatMoney(amount: Cents, currency: Currency, { cents = false }
 	return formatter(currency, cents).format(amount / 100);
 }
 
-const compactFormatters = new Map<Currency, Intl.NumberFormat>();
+const compactFormatters = new Map<string, Intl.NumberFormat>();
 
-/** Short figures for chart labels: 60,000 → "$60k", 1,250,000 → "$1.3M". English suffixes, narrow symbol. */
-export function formatMoneyCompact(amount: Cents, currency: Currency): string {
-	let format = compactFormatters.get(currency);
+/**
+ * Short figures for chart labels: 60,000 → "$60k", 1,250,000 → "$1.3M".
+ * English suffixes, narrow symbol; `{ whole: true }` drops the decimal where
+ * labels are narrow: 25,340 → "$25k".
+ */
+export function formatMoneyCompact(
+	amount: Cents,
+	currency: Currency,
+	{ whole = false } = {}
+): string {
+	const key = `${currency}:${whole}`;
+	let format = compactFormatters.get(key);
 	if (!format) {
 		format = new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency,
 			currencyDisplay: 'narrowSymbol',
 			notation: 'compact',
-			maximumFractionDigits: 1
+			maximumFractionDigits: whole ? 0 : 1
 		});
-		compactFormatters.set(currency, format);
+		compactFormatters.set(key, format);
 	}
 	return format.format(amount / 100).replace('K', 'k');
 }

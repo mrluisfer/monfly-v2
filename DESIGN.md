@@ -86,6 +86,8 @@ retuning a colour updates every place that wears it.
 | `Tooltip`    | A label, or rich `content`; `anchor` points it at something other than its trigger.     |
 | `Kbd`        | Keycaps for a shortcut, read from the hotkey registry.                                  |
 | `Select`     | A `PillButton` with a caret opening a short list; the chosen item's blue check springs in. |
+| `Segmented`  | A few short choices side by side in a sunken capsule; one raised surface slides to the chosen one. A radio group: arrow keys move the choice. |
+| `Switch`     | On or off: a hairline capsule, grey off and blue on, whose thumb springs across. Name it with a `<label for>` on its `id`. |
 | `Orb`        | The blurred gradient sphere, in any palette colour. `editable` makes it a button that opens the palette. |
 | `OrbitRing`  | The dashed gauge ring with pointer marks, turning slowly around what it holds (an orb).  |
 | `Avatar`     | A person's blobatar — static, `animated` on hover, or `gaze` (alive, eyes on the pointer). |
@@ -133,10 +135,19 @@ open-accounts button is an `IconButton` with `href`.
 
 **The income chart** keeps the mockup's hatched columns and accent caps on
 real data: this quarter by month (the default), this month by week, this year
-by quarter, all time by year. Bars scale to the tallest one; a past bucket
+by quarter or by month, all time by year. Bars scale to the tallest one; a past bucket
 with nothing in it keeps a hairline, and one still to come is a dashed empty
 slot with no figure. Hovering or focusing a bar shows its exact income, entry
 count and share. The total keeps its lime symbol while its number counts.
+
+The gear left of the period (`IncomeSettings`, a small `IconButton` level
+with the `Select`) opens the chart's settings under a violet chip — violet is
+configuration: **This year by** quarters or months (`Segmented`), then
+**Amounts over bars** and **Still to come** (`Switch`es). Changes apply at
+once. Past eight bars, the figures shrink and drop their decimal ("$25k");
+turning off what's still to come folds those slots away. The settings are
+per browser, in the `income-view` cookie: the dashboard's server load reads
+it so SSR draws the chosen view, and the shared database never sees it.
 
 ## Motion
 
@@ -151,7 +162,7 @@ avatar. The specs, so new work matches:
 | Pop with spring     | The header's back button                | Scale 0.5→1 and x 10→0 px on a spring (bounce 0.4, 0.5 s); exit 0.3 s eased.                     |
 | Make room           | Back button's wrapper                   | Svelte `slide` on x, 350 ms `quintOut`, so neighbours glide instead of jumping.                  |
 | Hover reveal        | `MeterStat` action (the budget pencil)  | Opacity in 350 ms; scale 0.85→1 and x 6→0 px in 450 ms, ease-out-quint. Holds its space.         |
-| Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. |
+| Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. The Income card's gear turns the same way on hover, on focus and while its settings are open. |
 | Tab surface         | `TabStrip`                              | One shared surface slides (x, width) in 0.45 s, ease-out-quint.                                  |
 | Tab lift-off        | `TabStrip`, on scroll                   | Past 24 px of scroll (and back under 8, so it doesn't flicker; Motion `scroll()`), the surface's top, bottom and radius ease into the tab's own box and corners (`--radius-chip`) and its shoulders tuck in (CSS on `data-docked`, 450 ms in, 340 ms out); the box squashes and springs round (Motion, bounce 0.5); GSAP drips an ink drop from its underside, a stretched thread (160 ms) that lets go on `elastic.out(1, 0.45)`, drawn back in 1.5× quicker. A page loaded already scrolled is placed without motion. |
 | Meter fill          | `Meter`                                 | Width and pin in 700 ms, ease-out-quint; grows in after mount.                                   |
@@ -164,6 +175,9 @@ avatar. The specs, so new work matches:
 | Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
 | Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
 | Bars grow           | `IncomeBars`, on a new period           | New bars rise from the baseline 60 ms apart (`@starting-style` and a 700 ms height transition), their figures fading up after; bars that stay ease to their new height. |
+| Slots fold          | `IncomeBars`, "Still to come" off       | Slots still to come fold sideways (`flex-grow` → 0 in 0.45 s) and fade while the rest widen; back on, they unfold in 0.6 s. Figures turned off sink away (0.3 s, 30 ms apart) as the bars grow into their room. |
+| Segmented slide     | `Segmented`                             | One raised surface slides to the chosen option (translate, 0.45 s, ease-out-quint), as the tab surface does. |
+| Switch              | `Switch`                                | The thumb crosses and turns white in 300 ms on `--ease-spring`; the track turns blue in 200 ms. |
 | Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). Pressing one (click, Enter or Space) leaves its account out of the totals: the slice greys in place through the registered `--vivid` (a `color-mix()` percentage, 600 ms), its legend entry fades and strikes through, the total and the change count to the new sums (GSAP), and the slice squashes and springs back (Motion, bounce 0.55). |
 | Chip reveal         | `AccountsTotal`'s change chip           | Rests as a dot (the arrow) where a pointer can hover; pointing or focus opens it leftward out of a dot-wide slot, so the row never re-wraps. CSS eases a `0fr → 1fr` grid track — 450 ms open, 340 ms closed, ease-out-quint; GSAP brings the words in behind the edge ("this month", then the figure: opacity and x 8→0 px, 0.4 s `power3.out`, 70 ms apart) and runs back 1.35× quicker; Motion leans the arrow 1.5 px the way the money went (spring, bounce 0.5). Open on touch. |
 | Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
