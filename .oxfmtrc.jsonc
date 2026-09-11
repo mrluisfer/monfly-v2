@@ -17,6 +17,7 @@
 		"pnpm-lock.yaml",
 		"/static/",
 		// Written by release-please.
-		"CHANGELOG.md"
+		"CHANGELOG.md",
+		".release-please-manifest.json"
 	]
 }
