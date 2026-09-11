@@ -51,7 +51,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
       - dependencies
-      - ci
+      - "area: ci"
     commit-message:
       prefix: "chore(ci)"
     groups:
