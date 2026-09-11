@@ -1,0 +1,60 @@
+# Dependabot — monfly-v2
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Criterio: ruido bajo, señal alta.
+#   - Un PR semanal agrupado para minor/patch de produccion y otro para dev.
+#   - Los majors salen sueltos, uno por PR: rompen y se revisan a mano.
+#   - Sin bloques `ignore`: las ignore conditions tambien silencian los
+#     security updates, y eso es justo lo que no queremos perder.
+version: 2
+
+updates:
+  # ---------------------------------------------------------------- npm/pnpm
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Mexico_City
+    # Techo duro de PRs abiertos de Dependabot a la vez.
+    open-pull-requests-limit: 5
+    # Sube el rango en package.json en vez de fijar la version exacta.
+    versioning-strategy: increase
+    labels:
+      - dependencies
+    commit-message:
+      # include: scope añade (deps) o (deps-dev): "chore(deps): …", "chore(deps-dev): …".
+      prefix: "chore"
+      include: scope
+    groups:
+      # Todo lo de runtime que sea minor/patch -> 1 solo PR por semana.
+      prod-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      # Tooling (vite, eslint, prettier, drizzle-kit, svelte-check...) -> otro PR.
+      dev-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+    # Lo que NO cae en un grupo (los majors) llega como PR individual.
+
+  # ------------------------------------------------------------ GitHub Actions
+  # Las actions se pinnean por tag y se quedan viejas en silencio; esto las mueve.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
