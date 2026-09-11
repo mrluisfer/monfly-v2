@@ -153,6 +153,7 @@ avatar. The specs, so new work matches:
 | Hover reveal        | `MeterStat` action (the budget pencil)  | Opacity in 350 ms; scale 0.85→1 and x 6→0 px in 450 ms, ease-out-quint. Holds its space.         |
 | Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. |
 | Tab surface         | `TabStrip`                              | One shared surface slides (x, width) in 0.45 s, ease-out-quint.                                  |
+| Tab lift-off        | `TabStrip`, on scroll                   | Past 24 px of scroll (and back under 8, so it doesn't flicker; Motion `scroll()`), the surface's top, bottom and radius ease into the tab's own box and corners (`--radius-chip`) and its shoulders tuck in (CSS on `data-docked`, 450 ms in, 340 ms out); the box squashes and springs round (Motion, bounce 0.5); GSAP drips an ink drop from its underside, a stretched thread (160 ms) that lets go on `elastic.out(1, 0.45)`, drawn back in 1.5× quicker. A page loaded already scrolled is placed without motion. |
 | Meter fill          | `Meter`                                 | Width and pin in 700 ms, ease-out-quint; grows in after mount.                                   |
 | Dial morph          | `ExpensesDial`, on a new period         | GSAP: the wedges, their dividers and the hub morph in 0.9 s `power3.inOut` while the dial turns −14° about its centre (`svgOrigin` in both halves of the tween) and settles on `back.out(1.7)`. |
 | Deal                | `ExpensesCard` chips, on a new period   | Motion: opacity, y 12→0 px and scale 0.94→1 in 550 ms, 60 ms apart, ease-out-quint.              |
@@ -225,6 +226,10 @@ Brand → back → tabs → theme → account.
   link never sends anyone out of Monfly.
 - **Tabs:** one shared surface carries the browser-tab shape between tabs; tab
   widths stay fixed (the ✕ is always rendered) so nothing reflows mid-slide.
+  Scrolled, the page no longer meets the tab, so the surface lets go: it lifts
+  off into a flat box behind the tab, rounded like the tabs
+  (`--radius-chip`), and a small ink drop drips out
+  beneath it, marking the tab you're on. Back at the top it runs in reverse.
 - **Theme** cycles light → dark → system with no menu; its outline morphs
   between sun, moon and monitor.
 - **Account:** the blobatar — alive, watching the pointer — opens a menu: who is

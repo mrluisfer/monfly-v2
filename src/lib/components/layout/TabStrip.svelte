@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+	import gsap from 'gsap';
 	import { page } from '$app/state';
-	import { animate } from 'motion';
+	import { animate, scroll } from 'motion';
 	import Plus from '@lucide/svelte/icons/plus';
 	import X from '@lucide/svelte/icons/x';
 	import { IconButton } from '$lib/components/ui';
@@ -62,16 +64,83 @@
 		window.addEventListener('resize', replace);
 		return () => window.removeEventListener('resize', replace);
 	});
+
+	/*
+	 * Scrolled, the page no longer meets the tab above it, so the surface lets
+	 * go: it lifts off the header's edge into a box behind the tab (CSS, on
+	 * `data-docked`), gives like a drop pulled free (Motion), and a small drop
+	 * drips out beneath it to mark the tab you're on (GSAP). Back at the top it
+	 * all runs in reverse, a little quicker.
+	 */
+	let docked = $state(false);
+	let settled = $state(false);
+	let shape = $state<HTMLElement>();
+	let drop = $state<HTMLElement>();
+	let drip: gsap.core.Timeline | undefined;
+
+	// Placed as the page already is, scrolled or not, without motion; the
+	// transitions take over from the frame after.
+	$effect(() => {
+		docked = window.scrollY > 24;
+		const frame = requestAnimationFrame(() => requestAnimationFrame(() => (settled = true)));
+		return () => cancelAnimationFrame(frame);
+	});
+
+	// Two thresholds, so a page resting near the top doesn't flicker between shapes.
+	$effect(() =>
+		scroll((_progress: number, { y }: { y: { current: number } }) => {
+			if (!docked && y.current > 24) docked = true;
+			else if (docked && y.current < 8) docked = false;
+		})
+	);
+
+	$effect(() => {
+		if (!drop || prefersReducedMotion()) return;
+		const timeline = gsap
+			.timeline({ paused: true })
+			// Out of the box's underside comes a thread of liquid…
+			.fromTo(
+				drop,
+				{ y: -9, scaleX: 0.3, scaleY: 0.3, autoAlpha: 0 },
+				{ y: -5, scaleX: 0.45, scaleY: 1.8, autoAlpha: 1, duration: 0.16, ease: 'power2.in' },
+				0.14
+			)
+			// …that lets go and rounds into a drop, wobbling as it settles.
+			.to(drop, { y: 0, scaleX: 1, scaleY: 1, duration: 0.55, ease: 'elastic.out(1, 0.45)' }, 0.3);
+		if (untrack(() => docked)) timeline.progress(1);
+		drip = timeline;
+		return () => {
+			timeline.kill();
+			drip = undefined;
+		};
+	});
+
+	// Back at the top the drop is drawn in again, quicker than it fell.
+	$effect(() => {
+		if (docked) drip?.timeScale(1).play();
+		else drip?.timeScale(1.5).reverse();
+	});
+
+	// Pulling free, the box gives like a drop: squashed a touch, then round.
+	$effect(() => {
+		if (!docked || !shape || untrack(() => !settled) || prefersReducedMotion()) return;
+		animate(shape, { scaleY: [0.82, 1], scaleX: [1.05, 1] }, { type: 'spring', bounce: 0.5, duration: 0.7, delay: 0.1 });
+	});
 </script>
 
 <!-- pl-5 leaves room for the surface's left shoulder to overhang. -->
-<div class="relative flex h-full min-w-0 items-center gap-6 pl-5">
+<div class={cn('relative flex h-full min-w-0 items-center gap-6 pl-5', !settled && 'settling')}>
+	<!-- The active tab's surface: x and width from place(), its shape from data-docked -->
 	<div
 		bind:this={surface}
 		aria-hidden="true"
 		style="opacity: 0"
-		class="tab-merge pointer-events-none absolute top-2.5 bottom-0 left-0 rounded-t-[1.25rem] bg-canvas"
-	></div>
+		data-docked={docked || undefined}
+		class="pointer-events-none absolute inset-y-0 left-0"
+	>
+		<div bind:this={shape} class="tab-merge tab-shape absolute inset-x-0 bg-canvas"></div>
+		<span bind:this={drop} class="tab-drop"></span>
+	</div>
 
 	{#each tabs as tab, i (tab.href)}
 		{@const active = isActive(tab.href)}
@@ -102,3 +171,82 @@
 		<Plus />
 	</IconButton>
 </div>
+
+<style>
+	/*
+	 * The active tab's shape. At the top of the page it runs down into the
+	 * canvas, a shoulder either side, browser-tab style. Docked it lifts off
+	 * into the tab's own rounded box, flat as every surface here, and the
+	 * shoulders tuck in. Lifting takes 450 ms; settling back, 340.
+	 */
+	.tab-shape {
+		top: 0.625rem;
+		bottom: 0;
+		border-radius: 1.25rem 1.25rem 0 0;
+		transition:
+			top 0.34s var(--ease-out-quint),
+			bottom 0.34s var(--ease-out-quint),
+			border-radius 0.34s var(--ease-out-quint);
+	}
+
+	.tab-shape::before,
+	.tab-shape::after {
+		transition:
+			scale 0.25s var(--ease-out-quint),
+			opacity 0.25s var(--ease-out-quint);
+	}
+
+	.tab-shape::before {
+		transform-origin: 100% 100%;
+	}
+
+	.tab-shape::after {
+		transform-origin: 0 100%;
+	}
+
+	/* The tab's own box: h-11, centred in the h-20 header, and its corners. */
+	[data-docked] .tab-shape {
+		top: 1.125rem;
+		bottom: 1.125rem;
+		border-radius: var(--radius-chip);
+		transition-duration: 0.45s;
+	}
+
+	[data-docked] .tab-shape::before,
+	[data-docked] .tab-shape::after {
+		scale: 0;
+		opacity: 0;
+	}
+
+	/* The drop under the docked tab: a teardrop, point up, just let go. GSAP
+	   moves this box; the shape inside turns, so a stretch stays vertical. */
+	.tab-drop {
+		position: absolute;
+		top: calc(100% - 0.875rem);
+		left: 50%;
+		width: 0.5rem;
+		height: 0.5rem;
+		margin-left: -0.25rem;
+		opacity: 0;
+	}
+
+	.tab-drop::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 0 50% 50% 50%;
+		background: var(--fg);
+		rotate: 45deg;
+	}
+
+	/* Without GSAP (reduced motion) the drop simply shows. */
+	[data-docked] .tab-drop {
+		opacity: 1;
+	}
+
+	.settling .tab-shape,
+	.settling .tab-shape::before,
+	.settling .tab-shape::after {
+		transition: none;
+	}
+</style>
