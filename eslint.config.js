@@ -13,6 +13,7 @@ export default defineConfig(
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
+	// Stylistic rules off: formatting is Oxfmt's job.
 	prettier,
 	svelte.configs.prettier,
 	{

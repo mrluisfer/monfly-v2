@@ -13,8 +13,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"db:pull": "drizzle-kit pull --config=drizzle.config.ts",
 		"db:studio": "drizzle-kit studio --config=drizzle.config.ts",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"lint": "oxfmt --check && eslint .",
+		"format": "oxfmt"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -29,9 +29,7 @@
 		"globals": "^17.12.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
-		"prettier": "^3.9.6",
-		"prettier-plugin-svelte": "^4.1.1",
-		"prettier-plugin-tailwindcss": "^0.8.1",
+		"oxfmt": "^0.67.0",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"tailwindcss": "4.3.3",
@@ -64,8 +62,8 @@
 	"lint-staged": {
 		"*.{js,ts,svelte}": [
 			"eslint --fix",
-			"prettier --write"
+			"oxfmt --no-error-on-unmatched-pattern"
 		],
-		"*.{json,md,yml,yaml,css,html}": "prettier --write"
+		"*.{json,jsonc,md,yml,yaml,css,html}": "oxfmt --no-error-on-unmatched-pattern"
 	}
 }

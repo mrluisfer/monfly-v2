@@ -98,7 +98,7 @@ pnpm dev          # dev server on :5173
 pnpm build        # production build
 pnpm preview      # preview the build
 pnpm check        # svelte-check (types + a11y)
-pnpm lint         # Prettier + ESLint
+pnpm lint         # Oxfmt + ESLint
 pnpm format       # format the whole repo
 pnpm db:pull      # introspect the shared DB into drizzle/ (read-only)
 pnpm db:studio    # Drizzle Studio — it can edit rows: shared DB, careful
