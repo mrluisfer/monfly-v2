@@ -24,7 +24,7 @@ app). This file is for coding agents; people start at the [README](README.md).
 ```sh
 pnpm dev       # dev server on :5173
 pnpm check     # svelte-check: types + a11y
-pnpm lint      # Prettier + ESLint
+pnpm lint      # Oxfmt + ESLint
 pnpm format    # format the whole repo
 pnpm build     # production build
 ```

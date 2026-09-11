@@ -38,7 +38,7 @@ updates:
         update-types:
           - minor
           - patch
-      # Tooling (vite, eslint, prettier, drizzle-kit, svelte-check...) -> otro PR.
+      # Tooling (vite, eslint, oxfmt, drizzle-kit, svelte-check...) -> otro PR.
       dev-minor-patch:
         dependency-type: development
         update-types:

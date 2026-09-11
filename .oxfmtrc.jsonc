@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"singleQuote": true,
+	"trailingComma": "none",
+	"printWidth": 100,
+	// Keep package.json in the order people wrote it.
+	"sortPackageJson": false,
+	"sortTailwindcss": { "stylesheet": "./src/app.css" },
+	// .svelte goes through the Prettier bundled in Oxfmt and needs the svelte package.
+	"svelte": true,
+	"overrides": [
+		// Tabs in Markdown lists break nesting on GitHub.
+		{ "files": ["*.md"], "options": { "useTabs": false } }
+	],
+	"ignorePatterns": [
+		"pnpm-lock.yaml",
+		"/static/",
+		// Written by release-please.
+		"CHANGELOG.md"
+	]
+}

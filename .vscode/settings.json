@@ -1,8 +1,9 @@
 {
-	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.defaultFormatter": "oxc.oxc-vscode",
 	"editor.formatOnSave": true,
 	"eslint.validate": ["javascript", "typescript", "svelte"],
 	"files.associations": { "*.css": "tailwindcss" },
 	"typescript.tsdk": "node_modules/typescript/lib",
+	"oxc.enable.oxlint": false,
 	"biome.enabled": false
 }
