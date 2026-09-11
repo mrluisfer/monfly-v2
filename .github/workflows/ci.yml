@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same ref cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # The build imports $lib/server/db, which throws without a URL. neon()
+      # only parses it — nothing connects — so the shared, live database
+      # never has to reach CI.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # CLAUDE.md's bar: 0 errors and 0 warnings.
+      - run: pnpm check --fail-on-warnings
+      - run: pnpm build
