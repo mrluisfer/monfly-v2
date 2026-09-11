@@ -9,6 +9,11 @@ app). This file is for coding agents; people start at the [README](README.md).
   layers, the header, hotkeys. Compose from `$lib/components/ui`; extend a
   primitive rather than restyling per page. When a design decision changes,
   update `DESIGN.md`.
+- **Design skill:** [design-taste-frontend](.claude/skills/design-taste-frontend/SKILL.md)
+  is for marketing and auth pages (`(marketing)`, `(auth)`), not the app. Where it
+  disagrees with DESIGN.md or the stack — it assumes React, prefers other icon
+  sets, discourages violet (a brand colour here), bans the `—` DESIGN.md uses for
+  missing values and says not to mix GSAP with Motion — DESIGN.md and the stack win.
 - **Data work:** read README → Data flow and Database first. Money is integer
   cents (`$lib/finance/money`); months are drawn in the viewer's time zone;
   endpoints live under `/api` and call `requireMonflyUser`.
