@@ -341,3 +341,7 @@ that reads data:
   the final state before hydration, but it means the script that owns them must
   reveal them — animate `autoAlpha`, and set them visible in the reduced-motion
   branch and on failure, as `signup/+page.svelte` does.
+
+## License
+
+Proprietary — all rights reserved. See [LICENSE](LICENSE).
