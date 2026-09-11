@@ -95,18 +95,30 @@ Dashboard compositions live in `$lib/components/dashboard` (`MeterStat`,
 `$lib/components/layout`.
 
 **The expenses dial** is a pie of the whole period: the top four categories
-are wedges of the total, clockwise from 268°, and the hatch is everything
+are wedges of the total, clockwise from 270°, and the hatch is everything
 else — the long tail. Each wedge wears its category's colour, and so does its
 chip: the person picks it from the chip's orb, and it's stored in
 `User.colors` (see `$lib/colors`). Until a category has a choice, it takes the
 rank colours — blue, violet, lime, sky — skipping any colour a choice already
 holds, so two of the four only match when someone chose that. A recolour
-eases the wedge and the orb together; the axes are fixed decoration.
+eases the wedge and the orb together. Every mark reads one angle scale, the
+way a grammar-of-graphics polar chart does (TanStack Charts' `pie` and its
+`startAngle`). As in the mockup, a `--hairline` divides each part from the
+next — wedge from wedge, the last wedge from the hatch — running straight
+from the hub, a small fixed four-point star, out past the rim to a black tag
+whose tip points back at the hub. The wedges stay soft, blurred into one
+another. Small parts' dividers ease apart to at least 14°, standing a few
+degrees off their edges rather than bending (the soft colour hides the
+degrees; nothing hides a kink), and it all turns and morphs with the wedges.
+The chips may cover part of the dial: their own blur keeps it looking right.
 
 **The accounts column** opens with an overview card at its own height — the
 "Accounts" header and actions, every active account's total, this month's net
-movement as a tinted chip, and a share bar where each account's slice wears
-its colour. Below it two featured accounts, a card each, split the rest of the
+movement as a tinted chip — a dot, where a pointer can hover, until pointed
+at or focused — and a share bar where each account's slice wears
+its colour. Pressing a slice leaves that account out of the total and the
+change until it's pressed again — for the visit, not stored — and the label
+says how many are left out. Below it two featured accounts, a card each, split the rest of the
 column 50/50 (`flex-1` on a zero basis) — each block's header sits on top and
 its figures anchor to the bottom, so spare height spreads instead of pooling
 under the second card. An account has one colour everywhere: orb, sparkle,
@@ -142,7 +154,7 @@ avatar. The specs, so new work matches:
 | Icon gesture        | Menu item glyphs, on highlight          | 300 ms on `--ease-spring`: the gear turns 90°, the profile glyph grows 1.15×, log-out leans right. |
 | Tab surface         | `TabStrip`                              | One shared surface slides (x, width) in 0.45 s, ease-out-quint.                                  |
 | Meter fill          | `Meter`                                 | Width and pin in 700 ms, ease-out-quint; grows in after mount.                                   |
-| Dial morph          | `ExpensesDial`, on a new period         | GSAP: the wedges morph in 0.9 s `power3.inOut` while the dial turns −14° and settles on `back.out(1.7)`. |
+| Dial morph          | `ExpensesDial`, on a new period         | GSAP: the wedges, their dividers and the hub morph in 0.9 s `power3.inOut` while the dial turns −14° about its centre (`svgOrigin` in both halves of the tween) and settles on `back.out(1.7)`. |
 | Deal                | `ExpensesCard` chips, on a new period   | Motion: opacity, y 12→0 px and scale 0.94→1 in 550 ms, 60 ms apart, ease-out-quint.              |
 | Count               | Figures (`use:countUp`)                 | GSAP tweens from the current figure to the new one in 0.8 s, `power3.out`.                       |
 | Recolour            | `Orb`, `Sparkle`                        | The gradient morphs to the new colour in 450 ms (the registered `--orb-color`), and the orb springs back from 0.86 (bounce 0.5). |
@@ -151,7 +163,8 @@ avatar. The specs, so new work matches:
 | Month filter        | An account's header (`Select` ghost)    | The figures count over (GSAP) and blur into focus from 6 px (Motion, 600 ms); both rings surge ×10 and glide back over 1.4 s; the chosen label blurs in. |
 | Caret flip          | Every dropdown trigger                  | The caret turns 180° while its list is open (`data-state="open"`), 300 ms on `--ease-spring`.      |
 | Bars grow           | `IncomeBars`, on a new period           | New bars rise from the baseline 60 ms apart (`@starting-style` and a 700 ms height transition), their figures fading up after; bars that stay ease to their new height. |
-| Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). |
+| Share bar           | `AccountsTotal`                         | Slices grow from nothing 80 ms apart and ease to new shares (`flex-grow`, 900 ms, `@starting-style`); a soft sheen crosses the bar every 7 s; the change chip springs (bounce 0.45) when the totals move. Pointing at a slice — through a taller invisible target that tracks it — opens its amount in a tooltip, lifts it and dims the rest (`:has()`). Pressing one (click, Enter or Space) leaves its account out of the totals: the slice greys in place through the registered `--vivid` (a `color-mix()` percentage, 600 ms), its legend entry fades and strikes through, the total and the change count to the new sums (GSAP), and the slice squashes and springs back (Motion, bounce 0.55). |
+| Chip reveal         | `AccountsTotal`'s change chip           | Rests as a dot (the arrow) where a pointer can hover; pointing or focus opens it leftward out of a dot-wide slot, so the row never re-wraps. CSS eases a `0fr → 1fr` grid track — 450 ms open, 340 ms closed, ease-out-quint; GSAP brings the words in behind the edge ("this month", then the figure: opacity and x 8→0 px, 0.4 s `power3.out`, 70 ms apart) and runs back 1.35× quicker; Motion leans the arrow 1.5 px the way the money went (spring, bounce 0.5). Open on touch. |
 | Loading over        | A widget fetching its next period       | The last period stays on screen (TanStack `keepPreviousData`), dimmed to 60 %, and animates from there. |
 | Theme morph         | `ThemeToggle`                           | MorphSVG outline 0.55 s `power3.inOut`; rays `back.out(1.8)`; a −24° twist settling on `back.out(2.2)`. |
 | Gaze                | The header avatar (`Avatar gaze`)       | Breathes and blinks; eyes follow the pointer anywhere on the page, travel 4 viewBox units.       |
@@ -166,7 +179,8 @@ Rules:
   (`--ease-spring`); anything that moves layout or a large surface stays on
   ease-out-quint.
 - **Animate compositor properties** (opacity, scale, translate, rotate). Width
-  only where it buys spatial continuity: the meter fill, the back button's room.
+  only where it buys spatial continuity: the meter fill, the back button's room,
+  the change chip opening out of its dot.
 - **Reduced motion:** `app.css` flattens CSS transitions; Motion and GSAP code
   checks `prefersReducedMotion()` and falls back to opacity-only or instant;
   blobatar goes still on its own.
