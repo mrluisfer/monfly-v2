@@ -19,6 +19,10 @@ updates:
       timezone: America/Mexico_City
     # Techo duro de PRs abiertos de Dependabot a la vez.
     open-pull-requests-limit: 5
+    # Espera 7 dias antes de proponer una version recien publicada: da margen
+    # a que se detecte un paquete comprometido. No aplica a security updates.
+    cooldown:
+      default-days: 7
     # Sube el rango en package.json en vez de fijar la version exacta.
     versioning-strategy: increase
     labels:
@@ -49,6 +53,8 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - "area: ci"

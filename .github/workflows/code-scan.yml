@@ -1,0 +1,43 @@
+# Analisis estatico con Semgrep Community Edition.
+# GitHub code scanning (CodeQL) no existe para repos privados de cuenta personal,
+# y la licencia de CodeQL no permite usarlo en codigo cerrado. Semgrep corre
+# entero en el runner: sin cuenta, sin token y sin subir el codigo a ningun lado.
+name: Code scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Menor privilegio posible: solo leer el codigo.
+permissions:
+  contents: read
+
+# Un push nuevo sobre la misma rama cancela el run anterior.
+concurrency:
+  group: code-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # --metrics=off: solo descarga las reglas, no envia nada a semgrep.dev.
+      # --error: cualquier hallazgo hace fallar el job.
+      # Semgrep no entiende .svelte: cubre los .ts (endpoints, server, $lib).
+      # La regla excluida busca la clave de npm (min-release-age); este repo usa
+      # pnpm, que lee minimum-release-age de .npmrc.
+      - name: Run semgrep
+        run: >
+          semgrep scan --metrics=off --error
+          --config p/default --config p/javascript --config p/typescript
+          --config p/owasp-top-ten --config p/github-actions
+          --exclude-rule package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age
