@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.1](https://github.com/mrluisfer/monfly-v2/compare/v1.0.0...v1.0.1) (2026-09-11)
+
+
+### Continuous Integration
+
+* chores, docs, build and CI changes reach the changelog ([#15](https://github.com/mrluisfer/monfly-v2/issues/15)) ([c40a2c3](https://github.com/mrluisfer/monfly-v2/commit/c40a2c3f576885792e1976a56ae7672a68454ad4))
+
+
+### Miscellaneous Chores
+
+* format with Oxfmt instead of Prettier ([#13](https://github.com/mrluisfer/monfly-v2/issues/13)) ([b11a73b](https://github.com/mrluisfer/monfly-v2/commit/b11a73bbc8f1b0eb8a64d6b31e901c85bee77f8b))
+* move to Node 24 LTS (24.21.0) ([#14](https://github.com/mrluisfer/monfly-v2/issues/14)) ([d60ff56](https://github.com/mrluisfer/monfly-v2/commit/d60ff56c63b483088eddea257f3540a2b1e15e7a))
+
 ## 1.0.0 (2026-09-11)
 
 
