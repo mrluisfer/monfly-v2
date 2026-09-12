@@ -5,7 +5,8 @@ import {
 	colorChoicesQuery,
 	expenseBreakdownQuery,
 	incomeQuery,
-	monthSpendingQuery
+	monthSpendingQuery,
+	savingsQuery
 } from '$lib/queries';
 import type { PageLoad } from './$types';
 
@@ -27,7 +28,8 @@ export const load: PageLoad = async ({ parent, fetch, data }) => {
 			queryClient.prefetchQuery(expenseBreakdownQuery(null, fetch)),
 			queryClient.prefetchQuery(colorChoicesQuery(fetch)),
 			queryClient.prefetchQuery(accountsQuery(undefined, fetch)),
-			queryClient.prefetchQuery(incomeQuery(DEFAULT_INCOME_PERIOD, unit, fetch))
+			queryClient.prefetchQuery(incomeQuery(DEFAULT_INCOME_PERIOD, unit, fetch)),
+			queryClient.prefetchQuery(savingsQuery(fetch))
 		]);
 	}
 	// A universal load replaces the server load's result rather than merging with it.

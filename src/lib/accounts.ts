@@ -7,8 +7,10 @@ import type { MonthKey } from './finance/period';
  * Accounts are v1's `Card` rows. Two of them are featured on the dashboard:
  * the one the person marked "main", the one marked "secondary" — or, where a
  * role is unset, the oldest remaining accounts in the order they were added.
+ * A third role stands apart: "savings" is the account the savings goal reads
+ * its running total from. At most one account holds each role.
  */
-export const ACCOUNT_ROLES = ['main', 'secondary'] as const;
+export const ACCOUNT_ROLES = ['main', 'secondary', 'savings'] as const;
 export type AccountRole = (typeof ACCOUNT_ROLES)[number];
 
 export const isAccountRole = (value: unknown): value is AccountRole =>
@@ -93,7 +95,9 @@ export type AccountList = {
 export function featuredAccounts<T extends { role: AccountRole | null }>(accounts: T[]): T[] {
 	const main = accounts.find((a) => a.role === 'main');
 	const secondary = accounts.find((a) => a.role === 'secondary');
-	const rest = accounts.filter((a) => a !== main && a !== secondary);
+	// The savings account is shown by the savings goal, so it never stands in
+	// for an unset slot here — it would be drawn twice.
+	const rest = accounts.filter((a) => a !== main && a !== secondary && a.role !== 'savings');
 	return [main ?? rest.shift(), secondary ?? rest.shift()].filter((a): a is T => a !== undefined);
 }
 

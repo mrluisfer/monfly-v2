@@ -11,6 +11,8 @@ record and mark the old one superseded.
 - [0005. Secrets stay out of the repo](0005-secrets-out-of-repo.md)
 - [0006. Oxfmt formats, ESLint lints](0006-oxfmt.md)
 - [0007. Node 24 LTS](0007-node-24.md)
+- [0008. Savings are a running total, not a monthly allowance](0008-savings-are-cumulative.md)
+- [0009. A savings goal can read an account, and adding is a transfer](0009-savings-account-link.md)
 
 ## Template
 

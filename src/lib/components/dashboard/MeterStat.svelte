@@ -89,6 +89,11 @@
 	 * Only where a pointer can hover: on touch there is no hover to reveal it,
 	 * so the action simply stays in view. It holds its space while hidden, so
 	 * the figure never shifts, and it stays out while its popover is open.
+	 *
+	 * Keyboard focus reveals it too, through `:focus-visible` rather than
+	 * `:focus-within`: closing the popover hands focus back to the trigger, and
+	 * `:focus-within` then kept the action on screen after the popover had gone
+	 * — until a click somewhere else took the focus off it.
 	 */
 	@media (hover: hover) {
 		.total-action[data-reveal='hover'] {
@@ -98,7 +103,7 @@
 		}
 
 		.total:hover .total-action,
-		.total:focus-within .total-action,
+		.total:has(:focus-visible) .total-action,
 		.total-action:has(:global([data-state='open'])) {
 			opacity: 1;
 			translate: 0 0;
