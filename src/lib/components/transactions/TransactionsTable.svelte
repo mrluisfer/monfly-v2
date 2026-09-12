@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Search from '@lucide/svelte/icons/search';
@@ -15,12 +14,17 @@
 		globalFilteringFeature,
 		rowPaginationFeature,
 		rowSortingFeature,
+		sortFn_alphanumeric,
+		sortFn_text,
 		tableFeatures,
 		type ColumnDef,
 		type SortingState
 	} from '@tanstack/svelte-table';
 	import { animate } from 'motion';
-	import { IconButton, Orb, PALETTE, type PaletteColor } from '$lib/components/ui';
+	import { categoryColor } from '$lib/categories';
+	import { DateLabel, IconButton, Orb, PALETTE, type PaletteColor } from '$lib/components/ui';
+	import CategoryIcon from './CategoryIcon.svelte';
+	import SortHeader from './SortHeader.svelte';
 	import { formatMoney, type Currency } from '$lib/finance';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
@@ -39,6 +43,10 @@
 		timeZone: string;
 		/** Each account's colour, by id — the same ones the dashboard uses. */
 		colors?: Record<string, PaletteColor>;
+		/** Colours people picked for their categories (`User.colors.category`). */
+		categoryChoices?: Record<string, PaletteColor>;
+		/** A line under every row. Off for a quieter table. */
+		dividers?: boolean;
 		/** The row opened in the detail panel, if any. */
 		selectedId?: string | null;
 		onSelect?: (row: TransactionRow) => void;
@@ -50,10 +58,20 @@
 		currency,
 		timeZone,
 		colors = {},
+		categoryChoices,
+		dividers = true,
 		selectedId = null,
 		onSelect,
 		class: className
 	}: Props = $props();
+
+	// One pass over the rows, so a category is placed once however many times it
+	// appears — and every row of it wears the same colour.
+	const tint = $derived.by(() => {
+		const out: Record<string, PaletteColor> = {};
+		for (const t of transactions) out[t.category] ??= categoryColor(t.category, categoryChoices);
+		return out;
+	});
 
 	// v9 is modular: the feature set is declared once and carries the row
 	// models with it, and it types everything downstream — hence `typeof features`.
@@ -65,7 +83,12 @@
 		coreRowModel: createCoreRowModel(),
 		sortedRowModel: createSortedRowModel(),
 		filteredRowModel: createFilteredRowModel(),
-		paginatedRowModel: createPaginatedRowModel()
+		paginatedRowModel: createPaginatedRowModel(),
+		// v9 registers comparators rather than bundling them: `sortFn: 'auto'`
+		// resolves the text columns to these two by name, and falls back to a
+		// plain `<` — case-sensitive, blind to digits inside a string — when
+		// they aren't here.
+		sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text }
 	});
 
 	const column = createColumnHelper<typeof features, TransactionRow>();
@@ -82,10 +105,8 @@
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const columns: ColumnDef<typeof features, TransactionRow, any>[] = [
 		column.accessor('date', { id: 'date', header: 'Date' }),
-		column.accessor((row) => `${row.category} ${row.description ?? ''}`, {
-			id: 'what',
-			header: 'Transaction'
-		}),
+		column.accessor('category', { id: 'category', header: 'Category' }),
+		column.accessor((row) => row.description ?? '', { id: 'what', header: 'Description' }),
 		column.accessor((row) => row.account?.name ?? '', { id: 'account', header: 'Account' }),
 		column.accessor((row) => signedAmount(row), { id: 'amount', header: 'Amount' })
 	];
@@ -117,17 +138,6 @@
 	const first = $derived(shown === 0 ? 0 : page.pageIndex * page.pageSize + 1);
 	const last = $derived(Math.min(first + page.pageSize - 1, shown));
 
-	const dayOf = $derived(
-		new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone })
-	);
-	const yearOf = $derived(new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone }));
-	const thisYear = $derived(yearOf.format(new Date()));
-	const day = (iso: string) => {
-		const date = new Date(iso);
-		const year = yearOf.format(date);
-		return year === thisYear ? dayOf.format(date) : `${dayOf.format(date)}, ${year}`;
-	};
-
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
 
@@ -139,10 +149,14 @@
 	 * share here and nothing else has to move.
 	 */
 	const HEADS = [
-		{ id: 'what', label: 'Transaction', align: 'text-left', width: '40%', color: 'sky' },
-		{ id: 'account', label: 'Account', align: 'text-left', width: '24%', color: 'lavender' },
-		{ id: 'date', label: 'Date', align: 'text-left', width: '16%', color: 'teal' },
-		{ id: 'amount', label: 'Amount', align: 'text-right', width: '20%', color: 'coral' }
+		// The glyph column heads nothing and sorts by nothing: it is the category
+		// beside it, drawn. Its label is there for a screen reader alone.
+		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '6%', color: 'mint' },
+		{ id: 'category', label: 'Category', align: 'text-left', width: '18%', color: 'mint' },
+		{ id: 'what', label: 'Description', align: 'text-left', width: '25%', color: 'sky' },
+		{ id: 'account', label: 'Account', align: 'text-left', width: '18%', color: 'lavender' },
+		{ id: 'date', label: 'Date', align: 'text-left', width: '14%', color: 'teal' },
+		{ id: 'amount', label: 'Amount', align: 'text-right', width: '19%', color: 'coral' }
 	] as const satisfies readonly { color: PaletteColor; [k: string]: string }[];
 
 	const sortOf = (id: string) => sorting.find((s) => s.id === id);
@@ -220,8 +234,10 @@
 		</p>
 	</div>
 
-	<div class="mt-6 max-h-[32rem] overflow-y-auto">
-		<table class="w-full table-fixed border-collapse text-left">
+	<!-- Columns keep their air down to `min-w`; past that the ledger scrolls
+	     sideways rather than crushing a description against an orb. -->
+	<div class="mt-6 max-h-[32rem] overflow-auto">
+		<table class="w-full min-w-[52rem] table-fixed border-collapse text-left">
 			<colgroup>
 				{#each HEADS as head (head.id)}
 					<col style="width: {head.width}" />
@@ -236,36 +252,21 @@
 						<th
 							scope="col"
 							aria-sort={sort ? (sort.desc ? 'descending' : 'ascending') : 'none'}
-							class={cn('pb-3 text-sm font-medium text-fg-muted', head.align)}
+							class={cn(
+								'px-3 pb-3 text-sm font-medium text-fg-muted first:pl-0 last:pr-0',
+								head.align
+							)}
 						>
-							<button
-								type="button"
-								onclick={() => table.getColumn(head.id)?.toggleSorting()}
-								class={cn(
-									'group inline-flex items-center gap-1.5 rounded-sm transition-colors duration-200',
-									'hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
-									head.align === 'text-right' && 'flex-row-reverse',
-									// The column in force reads at full strength; the rest stay quiet.
-									sort && 'text-fg'
-								)}
-							>
-								{head.label}
-								<span
-									class={cn(
-										'transition-opacity duration-200',
-										sort ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
-									)}
-								>
-									<!-- One arrow that turns over, as every caret here does, rather
-									     than two that swap. -->
-									<ArrowUp
-										class={cn(
-											'size-3.5 stroke-[1.75] transition-[rotate] duration-300 ease-[var(--ease-spring)]',
-											sort?.desc && 'rotate-180'
-										)}
-									/>
-								</span>
-							</button>
+							{#if head.id === 'icon'}
+								<span class="sr-only">{head.label}</span>
+							{:else}
+								<SortHeader
+									label={head.label}
+									sort={sortOf(head.id)}
+									align={head.align === 'text-right' ? 'right' : 'left'}
+									onclick={() => table.getColumn(head.id)?.toggleSorting()}
+								/>
+							{/if}
 
 							{#if i === 0}
 								<!-- It rides on the row's own line, under whichever column is sorted. -->
@@ -285,22 +286,33 @@
 					<tr
 						style="--i: {i}"
 						class={cn(
-							'row border-b border-line transition-colors duration-150',
+							'row transition-colors duration-150',
+							// Not under the last one: the card's own rule already closes the list.
+							dividers && 'border-b border-line last:border-0',
 							selectedId === t.id ? 'bg-blue/8' : 'hover:bg-sunken'
 						)}
 					>
-						<td class="py-3">
+						<td class="px-3 py-3 first:pl-0 last:pr-0">
+							<CategoryIcon category={t.category} color={tint[t.category]} />
+						</td>
+						<td class="px-3 py-3 first:pl-0 last:pr-0">
+							<!-- The row's way in: pressing the category opens the whole entry. -->
 							<button
 								type="button"
 								onclick={() => onSelect?.(t)}
 								class="block max-w-full truncate text-left text-[0.9375rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
 							>
-								{t.category}{#if t.description}<span class="text-fg-muted">
-										· {t.description}</span
-									>{/if}
+								{#if t.category}{t.category}{:else}<span class="text-fg-subtle">—</span>{/if}
 							</button>
 						</td>
-						<td class="py-3">
+						<td class="px-3 py-3 text-[0.9375rem] text-fg-muted first:pl-0 last:pr-0">
+							{#if t.description}
+								<span class="block truncate">{t.description}</span>
+							{:else}
+								<span class="text-fg-subtle">—</span>
+							{/if}
+						</td>
+						<td class="px-3 py-3 first:pl-0 last:pr-0">
 							{#if t.account}
 								<span class="flex items-center gap-2 text-[0.9375rem] text-fg-muted">
 									<Orb color={colors[t.account.id] ?? 'blue'} class="size-4 shrink-0" />
@@ -310,13 +322,15 @@
 								<span class="text-[0.9375rem] text-fg-subtle">—</span>
 							{/if}
 						</td>
-						<td class="tabular py-3 text-[0.9375rem] whitespace-nowrap text-fg-muted">
-							{day(t.date)}
+						<td class="px-3 py-3 text-[0.9375rem] text-fg-muted first:pl-0 last:pr-0">
+							<DateLabel date={t.date} {timeZone} />
 						</td>
 						<td
 							class={cn(
-								'tabular py-3 text-right text-[0.9375rem] whitespace-nowrap',
-								t.type === 'income' && 'text-positive'
+								'tabular px-3 py-3 text-right text-[0.9375rem] whitespace-nowrap first:pl-0 last:pr-0',
+								// Money in reads green, money out the pastel red: which way a row
+								// went is the first thing anyone scans a ledger for.
+								t.type === 'income' ? 'text-positive' : 'text-spent'
 							)}
 						>
 							{signed(signedAmount(t))}

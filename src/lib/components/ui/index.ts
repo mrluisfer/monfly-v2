@@ -3,6 +3,7 @@ export { default as Blob, BLOB_COLOR, type BlobColor } from './Blob.svelte';
 export { default as Caret } from './Caret.svelte';
 export { default as Card } from './Card.svelte';
 export { default as CardTabs } from './CardTabs.svelte';
+export { default as DateLabel } from './DateLabel.svelte';
 export { default as Checkbox } from './Checkbox.svelte';
 export { default as OrbitRing } from './OrbitRing.svelte';
 export { default as Figure } from './Figure.svelte';

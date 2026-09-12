@@ -112,6 +112,9 @@
 
 	--color-positive: var(--positive);
 	--color-negative: var(--negative);
+	/* Money out. `negative` is the alarm — an error, a budget overrun — and
+	   spending is not a fault, so it gets the pastel red instead. */
+	--color-spent: var(--pastel-rose);
 
 	/* Space Grotesk stands in for PP Formula — geometric, technical numerals.
 	   Outfit stands in for Lufga — geometric UI sans. */
