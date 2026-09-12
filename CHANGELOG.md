@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/mrluisfer/monfly-v2/compare/v1.2.0...v1.3.0) (2026-09-12)
+
+
+### Features
+
+* transactions filter, pager and a shared share bar ([#26](https://github.com/mrluisfer/monfly-v2/issues/26)) ([0005baa](https://github.com/mrluisfer/monfly-v2/commit/0005baa96da89c963f41d445ea7131a929b713c3))
+
 ## [1.2.0](https://github.com/mrluisfer/monfly-v2/compare/v1.1.0...v1.2.0) (2026-09-12)
 
 
