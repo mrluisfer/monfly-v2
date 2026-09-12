@@ -1,4 +1,5 @@
 export { default as Avatar } from './Avatar.svelte';
+export { default as Badge } from './Badge.svelte';
 export { default as Blob, BLOB_COLOR, type BlobColor } from './Blob.svelte';
 export { default as Caret } from './Caret.svelte';
 export { default as Card } from './Card.svelte';
@@ -16,6 +17,8 @@ export { PALETTE, PALETTE_COLORS, type PaletteColor } from './palette';
 export { default as PillButton } from './PillButton.svelte';
 export { default as Segmented } from './Segmented.svelte';
 export { default as Select } from './Select.svelte';
+export { default as ShareBar, type ShareSegment } from './ShareBar.svelte';
+export { default as ShareBarPicker } from './ShareBarPicker.svelte';
 export { default as Sparkle } from './Sparkle.svelte';
 export { default as Switch } from './Switch.svelte';
 export { default as ThemeToggle } from './ThemeToggle.svelte';

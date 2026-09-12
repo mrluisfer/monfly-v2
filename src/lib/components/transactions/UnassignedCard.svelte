@@ -1,13 +1,23 @@
 <script lang="ts">
+	import Check from '@lucide/svelte/icons/check';
 	import X from '@lucide/svelte/icons/x';
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+	import { onDestroy } from 'svelte';
 	import { quintOut } from 'svelte/easing';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { fly } from 'svelte/transition';
+	import { fly, slide } from 'svelte/transition';
 	import { browser } from '$app/environment';
+	import { countUp } from '$lib/actions';
 	import { accountColors, featuredAccounts } from '$lib/accounts';
 	import { categoryColor } from '$lib/categories';
-	import { Card, IconButton, PillButton, Select, type PaletteColor } from '$lib/components/ui';
+	import {
+		Badge,
+		Card,
+		IconButton,
+		PillButton,
+		Select,
+		type PaletteColor
+	} from '$lib/components/ui';
 	import UnassignedList from './UnassignedList.svelte';
 	import { DEFAULT_CURRENCY, formatMoney } from '$lib/finance';
 	import {
@@ -16,6 +26,7 @@
 		colorChoicesQuery,
 		unassignedQuery
 	} from '$lib/queries';
+	import { pop } from '$lib/transitions';
 	import { signedAmount, type UnassignedTransaction } from '$lib/transactions';
 	import { prefersReducedMotion } from '$lib/utils';
 
@@ -120,17 +131,37 @@
 		picked.clear();
 	}
 
-	let status = $state('');
+	/** How long the last assignment stays said. */
+	const NOTICE_MS = 5000;
+
+	/**
+	 * The last assignment, said for a few seconds. Another before it goes takes
+	 * its place in the same badge and starts the time over; `id` tells the badge
+	 * something new arrived, even in the same words.
+	 */
+	let notice = $state<{ id: number; assigned: number; name: string; moved: number } | null>(null);
+	let dismiss: ReturnType<typeof setTimeout> | undefined;
+
+	function announce(assigned: number, name: string, moved: number) {
+		notice = { id: (notice?.id ?? 0) + 1, assigned, name, moved };
+		clearTimeout(dismiss);
+		dismiss = setTimeout(() => (notice = null), NOTICE_MS);
+	}
+
+	// Not `$effect`: this component's own `effect` shadows the rune.
+	onDestroy(() => clearTimeout(dismiss));
 
 	function submit() {
 		if (!account || chosen.length === 0) return;
 		const name = account.name;
-		status = '';
 		assign.mutate(
 			{ ids: chosen.map((t) => t.id), accountId: account.id },
 			{
-				onSuccess: ({ assigned, moved }) => {
-					status = `Gave ${plural(assigned)} to ${name}${moved !== 0 ? ` · ${signed(moved)} moved into its balance` : ''}.`;
+				onSuccess: ({ assigned, moved }) => announce(assigned, name, moved),
+				// The rows came back: a "gave" still showing would say otherwise.
+				onError: () => {
+					clearTimeout(dismiss);
+					notice = null;
 				}
 			}
 		);
@@ -155,7 +186,42 @@
 
 <!-- Said once, in the first card: the answer covers both. -->
 {#snippet messages()}
-	<p class="mt-3 text-sm text-positive empty:hidden" aria-live="polite">{status}</p>
+	<!-- Read out in plain words; the badge's figure counts, so it isn't. The
+	     region stays put, so each new notice is heard. -->
+	<p class="sr-only" aria-live="polite">
+		{#if notice}
+			Gave {plural(notice.assigned)} to {notice.name}{notice.moved !== 0
+				? ` · ${signed(notice.moved)} moved into its balance`
+				: ''}.
+		{/if}
+	</p>
+	<!-- Its row opens as the badge pops in, and closes behind it, so the list
+	     below glides rather than jumps. -->
+	{#if notice}
+		<div class="pt-3" transition:slide={{ duration: motion(350), easing: quintOut }}>
+			<div
+				class="w-fit max-w-full origin-left"
+				aria-hidden="true"
+				in:pop={{ scale: 0.85, bounce: 0.4, duration: 0.45 }}
+				out:pop={{ scale: 0.85, duration: 0.3 }}
+			>
+				<Badge tone="positive" burst={notice.id}>
+					{#snippet icon()}<Check />{/snippet}
+					<span class="tabular">{plural(notice.assigned)}</span>
+					<span class="font-normal opacity-80">given to</span>
+					<span>{notice.name}</span>
+					{#if notice.moved !== 0}
+						<span class="font-normal opacity-80">·</span>
+						<!-- Counts up on arrival, and over from the last figure on an update. -->
+						<span class="tabular" use:countUp={{ value: notice.moved, format: signed }}
+							>{signed(notice.moved)}</span
+						>
+						<span class="font-normal opacity-80">into its balance</span>
+					{/if}
+				</Badge>
+			</div>
+		</div>
+	{/if}
 	{#if assign.isError}
 		<p class="mt-3 text-sm text-negative" role="alert">
 			Couldn't give them the account, so they're back in the list. Try again.
@@ -191,7 +257,7 @@
 					</span>
 				{/if}
 				<PillButton size="sm" onclick={() => pick(group.rows, !all)}>
-					{all ? 'Clear these' : `Pick all ${group.rows.length}`}
+					{all ? 'Clear these' : 'Pick all'}
 				</PillButton>
 			</div>
 		</header>

@@ -81,6 +81,8 @@ export type TransactionList = {
 	 * dashboard's question, not this page's.
 	 */
 	totals: { received: Cents; spent: Cents; count: number };
+	/** The earliest transaction's date, whatever the rows cover: where the months to pick begin. Null with none. */
+	oldest: string | null;
 };
 
 /** The most rows one response carries. */

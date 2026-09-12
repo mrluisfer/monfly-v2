@@ -57,7 +57,10 @@ export async function getTransactions(
 			.select({
 				received: sql<string>`coalesce(sum(${amountCents}) filter (where ${transaction.type} = ${INCOME}), 0)`,
 				spent: sql<string>`coalesce(sum(${amountCents}) filter (where ${transaction.type} <> ${INCOME}), 0)`,
-				count: sql<number>`count(*)::int`
+				count: sql<number>`count(*)::int`,
+				oldest: sql<
+					string | null
+				>`to_char(min(${transaction.date}), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`
 			})
 			.from(transaction)
 			.where(theirs)
@@ -72,6 +75,7 @@ export async function getTransactions(
 			spent: Number(sums?.spent ?? 0),
 			count: sums?.count ?? 0
 		},
+		oldest: sums?.oldest ?? null,
 		transactions: rows.slice(0, MAX_TRANSACTIONS).map((row) => ({
 			id: row.id,
 			date: row.date,

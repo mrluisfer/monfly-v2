@@ -14,6 +14,8 @@
 		color: PaletteColor;
 		/** Still to come: drawn as an empty slot, with no figure. */
 		future?: boolean;
+		/** Set back from the bar in focus: faded and greyed, its figure and tip still there. */
+		dimmed?: boolean;
 		/** Read out for the bar: "July: $60,000 from 5 incomes". */
 		description: string;
 	};
@@ -45,6 +47,9 @@
 	const share = (bar: Bar) => (bar.future || max <= 0 ? 0 : bar.value / max);
 	/** A slot still to come, while those are hidden. */
 	const folded = (bar: Bar) => !upcoming && !!bar.future;
+
+	/** Each bar's figure, by key: its tooltip points there, at the top of that bar. */
+	let tops = $state<Record<string, HTMLElement>>({});
 </script>
 
 <!--
@@ -69,6 +74,7 @@
 					tabindex={bar.future ? undefined : 0}
 					class={cn(
 						'slot group flex h-full min-w-0 flex-col justify-end outline-none',
+						bar.dimmed && 'dimmed',
 						folded(bar) && 'folded'
 					)}
 					style="--i: {i}"
@@ -85,6 +91,7 @@
 						{#if !bar.future}
 							<!-- The figure rides the bar's top edge. -->
 							<span
+								bind:this={tops[bar.key]}
 								class={cn(
 									'bar-figure tabular absolute inset-x-0 bottom-full mb-1.5 truncate font-display',
 									dense ? 'text-[0.6875rem]' : 'text-sm'
@@ -111,7 +118,9 @@
 				{#snippet detail()}
 					{@render tip(bar)}
 				{/snippet}
-				<Tooltip content={detail} side="top" delay={80} class="px-3 py-2.5">
+				<!-- Pointed at the bar's own top rather than the column's: an empty bar's
+				     detail opens down by the baseline, where the bar is. -->
+				<Tooltip content={detail} side="top" delay={80} anchor={tops[bar.key]} class="px-3 py-2.5">
 					{#snippet children({ props })}
 						{@render column(props)}
 					{/snippet}
@@ -130,6 +139,7 @@
 				class={cn(
 					'slot min-w-0 truncate text-center text-xs',
 					bar.future ? 'text-fg-subtle' : 'text-fg-muted',
+					bar.dimmed && 'dimmed',
 					folded(bar) && 'folded'
 				)}
 			>
@@ -177,7 +187,14 @@
 		flex: 1 1 0%;
 		transition:
 			flex-grow 0.6s var(--ease-out-quint),
-			opacity 0.4s var(--ease-out-quint);
+			opacity 0.4s var(--ease-out-quint),
+			filter 0.4s var(--ease-out-quint);
+	}
+
+	/* Set back from the bar in focus: faded, its cap greyed, still there to read. */
+	.slot.dimmed {
+		opacity: 0.45;
+		filter: grayscale(1);
 	}
 
 	.slot.folded {
