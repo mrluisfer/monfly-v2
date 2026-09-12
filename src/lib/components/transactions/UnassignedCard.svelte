@@ -257,7 +257,7 @@
 					</span>
 				{/if}
 				<PillButton size="sm" onclick={() => pick(group.rows, !all)}>
-					{all ? 'Clear these' : `Pick all ${group.rows.length}`}
+					{all ? 'Clear these' : 'Pick all'}
 				</PillButton>
 			</div>
 		</header>
