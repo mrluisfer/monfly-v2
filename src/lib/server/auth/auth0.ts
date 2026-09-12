@@ -94,7 +94,10 @@ export function isAuth0Configured(): boolean {
 /**
  * Builds the Universal Login URL — its sign-up screen or login — and stores the
  * PKCE transaction in an encrypted cookie. The callback URL is derived from
- * the request, so every origin you register in Auth0 works unchanged.
+ * the request, so every origin you register in Auth0 works unchanged. It always
+ * asks Auth0 for the login form (`prompt=login`): reaching this route means we
+ * have no session, and silently reusing Auth0's would sign the last person back
+ * in with no way to choose another account.
  */
 export function startAuth0Login(
 	event: RequestEvent,
@@ -105,6 +108,10 @@ export function startAuth0Login(
 			appState: { returnTo } satisfies AppState,
 			authorizationParams: {
 				redirect_uri: new URL('/auth/callback', event.url.origin).href,
+				// Auth0 keeps its own session after ours is gone, so without this a
+				// "sign in" hands back the person who just logged out — never the
+				// form, and no way to use a different account.
+				prompt: 'login',
 				...(screen === 'signup' ? { screen_hint: 'signup' } : {})
 			}
 		},
