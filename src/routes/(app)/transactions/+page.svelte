@@ -17,7 +17,7 @@
 		TransactionsTable,
 		UnassignedCard
 	} from '$lib/components/transactions';
-	import { Card, IconButton, PillButton } from '$lib/components/ui';
+	import { Card, IconButton, PillButton, Sparkle } from '$lib/components/ui';
 	import { DEFAULT_CURRENCY, addMonths, monthName } from '$lib/finance';
 	import { accountsQuery, colorChoicesQuery, transactionsQuery } from '$lib/queries';
 	import { pop } from '$lib/transitions';
@@ -203,6 +203,7 @@
 					{currency}
 					timeZone={data.timeZone}
 					{colors}
+					categoryChoices={choices.data?.category}
 					selectedId={open?.id ?? null}
 					onSelect={(row) => (selected = selected?.id === row.id ? null : row)}
 					class="mt-6"
@@ -235,7 +236,13 @@
 			{/if}
 
 			<Card class="p-7">
-				<h2 class="font-display text-2xl font-medium">Activity</h2>
+				<!-- Each card wears one of the brand three, the colour its own bars
+				     lead with, so the column reads as three things rather than one.
+				     A month's walk flashes the two that follow it. -->
+				<div class="flex items-center gap-2.5">
+					<Sparkle color="violet" animated burst={month} class="size-5 shrink-0" />
+					<h2 class="font-display text-2xl font-medium">Activity</h2>
+				</div>
 				<p class="mt-1.5 text-[0.9375rem] text-fg-muted">What left each month.</p>
 				<ActivityBars
 					transactions={rows}
@@ -247,7 +254,10 @@
 			</Card>
 
 			<Card class="p-7">
-				<h2 class="font-display text-2xl font-medium">Where it went</h2>
+				<div class="flex items-center gap-2.5">
+					<Sparkle color="lime" animated burst={month} class="size-5 shrink-0" />
+					<h2 class="font-display text-2xl font-medium">Where it went</h2>
+				</div>
 				<p class="mt-1.5 text-[0.9375rem] text-fg-muted">
 					{scope === 'month' ? monthLabel : 'Every category'}, largest first.
 				</p>
@@ -255,7 +265,10 @@
 			</Card>
 
 			<Card class="p-7">
-				<h2 class="font-display text-2xl font-medium">Where it sits</h2>
+				<div class="flex items-center gap-2.5">
+					<Sparkle color="blue" animated class="size-5 shrink-0" />
+					<h2 class="font-display text-2xl font-medium">Where it sits</h2>
+				</div>
 				<p class="mt-1.5 text-[0.9375rem] text-fg-muted">What each account holds now.</p>
 				<AccountBalances
 					accounts={accounts.data?.accounts ?? []}

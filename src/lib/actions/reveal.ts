@@ -26,6 +26,15 @@ export const reveal: Action<HTMLElement, RevealParams | undefined> = (node, para
 
 	node.style.opacity = '0';
 
+	// A share of the element is only ever in view if the element fits: a column
+	// four times the viewport can never show a quarter of itself, so the
+	// entrance would never run and the content would sit at opacity 0 for good.
+	// Anything that tall enters as soon as any of it arrives.
+	const amount =
+		typeof opts.amount === 'number' && node.offsetHeight * opts.amount > window.innerHeight
+			? 'some'
+			: opts.amount;
+
 	const stop = inView(
 		node,
 		(element) => {
@@ -47,7 +56,7 @@ export const reveal: Action<HTMLElement, RevealParams | undefined> = (node, para
 				};
 			}
 		},
-		{ amount: opts.amount }
+		{ amount }
 	);
 
 	return {
