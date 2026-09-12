@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/mrluisfer/monfly-v2/compare/v1.0.3...v1.1.0) (2026-09-12)
+
+
+### Features
+
+* transactions page — ledger, month walk and side charts ([#22](https://github.com/mrluisfer/monfly-v2/issues/22)) ([9a3b21a](https://github.com/mrluisfer/monfly-v2/commit/9a3b21a8675d9794d5abf9e1cee655a3a080e382))
+
 ## [1.0.3](https://github.com/mrluisfer/monfly-v2/compare/v1.0.2...v1.0.3) (2026-09-11)
 
 
