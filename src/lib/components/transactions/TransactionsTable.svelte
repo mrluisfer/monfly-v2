@@ -20,12 +20,16 @@
 		type ColumnDef,
 		type SortingState
 	} from '@tanstack/svelte-table';
+	import { DropdownMenu } from 'bits-ui';
 	import { animate } from 'motion';
+	import { flip } from 'svelte/animate';
+	import { quintOut } from 'svelte/easing';
 	import { categoryColor } from '$lib/categories';
 	import { DateLabel, IconButton, Orb, PALETTE, type PaletteColor } from '$lib/components/ui';
 	import CategoryIcon from './CategoryIcon.svelte';
 	import SortHeader from './SortHeader.svelte';
 	import { formatMoney, type Currency } from '$lib/finance';
+	import { pop } from '$lib/transitions';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
 
@@ -138,6 +142,39 @@
 	const first = $derived(shown === 0 ? 0 : page.pageIndex * page.pageSize + 1);
 	const last = $derived(Math.min(first + page.pageSize - 1, shown));
 
+	/**
+	 * The page numbers on offer: every one, up to seven; past that, seven slots —
+	 * the first, the last, the page in view with one either side, and a gap for
+	 * the rest — so the row never changes width.
+	 */
+	const pages = $derived.by((): (number | 'gap-start' | 'gap-end')[] => {
+		const at = page.pageIndex;
+		const n = pageCount;
+		if (n <= 7) return Array.from({ length: n }, (_, i) => i);
+		if (at < 4) return [0, 1, 2, 3, 4, 'gap-end', n - 1];
+		if (at > n - 5) return [0, 'gap-start', n - 5, n - 4, n - 3, n - 2, n - 1];
+		return [0, 'gap-start', at - 1, at, at + 1, 'gap-end', n - 1];
+	});
+
+	/** The pages a gap stands for: every one between the numbers either side of it. */
+	function hiddenBy(slot: number) {
+		const from = pages[slot - 1] as number;
+		const to = pages[slot + 1] as number;
+		return Array.from({ length: to - from - 1 }, (_, k) => from + 1 + k);
+	}
+
+	/** The rows a page holds, as the pager says them: "76–100". */
+	const stretch = (index: number) =>
+		`${index * page.pageSize + 1}–${Math.min((index + 1) * page.pageSize, shown)}`;
+
+	/** Which way the last move went, so the new stretch's label enters from that side. */
+	let dir = $state(1);
+
+	function go(index: number) {
+		dir = index < page.pageIndex ? -1 : 1;
+		table.setPageIndex(index);
+	}
+
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
 
@@ -151,9 +188,9 @@
 	const HEADS = [
 		// The glyph column heads nothing and sorts by nothing: it is the category
 		// beside it, drawn. Its label is there for a screen reader alone.
-		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '6%', color: 'mint' },
+		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '7%', color: 'mint' },
 		{ id: 'category', label: 'Category', align: 'text-left', width: '18%', color: 'mint' },
-		{ id: 'what', label: 'Description', align: 'text-left', width: '25%', color: 'sky' },
+		{ id: 'what', label: 'Description', align: 'text-left', width: '24%', color: 'sky' },
 		{ id: 'account', label: 'Account', align: 'text-left', width: '18%', color: 'lavender' },
 		{ id: 'date', label: 'Date', align: 'text-left', width: '14%', color: 'teal' },
 		{ id: 'amount', label: 'Amount', align: 'text-right', width: '19%', color: 'coral' }
@@ -235,9 +272,14 @@
 	</div>
 
 	<!-- Columns keep their air down to `min-w`; past that the ledger scrolls
-	     sideways rather than crushing a description against an orb. -->
-	<div class="mt-6 max-h-[32rem] overflow-auto">
-		<table class="w-full min-w-[52rem] table-fixed border-collapse text-left">
+	     sideways rather than crushing a description against an orb. The
+	     scroller pulls 12 px out into the card's padding, as the unassigned
+	     lists' do: every cell's `px-3` puts the columns back in line with the
+	     card, the rows' highlight overhangs them into that room, and an overlay
+	     scrollbar rides there rather than over the amounts. Laid out `separate`,
+	     since a collapsed table ignores a cell's radius. -->
+	<div class="-mx-3 mt-6 max-h-[32rem] overflow-auto">
+		<table class="w-full min-w-[53.5rem] table-fixed border-separate border-spacing-0 text-left">
 			<colgroup>
 				{#each HEADS as head (head.id)}
 					<col style="width: {head.width}" />
@@ -246,14 +288,15 @@
 			<thead class="sticky top-0 z-10 bg-card">
 				<!-- `relative`, so the mark below can be measured and placed against the
 				     whole row rather than the cell that happens to carry it. -->
-				<tr bind:this={headRow} class="relative border-b border-line">
+				<tr bind:this={headRow} class="relative">
 					{#each HEADS as head, i (head.id)}
 						{@const sort = sortOf(head.id)}
 						<th
 							scope="col"
 							aria-sort={sort ? (sort.desc ? 'descending' : 'ascending') : 'none'}
 							class={cn(
-								'px-3 pb-3 text-sm font-medium text-fg-muted first:pl-0 last:pr-0',
+								// The cells draw the line: a separate table ignores a row's border.
+								'border-b border-line px-3 pb-3 text-sm font-medium text-fg-muted',
 								head.align
 							)}
 						>
@@ -283,19 +326,16 @@
 			<tbody>
 				{#each rows as row, i (row.id)}
 					{@const t = row.original}
-					<tr
-						style="--i: {i}"
-						class={cn(
-							'row transition-colors duration-150',
-							// Not under the last one: the card's own rule already closes the list.
-							dividers && 'border-b border-line last:border-0',
-							selectedId === t.id ? 'bg-blue/8' : 'hover:bg-sunken'
-						)}
-					>
-						<td class="px-3 py-3 first:pl-0 last:pr-0">
+					{@const cell = cn(
+						'px-3 py-3 transition-colors duration-150 first:rounded-l-lg last:rounded-r-lg',
+						selectedId === t.id ? 'bg-blue/8' : 'group-hover:bg-sunken'
+					)}
+					<!-- The highlight is each cell's, so the two at the ends can round it off. -->
+					<tr style="--i: {i}" class={cn('row group relative', dividers && 'divided')}>
+						<td class={cell}>
 							<CategoryIcon category={t.category} color={tint[t.category]} />
 						</td>
-						<td class="px-3 py-3 first:pl-0 last:pr-0">
+						<td class={cell}>
 							<!-- The row's way in: pressing the category opens the whole entry. -->
 							<button
 								type="button"
@@ -305,14 +345,14 @@
 								{#if t.category}{t.category}{:else}<span class="text-fg-subtle">—</span>{/if}
 							</button>
 						</td>
-						<td class="px-3 py-3 text-[0.9375rem] text-fg-muted first:pl-0 last:pr-0">
+						<td class={cn(cell, 'text-[0.9375rem] text-fg-muted')}>
 							{#if t.description}
 								<span class="block truncate">{t.description}</span>
 							{:else}
 								<span class="text-fg-subtle">—</span>
 							{/if}
 						</td>
-						<td class="px-3 py-3 first:pl-0 last:pr-0">
+						<td class={cell}>
 							{#if t.account}
 								<span class="flex items-center gap-2 text-[0.9375rem] text-fg-muted">
 									<Orb color={colors[t.account.id] ?? 'blue'} class="size-4 shrink-0" />
@@ -322,12 +362,13 @@
 								<span class="text-[0.9375rem] text-fg-subtle">—</span>
 							{/if}
 						</td>
-						<td class="px-3 py-3 text-[0.9375rem] text-fg-muted first:pl-0 last:pr-0">
+						<td class={cn(cell, 'text-[0.9375rem] text-fg-muted')}>
 							<DateLabel date={t.date} {timeZone} />
 						</td>
 						<td
 							class={cn(
-								'tabular px-3 py-3 text-right text-[0.9375rem] whitespace-nowrap first:pl-0 last:pr-0',
+								cell,
+								'tabular text-right text-[0.9375rem] whitespace-nowrap',
 								// Money in reads green, money out the pastel red: which way a row
 								// went is the first thing anyone scans a ledger for.
 								t.type === 'income' ? 'text-positive' : 'text-spent'
@@ -348,28 +389,119 @@
 	{/if}
 
 	{#if pageCount > 1}
-		<div class="mt-6 flex items-center justify-between gap-4">
+		<div class="mt-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+			<!-- Keyed on the page, so each stretch enters from the side it came from.
+			     `inline-block` because a transform does nothing to an inline box. -->
 			<p class="tabular text-sm text-fg-muted">
-				{first}–{last} of {shown}
+				{#key page.pageIndex}
+					<span class="inline-block" in:pop={{ x: dir * 8, duration: 0.32 }}>
+						{first}–{last} of {shown}
+					</span>
+				{/key}
 			</p>
-			<div class="flex items-center gap-2">
+			<nav aria-label="Pages" class="flex items-center gap-2">
 				<IconButton
 					size="sm"
 					aria-label="Previous page"
 					disabled={!table.getCanPreviousPage()}
-					onclick={() => table.previousPage()}
+					onclick={() => go(page.pageIndex - 1)}
 				>
 					<ChevronLeft />
 				</IconButton>
+				<!-- The numbers sit in a sunken capsule under one raised surface, the
+				     Segmented control's: the surface slides to the page in view, and
+				     when the window of numbers moves they glide past it (flip), the
+				     ones arriving and leaving popping in and out (Motion). Arrows
+				     alone on a phone, where seven more would crowd the row. -->
+				<div
+					class="relative hidden h-9 rounded-full bg-sunken p-0.5 sm:block"
+					style="--slot: {Math.max(0, pages.indexOf(page.pageIndex))}"
+				>
+					<span
+						aria-hidden="true"
+						class="thumb pointer-events-none absolute inset-y-0.5 left-0.5 w-8 rounded-full border border-hairline bg-card"
+					></span>
+					<ol class="flex">
+						{#each pages as item, slot (item)}
+							<li
+								class="relative"
+								animate:flip={{ duration: prefersReducedMotion() ? 0 : 450, easing: quintOut }}
+								in:pop={{ scale: 0.6, bounce: 0.4, duration: 0.4 }}
+								out:pop={{ scale: 0.6, duration: 0.3 }}
+							>
+								{#if typeof item === 'number'}
+									<button
+										type="button"
+										aria-label="Page {item + 1}"
+										aria-current={item === page.pageIndex ? 'page' : undefined}
+										onclick={() => go(item)}
+										class="tabular grid size-8 place-items-center rounded-full text-sm text-fg-muted transition-colors duration-200 hover:text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue aria-[current=page]:text-fg"
+									>
+										{item + 1}
+									</button>
+								{:else}
+									{@const hidden = hiddenBy(slot)}
+									<!-- A gap is a way in to the pages it stands for: a short menu of
+									     them, each with the rows it holds. Opens upward, over the
+									     ledger it pages, rather than over the card below. -->
+									<DropdownMenu.Root>
+										<DropdownMenu.Trigger>
+											{#snippet child({ props })}
+												<button
+													{...props}
+													type="button"
+													aria-label="Pages {hidden[0] + 1} to {hidden[hidden.length - 1] + 1}"
+													class="grid size-8 place-items-center rounded-full text-sm text-fg-subtle transition-colors duration-200 hover:text-fg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue data-[state=open]:text-fg"
+												>
+													…
+												</button>
+											{/snippet}
+										</DropdownMenu.Trigger>
+										<DropdownMenu.Portal>
+											<!-- Every floating layer's entrance and exit: forceMount hands mounting to the {#if}. -->
+											<DropdownMenu.Content side="top" sideOffset={8} forceMount>
+												{#snippet child({ props, wrapperProps, open })}
+													{#if open}
+														<div {...wrapperProps}>
+															<div
+																{...props}
+																in:pop
+																out:pop
+																class="z-50 max-h-72 min-w-44 origin-(--bits-floating-transform-origin) overflow-y-auto rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none"
+															>
+																{#each hidden as index (index)}
+																	<DropdownMenu.Item
+																		textValue="Page {index + 1}"
+																		onSelect={() => go(index)}
+																		class="flex h-9 cursor-default items-center gap-4 rounded-[0.625rem] px-2.5 text-sm whitespace-nowrap transition-colors duration-150 outline-none select-none data-highlighted:bg-sunken"
+																	>
+																		Page {index + 1}
+																		<span class="tabular ml-auto text-xs text-fg-muted"
+																			>{stretch(index)}</span
+																		>
+																	</DropdownMenu.Item>
+																{/each}
+															</div>
+														</div>
+													{/if}
+												{/snippet}
+											</DropdownMenu.Content>
+										</DropdownMenu.Portal>
+									</DropdownMenu.Root>
+								{/if}
+							</li>
+						{/each}
+					</ol>
+				</div>
 				<IconButton
 					size="sm"
 					aria-label="Next page"
 					disabled={!table.getCanNextPage()}
-					onclick={() => table.nextPage()}
+					onclick={() => go(page.pageIndex + 1)}
 				>
 					<ChevronRight />
 				</IconButton>
-			</div>
+			</nav>
 		</div>
 	{/if}
 </div>
@@ -389,6 +521,30 @@
 		}
 	}
 
+	/* The rule under a row stays on the columns while the highlight overhangs
+	   it, as the unassigned lists' does. A separate table ignores a row's own
+	   border, so the row draws it. Not under the last: the card's edge closes
+	   the list. */
+	.divided::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0.75rem;
+		bottom: 0;
+		height: 1px;
+		background: var(--color-line);
+		pointer-events: none;
+	}
+
+	.divided:last-child::after {
+		content: none;
+	}
+
+	/* The page in view's surface: one number wide, slid over by its slot. */
+	.thumb {
+		translate: calc(var(--slot) * 2rem) 0;
+		transition: translate 0.45s var(--ease-out-quint);
+	}
+
 	/* The header was four greys. The sorted column's line is the one place
 	   colour belongs here, and it is the overview's language: one pastel, the
 	   column's own, eased across as the mark travels. */
@@ -400,6 +556,10 @@
 	@media (prefers-reduced-motion: reduce) {
 		.row {
 			animation: none;
+		}
+
+		.thumb {
+			transition: none;
 		}
 	}
 </style>

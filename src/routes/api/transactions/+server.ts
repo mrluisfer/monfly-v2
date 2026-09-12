@@ -7,9 +7,9 @@ import type { RequestHandler } from './$types';
 
 /**
  * The signed-in person's transactions, newest first. `?month=2026-09` narrows
- * them to one calendar month in their time zone — what the page opens with —
- * and no `month` returns the whole record. The totals alongside always cover
- * everything either way.
+ * them to one calendar month in their time zone, and no `month` returns the
+ * whole record — what the page opens with. The totals and the oldest date
+ * alongside always cover everything either way.
  */
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const profile = await requireMonflyUser(locals);

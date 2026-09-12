@@ -6,7 +6,7 @@
 	import { MediaQuery, SvelteSet } from 'svelte/reactivity';
 	import { countUp } from '$lib/actions';
 	import type { Account, Unassigned } from '$lib/accounts';
-	import { PALETTE, Tooltip, type PaletteColor } from '$lib/components/ui';
+	import { PALETTE, ShareBarPicker, type PaletteColor } from '$lib/components/ui';
 	import { formatMoney, type Cents, type Currency } from '$lib/finance';
 	import { cn, prefersReducedMotion } from '$lib/utils';
 
@@ -16,8 +16,9 @@
 	 * its amount in a tooltip. What v1's total holds beyond the accounts — money
 	 * that moved with none, a total typed in by hand — joins them as one
 	 * neutral, hatched line, so together they come to v1's figure. The figures
-	 * count (GSAP), the slices grow (CSS), the change chip springs when the
-	 * numbers move (Motion), and a sheen crosses the bar now and then. Where a
+	 * count (GSAP) and the change chip springs when the numbers move (Motion);
+	 * the bar is a `ShareBarPicker`, which grows, lights, greys and springs its
+	 * slices and sends a sheen across now and then. Where a
 	 * pointer can hover, the change chip rests as a dot and opens into its
 	 * figure when pointed at or focused.
 	 */
@@ -87,17 +88,19 @@
 	const slices = $derived(
 		lines
 			.map((line) => ({
+				id: line.id,
 				line,
 				share: whole > 0 ? weigh(line) / whole : 0,
-				color: colors[line.id] ?? 'blue',
+				// The unknown line brings no colour: the bar draws it hatched.
+				color: line.unknown ? undefined : (colors[line.id] ?? 'blue'),
 				off: off.has(line.id)
 			}))
 			.filter((slice) => slice.share > 0)
 	);
 
-	/** A slice's own properties: the unknown line brings no colour to mix. */
-	const ink = (slice: { line: Line; color: PaletteColor }) =>
-		slice.line.unknown ? '' : `--c: ${PALETTE[slice.color].css}; `;
+	/** A legend entry's own colour: the unknown line brings none to mix. */
+	const ink = (slice: { color?: PaletteColor }) =>
+		slice.color ? `--c: ${PALETTE[slice.color].css}; ` : '';
 
 	/**
 	 * The unknown line's parts, for its tooltip: card-less money in and out
@@ -118,33 +121,12 @@
 	const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 })
 		.format;
 
-	/** The slice being pointed at or focused: it lifts, the rest dim. */
-	let lit = $state<string | null>(null);
-
-	type Handler = ((event: Event) => void) | undefined;
-	/**
-	 * The tooltip trigger's own handlers first, then ours. Writing ours after
-	 * the spread without calling theirs replaces them: bits-ui then never hears
-	 * the pointer leave, and the tooltip sticks open and stops responding.
-	 */
-	const chain = (theirs: unknown, ours: () => void) => (event: Event) => {
-		(theirs as Handler)?.(event);
-		ours();
-	};
-
-	/** The visible slices, by account: a pressed one squashes and springs back. */
-	let bars = $state<Record<string, HTMLElement>>({});
-
 	// Leaving an account out, or counting it again: the totals count to their
-	// new sums (GSAP, via countUp), the slice greys or regains its colour
-	// (CSS, --vivid) and gives a little under the press (Motion).
+	// new sums (GSAP, via countUp) while the bar greys the slice or gives it
+	// back its colour and springs it under the press (ShareBarPicker).
 	function toggle(id: string) {
 		if (off.has(id)) off.delete(id);
 		else off.add(id);
-		const bar = bars[id];
-		if (bar && !prefersReducedMotion()) {
-			animate(bar, { scaleY: [0.4, 1] }, { type: 'spring', bounce: 0.55, duration: 0.5 });
-		}
 	}
 
 	let chip = $state<HTMLElement>();
@@ -285,95 +267,57 @@
 	</div>
 
 	{#if slices.length > 0}
-		<div class="relative mt-4">
-			<!-- What you see: each slice grown to its account's part of the whole -->
-			<div
-				class="share flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-sunken"
-				aria-hidden="true"
-			>
-				{#each slices as slice, i (slice.line.id)}
-					<span
-						bind:this={bars[slice.line.id]}
-						class={cn(
-							'slice h-full min-w-1 rounded-full',
-							slice.line.unknown && 'unknown hatch',
-							lit === slice.line.id && 'lit',
-							slice.off && 'off'
-						)}
-						style="{ink(slice)}--share: {slice.share}; --i: {i}"
-					></span>
-				{/each}
-			</div>
-
-			<!-- What you point at and press: the same slices, taller and invisible,
-			     each with its amount in a tooltip and a switch for the totals. They
-			     track the visible ones' widths. -->
-			<ul
-				class="absolute inset-x-0 -inset-y-2 flex gap-0.5"
-				aria-label="Accounts in the total balance"
-			>
-				{#each slices as slice, i (slice.line.id)}
-					{#snippet amount()}
-						<span class="flex flex-col gap-1 whitespace-nowrap">
-							<span class="flex items-center gap-2">
-								{#if slice.line.unknown}
-									<span class="hollow size-2 shrink-0 rounded-full"></span>
-								{:else}
-									<span
-										class="size-2 shrink-0 rounded-full"
-										style="background: {PALETTE[slice.color].css}"
-									></span>
-								{/if}
-								<span class="font-normal text-fg-muted">{slice.line.name}</span>
-								<span class="tabular">
-									{slice.line.unknown ? signed(slice.line.balance) : format(slice.line.balance)}
-								</span>
-							</span>
-							{#if slice.line.unknown && unassigned}
-								<span class="grid grid-cols-[1fr_auto] gap-x-4 font-normal text-fg-muted">
-									{#each parts(unassigned) as part (part.label)}
-										<span>{part.label}</span>
-										<span class="tabular text-right text-fg">{signed(part.amount)}</span>
-									{/each}
-								</span>
-								{#if unassigned.beforeAccounts > 0}
-									<span class="font-normal text-fg-muted">
-										{unassigned.beforeAccounts} older
-										{unassigned.beforeAccounts === 1 ? 'one is' : 'ones are'} already in your opening
-										balance
-									</span>
-								{/if}
-							{/if}
-							<span class="font-normal text-fg-muted">
-								{slice.off
-									? 'Left out of the total · click to count it'
-									: 'Click to leave out of the total'}
-							</span>
+		{#snippet amount(slice: (typeof slices)[number])}
+			<span class="flex flex-col gap-1 whitespace-nowrap">
+				<span class="flex items-center gap-2">
+					{#if slice.color}
+						<span
+							class="size-2 shrink-0 rounded-full"
+							style="background: {PALETTE[slice.color].css}"
+						></span>
+					{:else}
+						<span class="hollow size-2 shrink-0 rounded-full"></span>
+					{/if}
+					<span class="font-normal text-fg-muted">{slice.line.name}</span>
+					<span class="tabular">
+						{slice.line.unknown ? signed(slice.line.balance) : format(slice.line.balance)}
+					</span>
+				</span>
+				{#if slice.line.unknown && unassigned}
+					<span class="grid grid-cols-[1fr_auto] gap-x-4 font-normal text-fg-muted">
+						{#each parts(unassigned) as part (part.label)}
+							<span>{part.label}</span>
+							<span class="tabular text-right text-fg">{signed(part.amount)}</span>
+						{/each}
+					</span>
+					{#if unassigned.beforeAccounts > 0}
+						<span class="font-normal text-fg-muted">
+							{unassigned.beforeAccounts} older
+							{unassigned.beforeAccounts === 1 ? 'one is' : 'ones are'} already in your opening balance
 						</span>
-					{/snippet}
-					<li class="slice-target h-full min-w-1" style="--share: {slice.share}; --i: {i}">
-						<Tooltip content={amount} side="top" delay={60}>
-							{#snippet children({ props })}
-								<button
-									{...props}
-									type="button"
-									aria-pressed={!slice.off}
-									aria-label={slice.line.unknown
-										? `Count Unknown in the total balance: ${signed(slice.line.balance)} that sits in none of your accounts`
-										: `Count ${slice.line.name} in the total balance: ${format(slice.line.balance)}, ${percent(slice.share)} of all accounts`}
-									class="size-full cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-									onclick={chain(props.onclick, () => toggle(slice.line.id))}
-									onpointerenter={chain(props.onpointerenter, () => (lit = slice.line.id))}
-									onpointerleave={chain(props.onpointerleave, () => (lit = null))}
-									onfocus={chain(props.onfocus, () => (lit = slice.line.id))}
-									onblur={chain(props.onblur, () => (lit = null))}
-								></button>
-							{/snippet}
-						</Tooltip>
-					</li>
-				{/each}
-			</ul>
-		</div>
+					{/if}
+				{/if}
+				<span class="font-normal text-fg-muted">
+					{slice.off
+						? 'Left out of the total · click to count it'
+						: 'Click to leave out of the total'}
+				</span>
+			</span>
+		{/snippet}
+
+		<!-- Each slice is its account's part of the whole: pointing at one tells
+		     its amount, pressing it leaves the account out of the totals. -->
+		<ShareBarPicker
+			segments={slices}
+			tip={amount}
+			label={(slice) =>
+				slice.line.unknown
+					? `Count Unknown in the total balance: ${signed(slice.line.balance)} that sits in none of your accounts`
+					: `Count ${slice.line.name} in the total balance: ${format(slice.line.balance)}, ${percent(slice.share)} of all accounts`}
+			onToggle={(slice) => toggle(slice.id)}
+			listLabel="Accounts in the total balance"
+			class="mt-4 h-2.5"
+		/>
 
 		<ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted" aria-hidden="true">
 			{#each slices as slice (slice.line.id)}
@@ -395,99 +339,20 @@
 </div>
 
 <style>
-	.share {
-		position: relative;
-	}
-
-	/* Every few seconds a soft light crosses the bar, left to right. */
-	.share::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background: linear-gradient(
-			100deg,
-			transparent 30%,
-			rgb(255 255 255 / 0.6) 50%,
-			transparent 70%
-		);
-		mix-blend-mode: soft-light;
-		translate: -100% 0;
-		animation: sheen 7s var(--ease-out-quint) 1.5s infinite;
-	}
-
-	@keyframes sheen {
-		0% {
-			translate: -100% 0;
-		}
-		30%,
-		100% {
-			translate: 100% 0;
-		}
-	}
-
-	/* Each slice's width is its share, eased on every change and grown in from
-	   nothing when it first appears, one after another. Its invisible target
-	   moves the same way, so the tooltip always sits over the right colour. */
-	.slice,
-	.slice-target {
-		flex: var(--share) 1 0;
-		transition: flex-grow 0.9s var(--ease-out-quint) calc(var(--i) * 80ms);
-
-		@starting-style {
-			flex-grow: 0;
-		}
-	}
-
-	/* Every slice but the unknown one wears its account's colour. Scoped off
-	   .unknown on purpose: `.hatch` sits in @layer utilities, so an unlayered
-	   `background` here would paint over its stripes rather than lose to them. */
-	.slice:not(.unknown) {
-		background: linear-gradient(90deg, var(--ink), color-mix(in oklab, var(--ink) 55%, white));
-	}
-
-	.slice {
-		transition:
-			flex-grow 0.9s var(--ease-out-quint) calc(var(--i) * 80ms),
-			opacity 0.25s var(--ease-out-quint),
-			filter 0.25s var(--ease-out-quint),
-			--vivid 0.6s var(--ease-out-quint);
-	}
-
-	/* The unknown line is a gap, not a holding: the hatch inside a hairline, the
-	   same way the Meter draws the part of a budget nothing has claimed. It
-	   takes no palette colour, because it belongs to no account — in one it
-	   would read as an account someone had picked grey for. Stripes and
-	   outline are theme tokens, so it stays neutral on either ground. */
-	.slice.unknown {
-		border: 1px solid var(--color-hairline);
-	}
-
-	/* The slice pointed at stays bright; while one is, the others step back. */
-	.share:has(.lit) .slice:not(.lit) {
-		opacity: 0.4;
-	}
-
-	.slice.lit {
-		filter: saturate(1.2) brightness(1.04);
-	}
-
-	/* An account left out of the totals keeps its slice, greyed in place: the
-	   colour mixes toward the track's grey through the registered --vivid, so
-	   it eases rather than snaps. Its legend entry fades and strikes through. */
+	/* An account left out of the totals greys in the bar (ShareBar) and here:
+	   the legend's dot mixes toward grey through the registered --vivid, so it
+	   eases rather than snaps, and its entry fades and strikes through. */
 	@property --vivid {
 		syntax: '<percentage>';
 		inherits: false;
 		initial-value: 100%;
 	}
 
-	.slice,
 	.legend {
 		--grey: color-mix(in oklab, var(--color-fg-muted) 35%, var(--color-card));
 		--ink: color-mix(in oklab, var(--c) var(--vivid), var(--grey));
 	}
 
-	.slice.off,
 	.legend.off {
 		--vivid: 0%;
 	}
@@ -509,12 +374,6 @@
 	.hollow {
 		background: none;
 		border: 1px solid var(--color-hairline);
-	}
-
-	/* Left out, it fades where a coloured slice would drain to grey: it has no
-	   colour to lose, so opacity is the whole of the change. */
-	.slice.unknown.off {
-		opacity: 0.45;
 	}
 
 	.legend .struck {

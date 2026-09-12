@@ -14,6 +14,8 @@
 		color: PaletteColor;
 		/** Still to come: drawn as an empty slot, with no figure. */
 		future?: boolean;
+		/** Set back from the bar in focus: faded and greyed, its figure and tip still there. */
+		dimmed?: boolean;
 		/** Read out for the bar: "July: $60,000 from 5 incomes". */
 		description: string;
 	};
@@ -69,6 +71,7 @@
 					tabindex={bar.future ? undefined : 0}
 					class={cn(
 						'slot group flex h-full min-w-0 flex-col justify-end outline-none',
+						bar.dimmed && 'dimmed',
 						folded(bar) && 'folded'
 					)}
 					style="--i: {i}"
@@ -130,6 +133,7 @@
 				class={cn(
 					'slot min-w-0 truncate text-center text-xs',
 					bar.future ? 'text-fg-subtle' : 'text-fg-muted',
+					bar.dimmed && 'dimmed',
 					folded(bar) && 'folded'
 				)}
 			>
@@ -177,7 +181,14 @@
 		flex: 1 1 0%;
 		transition:
 			flex-grow 0.6s var(--ease-out-quint),
-			opacity 0.4s var(--ease-out-quint);
+			opacity 0.4s var(--ease-out-quint),
+			filter 0.4s var(--ease-out-quint);
+	}
+
+	/* Set back from the bar in focus: faded, its cap greyed, still there to read. */
+	.slot.dimmed {
+		opacity: 0.45;
+		filter: grayscale(1);
 	}
 
 	.slot.folded {

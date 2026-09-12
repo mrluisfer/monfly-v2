@@ -4,9 +4,9 @@ import type { PageLoad } from './$types';
 
 /**
  * Prefetches with SvelteKit's `fetch`, so the server renders the real rows and
- * hydration reuses them. The page opens on this month; asking for the whole
- * record is a second query, fetched only when someone asks for it. A new Auth0
- * user has no account row yet: nothing to read.
+ * hydration reuses them. The page opens on the whole record; a month is a
+ * second query, fetched when someone filters to one. A new Auth0 user has no
+ * account row yet: nothing to read.
  */
 export const load: PageLoad = async ({ parent, fetch }) => {
 	const { queryClient, profile, timeZone } = await parent();
@@ -14,7 +14,7 @@ export const load: PageLoad = async ({ parent, fetch }) => {
 
 	if (profile) {
 		await Promise.all([
-			queryClient.prefetchQuery(transactionsQuery(month, fetch)),
+			queryClient.prefetchQuery(transactionsQuery(undefined, fetch)),
 			queryClient.prefetchQuery(unassignedQuery(fetch)),
 			queryClient.prefetchQuery(accountsQuery(undefined, fetch)),
 			queryClient.prefetchQuery(colorChoicesQuery(fetch))
