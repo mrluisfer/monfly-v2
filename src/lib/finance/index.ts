@@ -4,4 +4,5 @@ export * from './expenses';
 export * from './income';
 export * from './money';
 export * from './period';
+export * from './savings';
 export * from './spending';

@@ -4,17 +4,22 @@
 		AccountsCard,
 		ExpensesCard,
 		IncomeCard,
-		MeterStat,
-		SpentThisMonth,
-		TipCard
+		LoansCard,
+		SavingsGoal,
+		SpentThisMonth
 	} from '$lib/components/dashboard';
-	import { Card } from '$lib/components/ui';
-	import { formatCurrency } from '$lib/utils';
+	import { DeskFreedomTip } from '$lib/components/tips';
+	import { CardTabs } from '$lib/components/ui';
 
 	let { data } = $props();
 
-	// Placeholder until savings goals (pots) have data; every other widget reads its own query.
-	const savings = { cap: 13000, spent: 6000, rest: 13000, value: 0.46 };
+	// Tips and Loans share the one slot under Income, so the column keeps the
+	// height the grid gives it and the row stays level across all three.
+	const asides = [
+		{ value: 'tips', label: 'Tips' },
+		{ value: 'loans', label: 'Loans' }
+	] as const;
+	let aside = $state<(typeof asides)[number]['value']>('tips');
 </script>
 
 <div class="flex flex-col gap-4 px-4 pb-6 sm:px-6 lg:px-8">
@@ -29,14 +34,7 @@
 
 		<div class="grid gap-x-12 gap-y-8 sm:grid-cols-2">
 			<SpentThisMonth month={data.month} enabled={data.profile !== null} />
-			<MeterStat
-				label="Savings goal"
-				total={formatCurrency(savings.cap)}
-				value={savings.value}
-				color="blue"
-				start={{ value: formatCurrency(savings.spent), label: 'Committed' }}
-				end={{ value: formatCurrency(savings.rest), label: 'Remaining' }}
-			/>
+			<SavingsGoal enabled={data.profile !== null} />
 		</div>
 	</section>
 
@@ -52,13 +50,19 @@
 			<AccountsCard timeZone={data.timeZone} enabled={data.profile !== null} />
 		</div>
 
-		<!-- Income + Tips -->
+		<!-- Income + the Tips / Loans aside -->
 		<div class="flex flex-col gap-4" use:reveal={{ delay: 0.15 }}>
 			<IncomeCard enabled={data.profile !== null} view={data.incomeView} />
 
-			<Card class="flex-1">
-				<TipCard />
-			</Card>
+			<CardTabs options={[...asides]} bind:value={aside} label="Tips and loans" class="flex-1">
+				{#snippet panel(value)}
+					{#if value === 'tips'}
+						<DeskFreedomTip />
+					{:else}
+						<LoansCard />
+					{/if}
+				{/snippet}
+			</CardTabs>
 		</div>
 	</div>
 </div>
