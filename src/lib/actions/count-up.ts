@@ -67,8 +67,13 @@ export const countUp: Action<HTMLElement, CountUpParams> = (node, params) => {
 
 	return {
 		update(next: CountUpParams) {
+			// Only a new figure is worth a tween. Params are rebuilt on every
+			// render of the host, and re-running the count for a figure that
+			// hasn't moved re-plays it from wherever it was — the same number
+			// counting itself out again, and a tween nobody asked for.
+			const moved = next.value !== params.value;
 			params = next;
-			run(next.value, next.duration ?? 0.8);
+			if (moved) run(next.value, next.duration ?? 0.8);
 		},
 		destroy() {
 			tween?.kill();
