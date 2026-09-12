@@ -1,12 +1,36 @@
 import { mutationOptions, queryOptions, type QueryClient } from '@tanstack/svelte-query';
-import type { AssignAccount, AssignResult, UnassignedList } from '$lib/transactions';
+import type { MonthKey } from '$lib/finance';
+import type {
+	AssignAccount,
+	AssignResult,
+	TransactionList,
+	UnassignedList
+} from '$lib/transactions';
 import { accountKeys } from './accounts';
 import { getJson, sendJson, type Fetch } from './http';
 
 export const transactionKeys = {
 	all: ['transactions'] as const,
+	list: (month?: MonthKey) => [...transactionKeys.all, 'list', month ?? 'all'] as const,
 	unassigned: () => [...transactionKeys.all, 'unassigned'] as const
 };
+
+/**
+ * Transactions newest first — the table's own source. With a `month` it is
+ * that month alone, which is what the page opens with; without one, the whole
+ * record. Each is its own cache entry, so asking for everything doesn't throw
+ * the month away. Pass SvelteKit's `fetch` from a load. Assigning an account
+ * invalidates `transactionKeys.all`, so both refresh with the unassigned list.
+ */
+export const transactionsQuery = (month?: MonthKey, fetcher: Fetch = fetch) =>
+	queryOptions({
+		queryKey: transactionKeys.list(month),
+		queryFn: () =>
+			getJson<TransactionList>(
+				month ? `/api/transactions?month=${month}` : '/api/transactions',
+				fetcher
+			)
+	});
 
 /** The user's transactions with no account, newest first. Pass SvelteKit's `fetch` from a load. */
 export const unassignedQuery = (fetcher: Fetch = fetch) =>
