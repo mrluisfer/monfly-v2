@@ -1,7 +1,7 @@
 {
 	"name": "monfly-v2",
 	"private": true,
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"license": "UNLICENSED",
 	"type": "module",
 	"engines": {
