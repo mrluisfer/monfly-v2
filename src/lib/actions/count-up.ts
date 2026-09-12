@@ -7,6 +7,8 @@ export type CountUpParams = {
 	duration?: number;
 	/** Start the tween only once the element scrolls into view. */
 	whenVisible?: boolean;
+	/** Count up on mount too. Off, the first figure is written as it is and only changes count. */
+	initial?: boolean;
 	format?: (n: number) => string;
 };
 
@@ -62,8 +64,9 @@ export const countUp: Action<HTMLElement, CountUpParams> = (node, params) => {
 		observer.observe(node);
 	}
 
+	if (params.initial === false) counter.n = params.value;
 	render();
-	start(params.value, params.duration ?? 1.4);
+	if (params.initial !== false) start(params.value, params.duration ?? 1.4);
 
 	return {
 		update(next: CountUpParams) {

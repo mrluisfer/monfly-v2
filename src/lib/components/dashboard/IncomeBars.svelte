@@ -47,6 +47,9 @@
 	const share = (bar: Bar) => (bar.future || max <= 0 ? 0 : bar.value / max);
 	/** A slot still to come, while those are hidden. */
 	const folded = (bar: Bar) => !upcoming && !!bar.future;
+
+	/** Each bar's figure, by key: its tooltip points there, at the top of that bar. */
+	let tops = $state<Record<string, HTMLElement>>({});
 </script>
 
 <!--
@@ -88,6 +91,7 @@
 						{#if !bar.future}
 							<!-- The figure rides the bar's top edge. -->
 							<span
+								bind:this={tops[bar.key]}
 								class={cn(
 									'bar-figure tabular absolute inset-x-0 bottom-full mb-1.5 truncate font-display',
 									dense ? 'text-[0.6875rem]' : 'text-sm'
@@ -114,7 +118,9 @@
 				{#snippet detail()}
 					{@render tip(bar)}
 				{/snippet}
-				<Tooltip content={detail} side="top" delay={80} class="px-3 py-2.5">
+				<!-- Pointed at the bar's own top rather than the column's: an empty bar's
+				     detail opens down by the baseline, where the bar is. -->
+				<Tooltip content={detail} side="top" delay={80} anchor={tops[bar.key]} class="px-3 py-2.5">
 					{#snippet children({ props })}
 						{@render column(props)}
 					{/snippet}
