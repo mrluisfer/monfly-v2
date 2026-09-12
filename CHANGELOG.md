@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/mrluisfer/monfly-v2/compare/v1.1.0...v1.2.0) (2026-09-12)
+
+
+### Features
+
+* transactions tables — category glyphs, sorting and a page that draws ([#24](https://github.com/mrluisfer/monfly-v2/issues/24)) ([bc0f45a](https://github.com/mrluisfer/monfly-v2/commit/bc0f45a60e4b319830c9ab586289fdb2b29df11a))
+
 ## [1.1.0](https://github.com/mrluisfer/monfly-v2/compare/v1.0.3...v1.1.0) (2026-09-12)
 
 
