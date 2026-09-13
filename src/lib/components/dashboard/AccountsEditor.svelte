@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Pencil from '@lucide/svelte/icons/pencil';
-	import Star from '@lucide/svelte/icons/star';
+	import MovingPencil from '@jis3r/icons/icons/pencil';
+	import MovingStar from '@jis3r/icons/icons/star';
 	import { Popover } from 'bits-ui';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { featuredAccounts, type Account, type AccountRole } from '$lib/accounts';
-	import { IconButton, Select } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton, Select } from '$lib/components/ui';
 	import { setAccountRoleMutation } from '$lib/queries';
 	import { pop } from '$lib/transitions';
 
@@ -27,7 +27,7 @@
 	<Popover.Trigger>
 		{#snippet child({ props })}
 			<IconButton size="sm" {...props} aria-label="Choose the main and secondary accounts">
-				<Pencil />
+				<AnimatedIcon icon={MovingPencil} set="moving" />
 			</IconButton>
 		{/snippet}
 	</Popover.Trigger>
@@ -48,7 +48,7 @@
 								<span
 									class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue"
 								>
-									<Star class="size-4 stroke-[1.75]" />
+									<AnimatedIcon icon={MovingStar} set="moving" trigger="mount" />
 								</span>
 								<div class="min-w-0">
 									<p class="text-sm font-medium">Featured accounts</p>

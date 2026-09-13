@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+/* Animated Color Icons' effects, unscoped, so an ancestor can play them (DESIGN.md → Icons). */
+@import '@animated-color-icons/lucide-svelte/animated-lucide.css';
 
 /* mode-watcher toggles `.dark` on <html> */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -237,6 +239,39 @@
    app.html adds .js before first paint — so no-JS visitors see everything. */
 .js [data-anim] {
 	visibility: hidden;
+}
+
+/* Animated Color Icons plays its effects under its own :hover or an
+   `.al-icon-wrapper:hover` ancestor. `AnimatedIcon` plays them with the glyph's
+   control instead — hovered, focused, a highlighted menu row — by setting
+   `.al-play`. The same effects as the package's, for the ones in use; add the
+   next when an icon brings it. */
+.al-play .al-anim-scale-pop {
+	animation: al-scale-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) var(--al-delay, 0ms) both;
+}
+
+.al-play .al-anim-fade {
+	animation: al-fade-pop 500ms ease var(--al-delay, 0ms) both;
+}
+
+.al-play .al-anim-nudge {
+	transform: translate(var(--al-tx, 0px), var(--al-ty, 0px));
+}
+
+.al-play .al-anim-fill {
+	fill-opacity: 0.18;
+}
+
+.al-play .al-anim-gear {
+	transform: rotate(var(--al-rotation, 90deg));
+}
+
+.al-play .al-anim-bell-ring {
+	animation: al-bell-ring 0.7s ease;
+}
+
+.al-play .al-anim-shake {
+	animation: al-shake 600ms ease var(--al-delay, 0ms) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

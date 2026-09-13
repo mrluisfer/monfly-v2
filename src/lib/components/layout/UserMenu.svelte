@@ -1,12 +1,13 @@
 <script lang="ts">
-	import Bell from '@lucide/svelte/icons/bell';
-	import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
-	import LogOut from '@lucide/svelte/icons/log-out';
-	import Settings from '@lucide/svelte/icons/settings';
+	import ColorCircleUserRound from '@animated-color-icons/lucide-svelte/CircleUserRound.svelte';
+	import MovingBell from '@jis3r/icons/icons/bell';
+	import MovingLogOut from '@jis3r/icons/icons/log-out';
+	import MovingSettings from '@jis3r/icons/icons/settings';
+	import type { ComponentProps } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Avatar, Kbd } from '$lib/components/ui';
+	import { AnimatedIcon, Avatar, Kbd } from '$lib/components/ui';
 	import { HOTKEYS, type Hotkey } from '$lib/hotkeys';
 	import { pop } from '$lib/transitions';
 	import { cn } from '$lib/utils';
@@ -22,8 +23,8 @@
 
 	/**
 	 * Each icon sits in a chip tinted with its accent — colour carries meaning
-	 * and life here, not grey. On highlight the glyph makes its own small
-	 * gesture: the gear turns, the door arrow leans out.
+	 * and life here, not grey. On highlight the glyph plays its own animation
+	 * (AnimatedIcon): the gear turns, the door arrow heads out.
 	 */
 	const TONE = {
 		blue: 'bg-blue/12 text-blue',
@@ -35,25 +36,22 @@
 
 	type Link = {
 		label: string;
-		icon: typeof Settings;
+		glyph: Pick<ComponentProps<typeof AnimatedIcon>, 'icon' | 'set'>;
 		tone: keyof typeof TONE;
-		gesture: string;
 		hotkey: Hotkey & { href: string };
 	};
 
 	const links: Link[] = [
 		{
 			label: 'Profile',
-			icon: CircleUserRound,
+			glyph: { icon: ColorCircleUserRound, set: 'color' },
 			tone: 'blue',
-			gesture: 'group-data-highlighted:scale-115',
 			hotkey: HOTKEYS.goProfile
 		},
 		{
 			label: 'Settings',
-			icon: Settings,
+			glyph: { icon: MovingSettings, set: 'moving' },
 			tone: 'violet',
-			gesture: 'group-data-highlighted:rotate-90',
 			hotkey: HOTKEYS.goSettings
 		}
 	];
@@ -67,7 +65,6 @@
 	].join(' ');
 	const chip =
 		'grid size-7 shrink-0 place-items-center rounded-lg group-data-disabled:opacity-50 group-data-disabled:grayscale';
-	const glyph = 'size-4 stroke-[1.75] transition-transform duration-300 ease-[var(--ease-spring)]';
 </script>
 
 <DropdownMenu.Root>
@@ -109,14 +106,16 @@
 							{#each links as link (link.label)}
 								<DropdownMenu.Item class={item} onSelect={() => goto(link.hotkey.href)}>
 									<span class={cn(chip, TONE[link.tone])}>
-										<link.icon class={cn(glyph, link.gesture)} />
+										<AnimatedIcon {...link.glyph} />
 									</span>
 									{link.label}
 									<Kbd keys={link.hotkey.keys} class="ml-auto" />
 								</DropdownMenu.Item>
 							{/each}
 							<DropdownMenu.Item class={item} disabled>
-								<span class={cn(chip, TONE.lime)}><Bell class={glyph} /></span>
+								<span class={cn(chip, TONE.lime)}
+									><AnimatedIcon icon={MovingBell} set="moving" /></span
+								>
 								Notifications
 								<span class="ml-auto text-xs">Soon</span>
 							</DropdownMenu.Item>
@@ -125,7 +124,7 @@
 
 							<DropdownMenu.Item class={item} onSelect={() => logout?.requestSubmit()}>
 								<span class={cn(chip, TONE.negative)}>
-									<LogOut class={cn(glyph, 'group-data-highlighted:translate-x-0.5')} />
+									<AnimatedIcon icon={MovingLogOut} set="moving" />
 								</span>
 								Log out
 							</DropdownMenu.Item>

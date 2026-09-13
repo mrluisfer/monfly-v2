@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import Search from '@lucide/svelte/icons/search';
 	import {
 		columnFilteringFeature,
 		createColumnHelper,
@@ -27,11 +26,11 @@
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { countUp } from '$lib/actions';
 	import { categoryColor } from '$lib/categories';
 	import { DateLabel, IconButton, Orb, PALETTE, type PaletteColor } from '$lib/components/ui';
 	import CategoryIcon from './CategoryIcon.svelte';
-	import LedgerTools, { type Kind } from './LedgerTools.svelte';
+	import LedgerToolbar from './LedgerToolbar.svelte';
+	import { toolColumns, type Kind } from './LedgerTools.svelte';
 	import SortHeader from './SortHeader.svelte';
 	import { formatMoney, type Currency } from '$lib/finance';
 	import { pop } from '$lib/transitions';
@@ -232,15 +231,12 @@
 	/** What the drawn columns' shares come to, so they spread back over the whole width. */
 	const spread = $derived(heads.reduce((sum, h) => sum + parseFloat(h.width), 0));
 
-	const toolColumns = $derived(
-		HEADS.filter((h) => h.id !== 'icon').map((h) => ({
-			id: h.id,
-			label: h.label,
-			color: h.color,
-			hidden: hidden.has(h.id),
-			// The amount is what a ledger is for: it stays.
-			locked: h.id === 'amount'
-		}))
+	// Any column can go, the amount too; the last one shown stays.
+	const menuColumns = $derived(
+		toolColumns(
+			HEADS.filter((h) => h.id !== 'icon'),
+			hidden
+		)
 	);
 
 	let scroller = $state<HTMLElement | null>(null);
@@ -349,39 +345,17 @@
 <div class={cn('flex flex-col', className)}>
 	<!-- Search — it reads the category and the note together — then the tools
 	     that narrow and shape the list, then what's left of it. -->
-	<div class="flex flex-wrap items-center gap-3">
-		<div
-			class="flex h-11 min-w-0 flex-1 basis-64 items-center gap-2.5 rounded-full border border-hairline px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue"
-		>
-			<Search class="size-4 shrink-0 stroke-[1.5] text-fg-subtle" aria-hidden="true" />
-			<input
-				value={search}
-				oninput={(event) => table.setGlobalFilter(event.currentTarget.value)}
-				type="search"
-				placeholder="Search transactions"
-				aria-label="Search transactions"
-				class="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-fg-subtle"
-			/>
-		</div>
-		<LedgerTools
-			{kind}
-			onKindChange={setKind}
-			searching={search !== ''}
-			onReset={reset}
-			columns={toolColumns}
-			onToggleColumn={toggleColumn}
-			onShowAllColumns={showAllColumns}
-		/>
-		<!-- The count counts over to what the search and filter leave (GSAP), and
-		     is read out once, in whole, rather than tick by tick. -->
-		<p class="tabular ml-auto text-sm text-fg-muted">
-			<span aria-hidden="true">
-				<span use:countUp={{ value: shown, initial: false, duration: 0.6 }}>{shown}</span>
-				{shown === 1 ? 'entry' : 'entries'}
-			</span>
-			<span class="sr-only" aria-live="polite">{shown} {shown === 1 ? 'entry' : 'entries'}</span>
-		</p>
-	</div>
+	<LedgerToolbar
+		{search}
+		onSearch={(value) => table.setGlobalFilter(value)}
+		count={shown}
+		{kind}
+		onKindChange={setKind}
+		onReset={reset}
+		columns={menuColumns}
+		onToggleColumn={toggleColumn}
+		onShowAllColumns={showAllColumns}
+	/>
 
 	<!-- Columns keep their air down to `min-w`; past that the ledger scrolls
 	     sideways rather than crushing a description against an orb. The
@@ -448,7 +422,13 @@
 						selectedId === t.id ? 'bg-blue/8' : 'group-hover:bg-sunken'
 					)}
 					<!-- The highlight is each cell's, so the two at the ends can round it off. -->
-					<tr style="--i: {i}" class={cn('row group relative', dividers && 'divided')}>
+					<!-- An open row tells its date the ground behind it (DateLabel). -->
+					<tr
+						style="--i: {i}{selectedId === t.id
+							? '; --date-ground: color-mix(in oklab, var(--color-blue) 8%, var(--color-card))'
+							: ''}"
+						class={cn('row group relative', dividers && 'divided')}
+					>
 						{#if drawn('category')}
 							<td class={cell}>
 								<CategoryIcon category={t.category} color={tint[t.category]} />
@@ -490,17 +470,19 @@
 								<DateLabel date={t.date} {timeZone} />
 							</td>
 						{/if}
-						<td
-							class={cn(
-								cell,
-								'tabular text-right text-[0.9375rem] whitespace-nowrap',
-								// Money in reads green, money out the pastel red: which way a row
-								// went is the first thing anyone scans a ledger for.
-								t.type === 'income' ? 'text-positive' : 'text-spent'
-							)}
-						>
-							{signed(signedAmount(t))}
-						</td>
+						{#if drawn('amount')}
+							<td
+								class={cn(
+									cell,
+									'tabular text-right text-[0.9375rem] whitespace-nowrap',
+									// Money in reads green, money out the pastel red: which way a row
+									// went is the first thing anyone scans a ledger for.
+									t.type === 'income' ? 'text-positive' : 'text-spent'
+								)}
+							>
+								{signed(signedAmount(t))}
+							</td>
+						{/if}
 					</tr>
 				{/each}
 			</tbody>

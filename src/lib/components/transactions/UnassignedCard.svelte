@@ -18,6 +18,8 @@
 		Select,
 		type PaletteColor
 	} from '$lib/components/ui';
+	import LedgerToolbar from './LedgerToolbar.svelte';
+	import { toolColumns, type Kind } from './LedgerTools.svelte';
 	import UnassignedList from './UnassignedList.svelte';
 	import { DEFAULT_CURRENCY, formatMoney } from '$lib/finance';
 	import {
@@ -28,7 +30,7 @@
 	} from '$lib/queries';
 	import { pop } from '$lib/transitions';
 	import { signedAmount, type UnassignedTransaction } from '$lib/transactions';
-	import { prefersReducedMotion } from '$lib/utils';
+	import { cn, prefersReducedMotion } from '$lib/utils';
 
 	/**
 	 * Every transaction v1 recorded with no account, and the way to give them
@@ -103,6 +105,45 @@
 		];
 		return all.filter((group) => group.rows.length > 0);
 	});
+
+	/**
+	 * Each card's own search, kind and hidden columns, as the ledger has them —
+	 * for this visit only. Picking all takes what they leave, so it never
+	 * reaches a row out of sight.
+	 */
+	const tools = $state<Record<Group['key'], { search: string; kind: Kind }>>({
+		counted: { search: '', kind: 'all' },
+		before: { search: '', kind: 'all' }
+	});
+	const hiddenBy: Record<Group['key'], SvelteSet<string>> = {
+		counted: new SvelteSet(),
+		before: new SvelteSet()
+	};
+
+	/** The rows a card's search and kind leave. The search reads the category and the note. */
+	function narrow(group: Group) {
+		const { search, kind } = tools[group.key];
+		const words = search.trim().toLowerCase();
+		return group.rows.filter(
+			(t) =>
+				(kind === 'all' || t.type === kind) &&
+				(words === '' || `${t.category} ${t.description ?? ''}`.toLowerCase().includes(words))
+		);
+	}
+
+	// The ledger's columns as these lists draw them, in the ledger's pastels.
+	const LIST_COLUMNS = [
+		{ id: 'category', label: 'Category', color: 'mint' },
+		{ id: 'what', label: 'Description', color: 'sky' },
+		{ id: 'date', label: 'Date', color: 'teal' },
+		{ id: 'amount', label: 'Amount', color: 'coral' }
+	] as const;
+
+	function toggleColumn(key: Group['key'], id: string) {
+		const hidden = hiddenBy[key];
+		if (hidden.has(id)) hidden.delete(id);
+		else hidden.add(id);
+	}
 
 	/** Picked rows, by id. Read through `chosen`, so a row that left the list drops out. */
 	const picked = new SvelteSet<string>();
@@ -233,7 +274,9 @@
      them is the gap between every other card, and the bar can stick across the
      whole column rather than inside one card. -->
 {#each groups as group, index (group.key)}
-	{@const all = group.rows.every((t) => picked.has(t.id))}
+	{@const shown = narrow(group)}
+	{@const all = shown.length > 0 && shown.every((t) => picked.has(t.id))}
+	{@const total = group.rows.reduce((sum, t) => sum + signedAmount(t), 0)}
 	<Card class="p-7">
 		<!-- No rule under the header: the columns draw their own, and two lines a
 		     few pixels apart read as an empty row. -->
@@ -251,12 +294,19 @@
 			     the heading reading as a checkbox's label. -->
 			<div class="flex shrink-0 flex-col items-end gap-3">
 				{#if group.key === 'counted'}
-					<!-- The same figure as the dashboard's Unknown slice. -->
-					<span class="tabular font-display text-lg">
-						{signed(group.rows.reduce((sum, t) => sum + signedAmount(t), 0))}
+					<!-- The same figure as the dashboard's Unknown slice, in the colours
+					     the rows' amounts wear: money in green, money out the pastel red. -->
+					<span
+						class={cn(
+							'tabular font-display text-lg',
+							total > 0 && 'text-positive',
+							total < 0 && 'text-spent'
+						)}
+					>
+						{signed(total)}
 					</span>
 				{/if}
-				<PillButton size="sm" onclick={() => pick(group.rows, !all)}>
+				<PillButton size="sm" disabled={shown.length === 0} onclick={() => pick(shown, !all)}>
 					{all ? 'Clear these' : 'Pick all'}
 				</PillButton>
 			</div>
@@ -264,13 +314,31 @@
 
 		{#if index === 0}{@render messages()}{/if}
 
+		<!-- The ledger's own bar: a search, the kind, the columns and the count. -->
+		<LedgerToolbar
+			class="mt-5"
+			search={tools[group.key].search}
+			onSearch={(value) => (tools[group.key].search = value)}
+			count={shown.length}
+			kind={tools[group.key].kind}
+			onKindChange={(kind) => (tools[group.key].kind = kind)}
+			onReset={() => {
+				tools[group.key].search = '';
+				tools[group.key].kind = 'all';
+			}}
+			columns={toolColumns(LIST_COLUMNS, hiddenBy[group.key])}
+			onToggleColumn={(id) => toggleColumn(group.key, id)}
+			onShowAllColumns={() => hiddenBy[group.key].clear()}
+		/>
+
 		<UnassignedList
-			rows={group.rows}
+			rows={shown}
 			{currency}
 			{timeZone}
 			{tint}
 			{picked}
 			{dividers}
+			hidden={hiddenBy[group.key]}
 			onPick={pick}
 		/>
 	</Card>

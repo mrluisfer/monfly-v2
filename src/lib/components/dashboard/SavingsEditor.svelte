@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Pencil from '@lucide/svelte/icons/pencil';
-	import Target from '@lucide/svelte/icons/target';
+	import ColorTarget from '@animated-color-icons/lucide-svelte/Target.svelte';
+	import MovingPencil from '@jis3r/icons/icons/pencil';
 	import { Popover } from 'bits-ui';
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
-	import { IconButton, PillButton, Select } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton, PillButton, Select } from '$lib/components/ui';
 	import {
 		MAX_GOAL,
 		currencySymbol,
@@ -117,7 +117,7 @@
 				{...props}
 				aria-label={savings.goal === null ? 'Set savings goal' : 'Edit savings goal'}
 			>
-				<Pencil />
+				<AnimatedIcon icon={MovingPencil} set="moving" />
 			</IconButton>
 		{/snippet}
 	</Popover.Trigger>
@@ -139,7 +139,7 @@
 									<span
 										class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue"
 									>
-										<Target class="size-4 stroke-[1.75]" />
+										<AnimatedIcon icon={ColorTarget} set="color" trigger="mount" />
 									</span>
 									<div class="min-w-0">
 										<label for="{uid}-goal" class="block text-sm font-medium">Savings goal</label>

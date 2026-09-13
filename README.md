@@ -5,18 +5,19 @@ the database v1 shares, and the first real dashboard data ("Spent this month").
 
 ## Stack
 
-| Layer        | Choice                         | Notes                                                        |
-| ------------ | ------------------------------ | ------------------------------------------------------------ |
-| Framework    | SvelteKit 2 + Svelte 5 (runes) | Runes forced on outside `node_modules`                       |
-| Styling      | Tailwind CSS 4                 | OKLCH tokens in `src/app.css`, light + dark                  |
-| Animation    | Motion                         | `use:reveal`, `use:spring`, tab surface, `pop` transitions   |
-| Animation    | GSAP                           | `use:countUp`, the signup timeline, the theme-toggle morph   |
-| Positioning  | Floating UI                    | Inside bits-ui for tooltips/popovers; `use:anchor` otherwise |
-| Primitives   | bits-ui                        | Accessible headless components                               |
-| Server state | TanStack Query v6              | Per-request client; `$lib/queries` (see Data flow)           |
-| Tables       | TanStack Table v9              | Installed, not yet used                                      |
-| Icons        | `@lucide/svelte`               | The Svelte 5 package, not `lucide-svelte`                    |
-| Theming      | mode-watcher                   | Toggles `.dark` on `<html>`, no FOUC                         |
+| Layer          | Choice                                                                         | Notes                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Framework      | SvelteKit 2 + Svelte 5 (runes)                                                 | Runes forced on outside `node_modules`                                                                 |
+| Styling        | Tailwind CSS 4                                                                 | OKLCH tokens in `src/app.css`, light + dark                                                            |
+| Animation      | Motion                                                                         | `use:reveal`, `use:spring`, tab surface, `pop` transitions                                             |
+| Animation      | GSAP                                                                           | `use:countUp`, the signup timeline, the theme-toggle morph                                             |
+| Positioning    | Floating UI                                                                    | Inside bits-ui for tooltips/popovers; `use:anchor` otherwise                                           |
+| Primitives     | bits-ui                                                                        | Accessible headless components                                                                         |
+| Server state   | TanStack Query v6                                                              | Per-request client; `$lib/queries` (see Data flow)                                                     |
+| Tables         | TanStack Table v9                                                              | Installed, not yet used                                                                                |
+| Icons          | `@lucide/svelte`                                                               | The Svelte 5 package, not `lucide-svelte`                                                              |
+| Animated icons | `@jis3r/icons`, `@animated-color-icons/lucide-svelte`, `svelte-animated-icons` | Svelte 5 sets only; which to pick in DESIGN.md → Icons ([0010](docs/decisions/0010-animated-icons.md)) |
+| Theming        | mode-watcher                                                                   | Toggles `.dark` on `<html>`, no FOUC                                                                   |
 
 ## Design language
 

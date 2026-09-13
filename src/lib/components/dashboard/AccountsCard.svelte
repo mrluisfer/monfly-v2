@@ -1,9 +1,9 @@
 <script lang="ts">
-	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import ColorExternalLink from '@animated-color-icons/lucide-svelte/ExternalLink.svelte';
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
 	import { accountColors, featuredAccounts } from '$lib/accounts';
-	import { Card, IconButton } from '$lib/components/ui';
+	import { AnimatedIcon, Card, IconButton } from '$lib/components/ui';
 	import { accountsQuery, colorChoicesQuery, setColorMutation } from '$lib/queries';
 	import AccountBlock from './AccountBlock.svelte';
 	import AccountsEditor from './AccountsEditor.svelte';
@@ -67,7 +67,9 @@
 		<h2 class="font-display text-2xl font-medium">Accounts</h2>
 		<div class="flex gap-2">
 			<AccountsEditor accounts={list?.accounts ?? []} />
-			<IconButton size="sm" href="/cards" aria-label="Open accounts"><ExternalLink /></IconButton>
+			<IconButton size="sm" href="/cards" aria-label="Open accounts"
+				><AnimatedIcon icon={ColorExternalLink} set="color" /></IconButton
+			>
 		</div>
 	</div>
 	<!-- Card-less money is reason enough to draw the total: with no accounts at

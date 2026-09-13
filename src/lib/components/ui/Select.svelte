@@ -1,9 +1,10 @@
 <script lang="ts" generics="T extends string">
-	import Check from '@lucide/svelte/icons/check';
+	import MovingCheck from '@jis3r/icons/icons/check';
 	import { Select } from 'bits-ui';
 	import { blur } from 'svelte/transition';
 	import { pop } from '$lib/transitions';
 	import { cn } from '$lib/utils';
+	import AnimatedIcon from './AnimatedIcon.svelte';
 	import Caret from './Caret.svelte';
 	import { PALETTE, type PaletteColor } from './palette';
 	import PillButton from './PillButton.svelte';
@@ -118,9 +119,13 @@
 												></span>
 											{/if}
 											{option.label}
-											<Check
+											<AnimatedIcon
+												icon={MovingCheck}
+												set="moving"
+												trigger="none"
+												play={chosen}
 												class={cn(
-													'ml-auto size-4 stroke-[1.75] text-blue transition-[opacity,scale] duration-300 ease-[var(--ease-spring)]',
+													'ml-auto text-blue transition-[opacity,scale] duration-300 ease-[var(--ease-spring)]',
 													chosen ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
 												)}
 											/>

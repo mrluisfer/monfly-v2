@@ -38,6 +38,9 @@ Every changed line should trace back to what was asked.
   or `migrate`. Schema changes are Prisma migrations in v1; v1's `.env` points
   at the Neon `develop` branch, production is the URL in v1's `.env.local`.
 - **Shortcuts** are added to `src/lib/hotkeys/registry.ts`, nowhere else.
+- **Icons** are Lucide (`@lucide/svelte`). Animated ones come from the three
+  Svelte 5 sets in [DESIGN.md → Icons](DESIGN.md#icons); React-only icon
+  registries (shadcn `.tsx`, `motion/react`) don't run here.
 - **Why things are the way they are:** [docs/decisions](docs/decisions/). Don't
   reopen a recorded decision without a new reason; record new ones there.
 

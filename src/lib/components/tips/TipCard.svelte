@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import MovingArrowRight from '@jis3r/icons/icons/arrow-right';
 	import type { Snippet } from 'svelte';
-	import { IconButton } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton } from '$lib/components/ui';
 
 	type Props = {
 		/** The graphic on top; it takes whatever height is left over. */
@@ -35,7 +35,7 @@
 			<p class="mt-1.5 text-[0.8125rem] leading-relaxed text-fg-muted">{description}</p>
 		</div>
 		<IconButton dashed {href} aria-label={action}>
-			<ArrowRight />
+			<AnimatedIcon icon={MovingArrowRight} set="moving" />
 		</IconButton>
 	</div>
 </div>

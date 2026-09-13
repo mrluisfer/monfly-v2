@@ -1,5 +1,6 @@
 <script lang="ts">
-	import HandCoins from '@lucide/svelte/icons/hand-coins';
+	import MovingHandCoins from '@jis3r/icons/icons/hand-coins';
+	import { AnimatedIcon } from '$lib/components/ui';
 </script>
 
 <!--
@@ -10,7 +11,8 @@
 	<div
 		class="grid size-11 shrink-0 place-items-center rounded-full border border-dashed border-hairline text-fg-subtle"
 	>
-		<HandCoins class="size-[1.15rem] stroke-[1.5]" />
+		<!-- Not a control: it plays once, as the tab opens. -->
+		<AnimatedIcon icon={MovingHandCoins} set="moving" size={18} strokeWidth={1.5} trigger="mount" />
 	</div>
 
 	<p class="mt-5 text-[0.9375rem] text-fg-muted">No loans yet.</p>
