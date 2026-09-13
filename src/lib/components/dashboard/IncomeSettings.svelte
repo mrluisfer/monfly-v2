@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Settings from '@lucide/svelte/icons/settings';
+	import MovingSettings from '@jis3r/icons/icons/settings';
 	import { Popover } from 'bits-ui';
-	import { IconButton, Segmented, Switch } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton, Segmented, Switch } from '$lib/components/ui';
 	import type { YearUnit } from '$lib/finance';
 	import type { IncomeView } from '$lib/income-view';
 	import { pop } from '$lib/transitions';
@@ -32,11 +32,10 @@
 <Popover.Root>
 	<Popover.Trigger>
 		{#snippet child({ props })}
-			<IconButton size="sm" {...props} aria-label="Income chart settings" class="group">
-				<!-- The gear turns, as the account menu's does. -->
-				<Settings
-					class="transition-transform duration-300 ease-[var(--ease-spring)] group-hover:rotate-90 group-focus-visible:rotate-90 group-data-[state=open]:rotate-90"
-				/>
+			<IconButton size="sm" {...props} aria-label="Income chart settings">
+				<!-- The gear plays with the button, as the account menu's does, and
+				     holds while its settings are open. -->
+				<AnimatedIcon icon={MovingSettings} set="moving" play={props['data-state'] === 'open'} />
 			</IconButton>
 		{/snippet}
 	</Popover.Trigger>
@@ -57,7 +56,7 @@
 								<span
 									class="grid size-7 shrink-0 place-items-center rounded-lg bg-violet/12 text-violet"
 								>
-									<Settings class="size-4 stroke-[1.75]" />
+									<AnimatedIcon icon={MovingSettings} set="moving" trigger="mount" />
 								</span>
 								<div class="min-w-0">
 									<p class="text-sm font-medium">Income chart</p>

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Pencil from '@lucide/svelte/icons/pencil';
-	import Target from '@lucide/svelte/icons/target';
+	import ColorTarget from '@animated-color-icons/lucide-svelte/Target.svelte';
+	import MovingPencil from '@jis3r/icons/icons/pencil';
 	import { Popover } from 'bits-ui';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
-	import { IconButton, PillButton } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton, PillButton } from '$lib/components/ui';
 	import {
 		MAX_BUDGET,
 		currencySymbol,
@@ -75,7 +75,7 @@
 				{...props}
 				aria-label={budget === null ? 'Set monthly budget' : 'Edit monthly budget'}
 			>
-				<Pencil />
+				<AnimatedIcon icon={MovingPencil} set="moving" />
 			</IconButton>
 		{/snippet}
 	</Popover.Trigger>
@@ -98,7 +98,7 @@
 									<span
 										class="grid size-7 shrink-0 place-items-center rounded-lg bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime"
 									>
-										<Target class="size-4 stroke-[1.75]" />
+										<AnimatedIcon icon={ColorTarget} set="color" trigger="mount" />
 									</span>
 									<div class="min-w-0">
 										<label for="{uid}-amount" class="block text-sm font-medium"

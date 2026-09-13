@@ -31,9 +31,20 @@
 		onPick: (rows: UnassignedTransaction[], on: boolean) => void;
 		/** A line under every row, as the ledger has. Off for a quieter list. */
 		dividers?: boolean;
+		/** Columns the card's columns menu hid. The box always stays. */
+		hidden?: ReadonlySet<string>;
 	};
 
-	let { rows, currency, timeZone, tint, picked, onPick, dividers = true }: Props = $props();
+	let {
+		rows,
+		currency,
+		timeZone,
+		tint,
+		picked,
+		onPick,
+		dividers = true,
+		hidden = new Set<string>()
+	}: Props = $props();
 
 	type Column = 'category' | 'what' | 'date' | 'amount';
 
@@ -51,6 +62,26 @@
 		Column,
 		{ label: string; of: (t: UnassignedTransaction) => string | number; first: boolean }
 	>;
+
+	const drawn = (id: Column) => !hidden.has(id);
+
+	/** Each column's tracks, after the box's: the glyph rides with its category. */
+	const TRACKS: Record<Column, string> = {
+		category: 'auto minmax(0,10rem)',
+		what: 'minmax(0,1fr)',
+		date: 'auto',
+		amount: 'auto'
+	};
+
+	const template = $derived.by(() => {
+		const tracks = (Object.keys(TRACKS) as Column[]).filter(drawn).map((id) => TRACKS[id]);
+		// With the description hidden nothing stretches, so the last column does
+		// and the amount keeps to the right edge.
+		const last = tracks.length - 1;
+		if (!drawn('what') && last >= 0)
+			tracks[last] = tracks[last].replace(/auto$/, 'minmax(max-content,1fr)');
+		return ['auto', ...tracks].join(' ');
+	});
 
 	// Newest first, as the server sends them and as the ledger opens.
 	let sort = $state<{ id: Column; desc: boolean }>({ id: 'date', desc: true });
@@ -112,7 +143,7 @@
 	     still needs a box of its own for the label and its highlight. The order
 	     is the ledger's — glyph, what it was, what it was for, the day, what it
 	     cost — so the three tables read the same way. -->
-	<div class="grid grid-cols-[auto_auto_minmax(0,10rem)_minmax(0,1fr)_auto_auto]">
+	<div class="grid" style="grid-template-columns: {template}">
 		<!-- The ledger's header, on the list's own tracks. The boxes and the glyph
 		     head nothing: one is the row's control, the other is the category
 		     beside it, drawn. Placed by column rather than by order, so the two
@@ -120,8 +151,13 @@
 		<div
 			class="sticky top-0 z-10 col-span-full -mx-3 grid grid-cols-subgrid items-center gap-x-6 border-b border-line bg-card px-3 pb-2 text-sm font-medium text-fg-muted"
 		>
-			{#each Object.entries(COLUMNS) as [id, column], i (id)}
-				<span class={cn(i === 0 && 'col-start-3', id === 'amount' && 'text-right')}>
+			{#each Object.entries(COLUMNS).filter(([id]) => drawn(id as Column)) as [id, column], i (id)}
+				<span
+					class={cn(
+						i === 0 && (drawn('category') ? 'col-start-3' : 'col-start-2'),
+						id === 'amount' && 'text-right'
+					)}
+				>
 					<SortHeader
 						label={column.label}
 						align={id === 'amount' ? 'right' : 'left'}
@@ -150,32 +186,48 @@
 							'col-span-full -mx-3 grid cursor-pointer grid-cols-subgrid items-center gap-x-6 rounded-lg px-3 py-2.5 transition-colors duration-150 select-none',
 							picked.has(row.id) ? 'bg-blue/8 hover:bg-blue/12' : 'hover:bg-sunken'
 						)}
+						style={picked.has(row.id)
+							? '--date-ground: color-mix(in oklab, var(--color-blue) 12%, var(--color-card))'
+							: undefined}
 					>
 						<Checkbox
 							id="pick-{row.id}"
 							checked={picked.has(row.id)}
 							onCheckedChange={(on) => pick(row, on)}
 						/>
-						<CategoryIcon category={row.category} color={tint[row.category]} />
-						<span class="truncate text-[0.9375rem]">
-							{#if row.category}{row.category}{:else}<span class="text-fg-subtle">—</span>{/if}
-						</span>
-						<span class="truncate text-[0.9375rem] text-fg-muted">
-							{#if row.description}{row.description}{:else}<span class="text-fg-subtle">—</span
-								>{/if}
-						</span>
-						<DateLabel date={row.date} {timeZone} class="text-sm text-fg-muted" />
-						<span
-							class={cn(
-								'tabular text-right text-[0.9375rem]',
-								row.type === 'income' ? 'text-positive' : 'text-spent'
-							)}
-						>
-							{signed(row)}
-						</span>
+						{#if drawn('category')}
+							<CategoryIcon category={row.category} color={tint[row.category]} />
+							<span class="truncate text-[0.9375rem]">
+								{#if row.category}{row.category}{:else}<span class="text-fg-subtle">—</span>{/if}
+							</span>
+						{/if}
+						{#if drawn('what')}
+							<span class="truncate text-[0.9375rem] text-fg-muted">
+								{#if row.description}{row.description}{:else}<span class="text-fg-subtle">—</span
+									>{/if}
+							</span>
+						{/if}
+						{#if drawn('date')}
+							<DateLabel date={row.date} {timeZone} class="text-sm text-fg-muted" />
+						{/if}
+						{#if drawn('amount')}
+							<span
+								class={cn(
+									'tabular text-right text-[0.9375rem]',
+									row.type === 'income' ? 'text-positive' : 'text-spent'
+								)}
+							>
+								{signed(row)}
+							</span>
+						{/if}
 					</label>
 				</li>
 			{/each}
 		</ul>
 	</div>
+
+	<!-- A list only comes up empty when the card's search or filter empties it. -->
+	{#if rows.length === 0}
+		<p class="py-6 text-[0.9375rem] text-fg-muted">Nothing matches that search or filter.</p>
+	{/if}
 </div>

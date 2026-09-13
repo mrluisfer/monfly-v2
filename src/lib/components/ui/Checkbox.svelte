@@ -1,8 +1,9 @@
 <script lang="ts">
-	import Check from '@lucide/svelte/icons/check';
-	import Minus from '@lucide/svelte/icons/minus';
+	import MovingCheck from '@jis3r/icons/icons/check';
+	import MovingMinus from '@jis3r/icons/icons/minus';
 	import { Checkbox } from 'bits-ui';
 	import { cn } from '$lib/utils';
+	import AnimatedIcon from './AnimatedIcon.svelte';
 
 	type Props = {
 		/** Checked or not. Bind it, or pass it and listen to `onCheckedChange`. */
@@ -55,11 +56,17 @@
 	)}
 >
 	{#snippet children({ checked: on, indeterminate: some })}
-		{@const Glyph = some ? Minus : Check}
-		<Glyph
-			aria-hidden="true"
+		<!-- It springs in, and plays as it lands: a mark, so it follows the state
+		     rather than the pointer. -->
+		<AnimatedIcon
+			icon={some ? MovingMinus : MovingCheck}
+			set="moving"
+			size={14}
+			strokeWidth={2.5}
+			trigger="none"
+			play={on || some}
 			class={cn(
-				'size-3.5 stroke-[2.5] transition-[opacity,scale] duration-300 ease-[var(--ease-spring)]',
+				'transition-[opacity,scale] duration-300 ease-[var(--ease-spring)]',
 				on || some ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
 			)}
 		/>

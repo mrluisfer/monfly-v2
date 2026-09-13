@@ -13,6 +13,7 @@ record and mark the old one superseded.
 - [0007. Node 24 LTS](0007-node-24.md)
 - [0008. Savings are a running total, not a monthly allowance](0008-savings-are-cumulative.md)
 - [0009. A savings goal can read an account, and adding is a transfer](0009-savings-account-link.md)
+- [0010. Animated icons: three Svelte 5 sets beside Lucide](0010-animated-icons.md)
 
 ## Template
 

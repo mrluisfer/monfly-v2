@@ -3,9 +3,9 @@
 	import gsap from 'gsap';
 	import { page } from '$app/state';
 	import { animate, scroll } from 'motion';
-	import Plus from '@lucide/svelte/icons/plus';
-	import X from '@lucide/svelte/icons/x';
-	import { IconButton } from '$lib/components/ui';
+	import MovingPlus from '@jis3r/icons/icons/plus';
+	import MovingX from '@jis3r/icons/icons/x';
+	import { AnimatedIcon, IconButton } from '$lib/components/ui';
 	import { EASE_OUT_QUINT, cn, prefersReducedMotion } from '$lib/utils';
 
 	/** Browser-style workspace tabs. Static for now — no open/close state yet. */
@@ -162,17 +162,20 @@
 			{tab.label}
 			<!-- Always rendered so tab widths stay fixed; a width change mid-slide
 			     would reflow the strip and fight the surface animation. -->
-			<X
+			<AnimatedIcon
+				icon={MovingX}
+				set="moving"
+				size={14}
 				class={cn(
-					'size-3.5 transition-opacity duration-300',
-					active ? 'opacity-45 hover:opacity-80' : 'opacity-0 group-hover:opacity-35'
+					'transition-opacity duration-300',
+					active ? 'opacity-45 group-hover:opacity-80' : 'opacity-0 group-hover:opacity-35'
 				)}
 			/>
 		</a>
 	{/each}
 
 	<IconButton size="sm" dashed aria-label="New tab" class="ml-1">
-		<Plus />
+		<AnimatedIcon icon={MovingPlus} set="moving" />
 	</IconButton>
 </div>
 

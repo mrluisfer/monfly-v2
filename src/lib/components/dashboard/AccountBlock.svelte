@@ -1,11 +1,19 @@
 <script lang="ts">
-	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import MovingArrowRight from '@jis3r/icons/icons/arrow-right';
 	import { animate } from 'motion';
 	import { createQuery, keepPreviousData } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
 	import { countUp } from '$lib/actions';
 	import type { Account } from '$lib/accounts';
-	import { Figure, Orb, OrbitRing, Select, Sparkle, type PaletteColor } from '$lib/components/ui';
+	import {
+		AnimatedIcon,
+		Figure,
+		Orb,
+		OrbitRing,
+		Select,
+		Sparkle,
+		type PaletteColor
+	} from '$lib/components/ui';
 	import {
 		earlierMonthsThisYear,
 		formatMoney,
@@ -159,15 +167,16 @@
 				class="mt-1 flex items-center justify-end gap-1 text-sm whitespace-nowrap text-fg-muted"
 			>
 				To review
-				<ArrowRight class="review-arrow size-3.5 stroke-[1.75]" aria-hidden="true" />
+				<AnimatedIcon icon={MovingArrowRight} set="moving" size={14} class="review-arrow" />
 			</span>
 		</a>
 	</div>
 </div>
 
 <style>
-	/* The arrow says "this goes somewhere": it slides in on hover or focus,
-	   then keeps nudging the way it points. Touch has no hover, so it stays. */
+	/* The arrow says "this goes somewhere": it slides in on hover or focus and
+	   plays its own push the way it points (AnimatedIcon). Touch has no hover,
+	   so it stays. */
 	.review :global(.review-arrow) {
 		opacity: 0;
 		translate: -0.25rem 0;
@@ -180,23 +189,12 @@
 	.review:focus-visible :global(.review-arrow) {
 		opacity: 1;
 		translate: 0 0;
-		animation: nudge 1.4s var(--ease-out-quint) 0.45s infinite;
 	}
 
 	@media (hover: none) {
 		.review :global(.review-arrow) {
 			opacity: 1;
 			translate: 0 0;
-		}
-	}
-
-	@keyframes nudge {
-		0%,
-		100% {
-			translate: 0 0;
-		}
-		50% {
-			translate: 0.2rem 0;
 		}
 	}
 </style>

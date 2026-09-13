@@ -1,10 +1,10 @@
 <script lang="ts">
-	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+	import MovingArrowLeft from '@jis3r/icons/icons/arrow-left';
 	import { quintOut } from 'svelte/easing';
 	import { slide } from 'svelte/transition';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { IconButton, Logo, ThemeToggle } from '$lib/components/ui';
+	import { AnimatedIcon, IconButton, Logo, ThemeToggle } from '$lib/components/ui';
 	import { HOME_PATH } from '$lib/routes';
 	import { pop } from '$lib/transitions';
 	import TabStrip from './TabStrip.svelte';
@@ -51,7 +51,7 @@
 					out:pop={{ scale: 0.5, x: 10, duration: 0.4 }}
 				>
 					<IconButton dashed aria-label="Go back" onclick={goBack}>
-						<ArrowLeft />
+						<AnimatedIcon icon={MovingArrowLeft} set="moving" />
 					</IconButton>
 				</div>
 			</div>

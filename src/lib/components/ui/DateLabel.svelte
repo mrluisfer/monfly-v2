@@ -38,11 +38,12 @@
 	 * unrolling out of it left to right, and rolling back when the pointer
 	 * leaves.
 	 *
-	 * The short date holds the label's place. The whole one is a layer over it,
-	 * on the card's own surface, clipped to nothing until asked for: it may
-	 * reach past its column — a surface of its own, it covers what it passes
-	 * rather than running into it — and being out of the flow, no row reflows
-	 * and no column keeps room for it. Clipped shut, it isn't there to point at.
+	 * The short date holds the label's place. The whole one is plain text laid
+	 * over it, clipped to nothing until asked for: it may reach past its column,
+	 * and being out of the flow, no row reflows and no column keeps room for it.
+	 * Behind its words it wears the hovered row's own ground — no rim, no
+	 * padding, nothing that reads as a surface — only so what it passes over
+	 * doesn't show through. Clipped shut, it isn't there to point at.
 	 *
 	 * Assistive tech reads the whole date once, and `datetime` carries the
 	 * machine-readable instant.
@@ -109,19 +110,16 @@
 >
 
 <style>
-	/* Over the short date, its text exactly where the short date's is: the
-	   padding and rim the surface adds, its offset takes back. Above the next
-	   cells, below the table's sticky header. The clip unrolls it from the
-	   left, so its rim closes on the right last. */
+	/* Exactly over the short date, above the next cells and below the table's
+	   sticky header. Its ground is the hovered row's — `sunken`, or what a
+	   picked or open row sets as `--date-ground` — so it reads as the row's own
+	   text rather than something laid on it. */
 	.whole {
 		position: absolute;
 		z-index: 1;
-		top: calc(-0.125rem - 1px);
-		left: calc(-0.375rem - 1px);
-		padding: 0.125rem 0.375rem;
-		border: 1px solid var(--color-line);
-		border-radius: 0.375rem;
-		background: var(--color-card);
+		top: 0;
+		left: 0;
+		background: var(--date-ground, var(--color-sunken));
 		clip-path: inset(0 100% 0 0);
 	}
 </style>

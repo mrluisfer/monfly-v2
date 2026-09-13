@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@animated-color-icons/lucide-svelte':
+        specifier: 1.0.0
+        version: 1.0.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))
       '@auth0/auth0-server-js':
         specifier: 1.13.0
         version: 1.13.0
@@ -23,6 +26,9 @@ importers:
       '@fontsource-variable/space-grotesk':
         specifier: 5.3.0
         version: 5.3.0
+      '@jis3r/icons':
+        specifier: 2.9.0
+        version: 2.9.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))
       '@lucide/svelte':
         specifier: 1.43.0
         version: 1.43.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))
@@ -59,6 +65,9 @@ importers:
       motion:
         specifier: 13.2.0
         version: 13.2.0
+      svelte-animated-icons:
+        specifier: 1.0.0
+        version: 1.0.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))
       tailwind-merge:
         specifier: 3.6.0
         version: 3.6.0
@@ -128,6 +137,11 @@ importers:
         version: 8.2.2(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
 
 packages:
+
+  '@animated-color-icons/lucide-svelte@1.0.0':
+    resolution: {integrity: sha512-kTDlf6ycWy13/TxnvVjzt/CfCQ+tFZ9BLUFU4hfH0KMjqNzYXA2zdgM7+gF2f/hQJC6/Xot0wvaj6dLqtND8Fg==}
+    peerDependencies:
+      svelte: '>=3.0.0'
 
   '@auth0/auth0-auth-js@1.14.0':
     resolution: {integrity: sha512-tmvxPVI6/DdQUg/+s/hXZRE/dDxbocTaMoU2M8mpRN2deP8kBAoQOQuWYiTIGbh2EY3yHmHsuwst/gd0oAki0A==}
@@ -538,6 +552,11 @@ packages:
 
   '@internationalized/date@3.12.4':
     resolution: {integrity: sha512-M1dEn4c1U1HsSlaVR8upZtSqvXrTkHDfv18H01uCSJyjVLDxnBR38v/fMxecmlwXKR4i9HeZcmgQAPE6A+aGJQ==}
+
+  '@jis3r/icons@2.9.0':
+    resolution: {integrity: sha512-jXpUPNomX142/nga4ElkhKIzSD+o6PM3LqQI4CgjPiEPLaGouLpNmJPF+RNBdBvLKGWTIthNWXzmcFx39QPC2A==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1910,6 +1929,11 @@ packages:
   style-to-object@1.0.14:
     resolution: {integrity: sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==}
 
+  svelte-animated-icons@1.0.0:
+    resolution: {integrity: sha512-cjoRELyubRcYYmD0HDWgGpAMIkE4dSVGPKKbh9+qG/03XZHmlCuOgs6vJnRvzY6oWOrJEdiRnh3HMU18RxujEA==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   svelte-check@4.7.6:
     resolution: {integrity: sha512-t2scM//ZuVbSY/T2w6FSBw1v9s2NEmh/g+sy1lqtosW5ylBV5AF4wFb1Ts9Kf3MbfPDUDJDZ9L436YT0SPTdvw==}
     engines: {node: '>= 18.0.0'}
@@ -2097,6 +2121,10 @@ packages:
     resolution: {integrity: sha512-msJxIvYDYcoNL+PJsu+7qmpDWsYmAxTY+2TNYXXF0hzBzBk0BMecOqDOG/EckUoKCuKwObfbugIl8QpqHDXeFA==}
 
 snapshots:
+
+  '@animated-color-icons/lucide-svelte@1.0.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))':
+    dependencies:
+      svelte: 5.57.0(@typescript-eslint/types@8.70.0)
 
   '@auth0/auth0-auth-js@1.14.0':
     dependencies:
@@ -2351,6 +2379,10 @@ snapshots:
   '@internationalized/date@3.12.4':
     dependencies:
       '@swc/helpers': 0.5.23
+
+  '@jis3r/icons@2.9.0(svelte@5.57.0(@typescript-eslint/types@8.70.0))':
+    dependencies:
+      svelte: 5.57.0(@typescript-eslint/types@8.70.0)
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -3421,6 +3453,10 @@ snapshots:
   style-to-object@1.0.14:
     dependencies:
       inline-style-parser: 0.2.7
+
+  svelte-animated-icons@1.0.0(svelte@5.57.0(@typescript-eslint/types@8.70.0)):
+    dependencies:
+      svelte: 5.57.0(@typescript-eslint/types@8.70.0)
 
   svelte-check@4.7.6(picomatch@4.0.7)(svelte@5.57.0(@typescript-eslint/types@8.70.0))(typescript@6.0.3):
     dependencies:

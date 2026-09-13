@@ -11,36 +11,52 @@
 		/** The pastel its sort mark wears: its chip here wears it too. */
 		color: PaletteColor;
 		hidden: boolean;
-		/** Always shown: the menu greys it and says so. */
+		/** The only one still shown — a table keeps a column: the menu greys it and says so. */
 		locked?: boolean;
 	};
+
+	/** A table's columns as the columns menu offers them: every one hideable but the last shown. */
+	export function toolColumns(
+		columns: readonly { id: string; label: string; color: PaletteColor }[],
+		hidden: ReadonlySet<string>
+	): ToolColumn[] {
+		const shown = columns.filter((c) => !hidden.has(c.id)).length;
+		return columns.map((c) => ({
+			id: c.id,
+			label: c.label,
+			color: c.color,
+			hidden: hidden.has(c.id),
+			locked: shown === 1 && !hidden.has(c.id)
+		}));
+	}
 </script>
 
 <script lang="ts">
-	import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
-	import Banknote from '@lucide/svelte/icons/banknote';
-	import CalendarDays from '@lucide/svelte/icons/calendar-days';
-	import Check from '@lucide/svelte/icons/check';
-	import Columns3 from '@lucide/svelte/icons/columns-3';
-	import CreditCard from '@lucide/svelte/icons/credit-card';
-	import Eye from '@lucide/svelte/icons/eye';
-	import ListFilter from '@lucide/svelte/icons/list-filter';
-	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
-	import Tag from '@lucide/svelte/icons/tag';
-	import Text from '@lucide/svelte/icons/text';
-	import TrendingDown from '@lucide/svelte/icons/trending-down';
-	import TrendingUp from '@lucide/svelte/icons/trending-up';
+	import ColorBanknote from '@animated-color-icons/lucide-svelte/Banknote.svelte';
+	import ColorColumns3 from '@animated-color-icons/lucide-svelte/Columns3.svelte';
+	import ColorCreditCard from '@animated-color-icons/lucide-svelte/CreditCard.svelte';
+	import ColorListFilter from '@animated-color-icons/lucide-svelte/ListFilter.svelte';
+	import ColorText from '@animated-color-icons/lucide-svelte/Text.svelte';
+	import ColorTrendingDown from '@animated-color-icons/lucide-svelte/TrendingDown.svelte';
+	import ColorTrendingUp from '@animated-color-icons/lucide-svelte/TrendingUp.svelte';
+	import MovingArrowLeftRight from '@jis3r/icons/icons/arrow-left-right';
+	import MovingCalendarDays from '@jis3r/icons/icons/calendar-days';
+	import MovingEye from '@jis3r/icons/icons/eye';
+	import MovingRotateCcw from '@jis3r/icons/icons/rotate-ccw';
+	import MovingTag from '@jis3r/icons/icons/tag';
+	import MovingCheck from '@jis3r/icons/icons/check';
 	import { DropdownMenu } from 'bits-ui';
 	import { animate, stagger } from 'motion';
+	import type { ComponentProps } from 'svelte';
 	import { blur } from 'svelte/transition';
-	import { PALETTE, PillButton } from '$lib/components/ui';
+	import { AnimatedIcon, PALETTE, PillButton } from '$lib/components/ui';
 	import { pop } from '$lib/transitions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
 
 	/**
 	 * The ledger's tools beside its search: what kind of money to show, and
 	 * which columns. Two pills that open the menu surface — a tinted chip per
-	 * row, its glyph making a small gesture on highlight, a blue check that
+	 * row, its animated glyph playing on highlight, a blue check that
 	 * springs in for what's chosen — and an action under a rule to put things
 	 * back. The table owns the state; this only asks for changes.
 	 */
@@ -85,43 +101,45 @@
 	const narrowing =
 		'bg-[color-mix(in_oklab,var(--tint)_14%,transparent)] hover:bg-[color-mix(in_oklab,var(--tint)_24%,transparent)] border-[oklch(from_var(--tint)_calc(l_-_0.12)_c_h)] text-[oklch(from_var(--tint)_0.5_calc(c*1.6)_h)] dark:text-(--tint)';
 
+	/** An animated Lucide glyph and its set, as `AnimatedIcon` takes them (DESIGN.md → Icons). */
+	type Glyph = Pick<ComponentProps<typeof AnimatedIcon>, 'icon' | 'set'>;
+
 	// Blue is the list as it's yours; money in and out wear the colours their figures do.
 	const KINDS = [
 		{
 			value: 'all',
 			label: 'All types',
-			icon: ArrowLeftRight,
+			glyph: { set: 'moving', icon: MovingArrowLeftRight },
 			tint: '',
 			chip: 'bg-blue/12 text-blue',
-			gesture: 'group-data-highlighted:scale-115',
 			pill: ''
 		},
 		{
 			value: 'income',
 			label: 'Income',
-			icon: TrendingUp,
+			glyph: { set: 'color', icon: ColorTrendingUp },
 			tint: '--tint: var(--color-positive)',
 			chip: 'bg-positive/12 text-positive',
-			gesture: 'group-data-highlighted:-translate-y-0.5',
 			pill: narrowing
 		},
 		{
 			value: 'expense',
 			label: 'Expenses',
-			icon: TrendingDown,
+			glyph: { set: 'color', icon: ColorTrendingDown },
 			tint: '--tint: var(--color-spent)',
 			chip: pastel,
-			gesture: 'group-data-highlighted:translate-y-0.5',
 			pill: narrowing
 		}
 	] as const;
 
-	const GLYPHS: Record<string, typeof Tag> = {
-		category: Tag,
-		what: Text,
-		account: CreditCard,
-		date: CalendarDays,
-		amount: Banknote
+	// Moving Icons where it has the glyph — its motion is drawn by hand — and
+	// Animated Color Icons, which has all of Lucide, for the rest.
+	const GLYPHS: Record<string, Glyph> = {
+		category: { set: 'moving', icon: MovingTag },
+		what: { set: 'color', icon: ColorText },
+		account: { set: 'color', icon: ColorCreditCard },
+		date: { set: 'moving', icon: MovingCalendarDays },
+		amount: { set: 'color', icon: ColorBanknote }
 	};
 
 	const current = $derived(KINDS.find((k) => k.value === kind) ?? KINDS[0]);
@@ -136,9 +154,10 @@
 		'transition-colors duration-150 data-highlighted:bg-sunken',
 		'data-disabled:pointer-events-none data-disabled:text-fg-subtle'
 	].join(' ');
+	// The chip passes the pointer through: a glyph plays with its row, never
+	// under the pointer on itself alone.
 	const chip =
-		'grid size-7 shrink-0 place-items-center rounded-lg group-data-disabled:opacity-50 group-data-disabled:grayscale';
-	const glyph = 'size-4 stroke-[1.75] transition-transform duration-300 ease-[var(--ease-spring)]';
+		'pointer-events-none grid size-7 shrink-0 place-items-center rounded-lg group-data-disabled:opacity-50 group-data-disabled:grayscale';
 	/** The chosen row's check: it springs in, as the Select's does. */
 	const tick = (on: boolean) =>
 		cn(
@@ -173,9 +192,9 @@
 					{#key kind}
 						<span class="flex" in:pop={{ scale: 0.5, bounce: 0.5, duration: 0.45 }}>
 							{#if kind === 'all'}
-								<ListFilter class="size-4 stroke-[1.75]" />
+								<AnimatedIcon icon={ColorListFilter} set="color" />
 							{:else}
-								<current.icon class="size-4 stroke-[1.75]" />
+								<AnimatedIcon {...current.glyph} />
 							{/if}
 						</span>
 						<span in:blur={{ amount: 4, duration: 300 }}>{current.label}</span>
@@ -198,13 +217,26 @@
 										>Show</DropdownMenu.GroupHeading
 									>
 									{#each KINDS as option (option.value)}
-										<DropdownMenu.RadioItem value={option.value} class={item} data-deal>
+										<!-- `textValue`, because an Animated Color Icons glyph carries its
+										     own name as a <title>, which would join the typeahead text. -->
+										<DropdownMenu.RadioItem
+											value={option.value}
+											textValue={option.label}
+											class={item}
+											data-deal
+										>
 											{#snippet children({ checked })}
-												<span class={cn(chip, option.chip)} style={option.tint}>
-													<option.icon class={cn(glyph, option.gesture)} />
+												<span class={cn(chip, option.chip)} style={option.tint} aria-hidden="true">
+													<AnimatedIcon {...option.glyph} />
 												</span>
 												{option.label}
-												<Check class={tick(checked)} />
+												<AnimatedIcon
+													icon={MovingCheck}
+													set="moving"
+													trigger="none"
+													play={checked}
+													class={tick(checked)}
+												/>
 											{/snippet}
 										</DropdownMenu.RadioItem>
 									{/each}
@@ -216,8 +248,8 @@
 									onSelect={onReset}
 									data-deal
 								>
-									<span class={cn(chip, 'bg-violet/12 text-violet')}>
-										<RotateCcw class={cn(glyph, 'group-data-highlighted:-rotate-90')} />
+									<span class={cn(chip, 'bg-violet/12 text-violet')} aria-hidden="true">
+										<AnimatedIcon icon={MovingRotateCcw} set="moving" />
 									</span>
 									Clear search and filter
 								</DropdownMenu.Item>
@@ -237,7 +269,7 @@
 					caret
 					aria-label={hiddenCount > 0 ? `Columns: ${hiddenCount} hidden` : 'Columns'}
 				>
-					<Columns3 class="size-4 stroke-[1.75]" />
+					<AnimatedIcon icon={ColorColumns3} set="color" />
 					Columns
 					<!-- How many are hidden, in configuration's violet: it pops in with the
 					     first one hidden and out with the last one back. -->
@@ -268,8 +300,9 @@
 									<!-- Stays open, so several can go in one visit. A hidden column's
 									     chip drains to grey where it stands. -->
 									{#each columns as col (col.id)}
-										{@const Glyph = GLYPHS[col.id] ?? Tag}
+										{@const glyph = GLYPHS[col.id]}
 										<DropdownMenu.CheckboxItem
+											textValue={col.label}
 											checked={!col.hidden}
 											onCheckedChange={() => onToggleColumn(col.id)}
 											disabled={col.locked}
@@ -286,17 +319,24 @@
 														!checked && 'opacity-45 grayscale'
 													)}
 													style="--tint: {PALETTE[col.color].css}"
+													aria-hidden="true"
 												>
-													<Glyph class={cn(glyph, 'group-data-highlighted:scale-115')} />
+													{#if glyph}<AnimatedIcon {...glyph} />{/if}
 												</span>
 												<span
 													class={cn('transition-colors duration-200', !checked && 'text-fg-muted')}
 													>{col.label}</span
 												>
 												{#if col.locked}
-													<span class="ml-auto text-xs">Always</span>
+													<span class="ml-auto text-xs">Last one</span>
 												{:else}
-													<Check class={tick(checked)} />
+													<AnimatedIcon
+														icon={MovingCheck}
+														set="moving"
+														trigger="none"
+														play={checked}
+														class={tick(checked)}
+													/>
 												{/if}
 											{/snippet}
 										</DropdownMenu.CheckboxItem>
@@ -310,8 +350,8 @@
 									closeOnSelect={false}
 									data-deal
 								>
-									<span class={cn(chip, 'bg-violet/12 text-violet')}>
-										<Eye class={cn(glyph, 'group-data-highlighted:scale-115')} />
+									<span class={cn(chip, 'bg-violet/12 text-violet')} aria-hidden="true">
+										<AnimatedIcon icon={MovingEye} set="moving" />
 									</span>
 									Show every column
 								</DropdownMenu.Item>
