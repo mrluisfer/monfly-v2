@@ -10,6 +10,12 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	{
+		// The Figma plugin is not an app module: these are fragments a build step
+		// concatenates into one script, so every cross-file reference reads as
+		// unused here. (Its `code.js` output is gitignored, so already excluded.)
+		ignores: ['tools/figma-design-system/src/*.js']
+	},
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,
