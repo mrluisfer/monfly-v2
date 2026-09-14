@@ -208,7 +208,9 @@
 							</span>
 						{/if}
 						{#if drawn('date')}
-							<DateLabel date={row.date} {timeZone} class="text-sm text-fg-muted" />
+							<!-- Its column keeps room for the whole date, so it unrolls over
+							     nothing but its own short one: the amount beside it stays put. -->
+							<DateLabel date={row.date} {timeZone} room class="text-sm text-fg-muted" />
 						{/if}
 						{#if drawn('amount')}
 							<span

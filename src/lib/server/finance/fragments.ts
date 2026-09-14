@@ -5,6 +5,9 @@ import { card, transaction } from '../db/schema';
 export const EXPENSE = 'expense';
 export const INCOME = 'income';
 
+/** Prisma's `@updatedAt` writes UTC wall-clock time into a zone-less column; so does this. */
+export const nowUtc = sql`(now() at time zone 'utc')`;
+
 /** Each stored amount rounded to cents before summing — integers from here on. */
 export const amountCents = sql`round(${transaction.amount}::numeric * 100)`;
 

@@ -122,3 +122,21 @@ export function isTimeZone(value: string): boolean {
 		return false;
 	}
 }
+
+/** One calendar day as `YYYY-MM-DD` — what a date field holds and a ledger row is edited to. */
+export type DateKey = `${number}-${string}-${string}`;
+
+const DATE_KEY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** True for a real day: the shape, and a month that has that many days in it. */
+export function isDateKey(value: unknown): value is DateKey {
+	if (typeof value !== 'string' || !DATE_KEY.test(value)) return false;
+	const [year, month, day] = value.split('-').map(Number);
+	return day <= daysInMonth(`${year}-${String(month).padStart(2, '0')}` as MonthKey);
+}
+
+/** Today as seen from `timeZone`: `'2026-09-14'`. */
+export function todayKey(timeZone: string, now = new Date()): DateKey {
+	const { year, month, day } = localDate(timeZone, now);
+	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` as DateKey;
+}

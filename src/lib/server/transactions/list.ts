@@ -3,7 +3,7 @@ import type { Currency } from '../../finance/money';
 import { addMonths, type MonthKey } from '../../finance/period';
 import { MAX_TRANSACTIONS, type TransactionList } from '../../transactions';
 import type { db as appDb } from '../db';
-import { card, transaction } from '../db/schema';
+import { card, loan, transaction } from '../db/schema';
 import { INCOME, amountCents, utcMidnight } from '../finance/fragments';
 
 type Input = {
@@ -45,7 +45,8 @@ export async function getTransactions(
 				category: transaction.category,
 				description: transaction.description,
 				accountId: card.id,
-				accountName: card.name
+				accountName: card.name,
+				loanLinked: sql<boolean>`${transaction.appliedToLoanId} is not null or exists (select 1 from ${loan} where ${loan.transactionId} = ${transaction.id})`
 			})
 			.from(transaction)
 			.leftJoin(card, and(eq(card.id, transaction.cardId), eq(card.status, 'active')))
@@ -84,7 +85,8 @@ export async function getTransactions(
 			category: row.category,
 			description: row.description?.trim() || null,
 			account:
-				row.accountId && row.accountName ? { id: row.accountId, name: row.accountName } : null
+				row.accountId && row.accountName ? { id: row.accountId, name: row.accountName } : null,
+			loanLinked: row.loanLinked
 		}))
 	};
 }

@@ -1,0 +1,182 @@
+<!--
+	One button per step, run in order. Each step says what it made, so a failure
+	names the step it happened in rather than leaving the file half-built.
+-->
+<style>
+	:root {
+		color-scheme: light dark;
+	}
+	* {
+		box-sizing: border-box;
+	}
+	body {
+		margin: 0;
+		padding: 12px;
+		font:
+			12px/1.45 'Inter',
+			-apple-system,
+			system-ui,
+			sans-serif;
+		background: #f6f6f8;
+		color: #050f1c;
+	}
+	@media (prefers-color-scheme: dark) {
+		body {
+			background: #1b2236;
+			color: #f2f4f8;
+		}
+		button {
+			background: #151b2d;
+			color: inherit;
+			border-color: #313a52;
+		}
+		button:hover:not(:disabled) {
+			background: #232b40;
+		}
+		.log {
+			background: #0f1424;
+			border-color: #232b40;
+		}
+	}
+	h1 {
+		margin: 0 0 2px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+	p.lede {
+		margin: 0 0 12px;
+		opacity: 0.6;
+	}
+	ol {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 6px;
+	}
+	button {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 10px;
+		font: inherit;
+		text-align: left;
+		background: #fff;
+		color: inherit;
+		border: 1px solid #e6e6ea;
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	button:hover:not(:disabled) {
+		background: #f2f2f4;
+	}
+	button:disabled {
+		opacity: 0.45;
+		cursor: progress;
+	}
+	button .n {
+		flex: none;
+		width: 18px;
+		height: 18px;
+		display: grid;
+		place-items: center;
+		border-radius: 5px;
+		background: #495bff;
+		color: #fff;
+		font-size: 10px;
+		font-weight: 600;
+	}
+	button[data-done='yes'] .n {
+		background: #3fa93f;
+	}
+	button[data-done='failed'] .n {
+		background: #e0484d;
+	}
+	.row {
+		display: flex;
+		gap: 6px;
+		margin: 12px 0 8px;
+	}
+	.row button {
+		width: auto;
+	}
+	.log {
+		margin-top: 10px;
+		padding: 8px;
+		max-height: 180px;
+		overflow: auto;
+		background: #fff;
+		border: 1px solid #e6e6ea;
+		border-radius: 8px;
+		white-space: pre-wrap;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-size: 11px;
+	}
+</style>
+
+<h1>Monfly design system</h1>
+<p class="lede">
+	Run the steps in order. Each one is idempotent — running it twice replaces its own work rather
+	than duplicating it.
+</p>
+
+<ol id="steps"></ol>
+
+<div class="row">
+	<button id="all"><span class="n">▶</span> Run every remaining step</button>
+</div>
+
+<div class="log" id="log">Ready.</div>
+
+<script>
+	const steps = document.getElementById('steps');
+	const log = document.getElementById('log');
+	let buttons = [];
+	let busy = false;
+
+	function say(line) {
+		log.textContent = line + '\n' + log.textContent;
+	}
+
+	function setBusy(state) {
+		busy = state;
+		for (const b of [...buttons, document.getElementById('all')]) b.disabled = state;
+	}
+
+	onmessage = (event) => {
+		const msg = event.data.pluginMessage;
+		if (!msg) return;
+
+		if (msg.type === 'steps') {
+			steps.innerHTML = '';
+			buttons = msg.steps.map((step, i) => {
+				const li = document.createElement('li');
+				const b = document.createElement('button');
+				b.innerHTML = '<span class="n">' + (i + 1) + '</span>';
+				b.appendChild(document.createTextNode(step.label));
+				b.onclick = () => {
+					setBusy(true);
+					say('→ ' + step.label);
+					parent.postMessage({ pluginMessage: { type: 'run', id: step.id } }, '*');
+				};
+				li.appendChild(b);
+				steps.appendChild(li);
+				return b;
+			});
+		}
+
+		if (msg.type === 'done') {
+			setBusy(false);
+			const b = buttons[msg.index];
+			if (b) b.dataset.done = msg.ok ? 'yes' : 'failed';
+			say((msg.ok ? '✓ ' : '✗ ') + msg.message);
+		}
+	};
+
+	document.getElementById('all').onclick = () => {
+		setBusy(true);
+		say('→ running every step');
+		parent.postMessage({ pluginMessage: { type: 'run-all' } }, '*');
+	};
+</script>

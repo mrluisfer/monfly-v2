@@ -3,10 +3,7 @@ import type { Currency } from '../../finance/money';
 import type { AssignResult, UnassignedList } from '../../transactions';
 import type { db as appDb } from '../db';
 import { card, transaction } from '../db/schema';
-import { INCOME, amountCents, signedCents, sinceFirstAccount } from '../finance/fragments';
-
-/** Prisma's `@updatedAt` writes UTC wall-clock time into a zone-less column; so does this. */
-const nowUtc = sql`(now() at time zone 'utc')`;
+import { INCOME, amountCents, nowUtc, signedCents, sinceFirstAccount } from '../finance/fragments';
 
 /** The user's card-less transactions, newest first. Read-only. */
 export async function getUnassigned(
