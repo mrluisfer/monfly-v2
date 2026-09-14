@@ -161,10 +161,14 @@
 		>
 			{tab.label}
 			<!-- Always rendered so tab widths stay fixed; a width change mid-slide
-			     would reflow the strip and fight the surface animation. -->
+			     would reflow the strip and fight the surface animation.
+			     `mount`, not the pointer: this glyph's gesture draws it in from
+			     nothing, so playing it on hover would take the ✕ away at the moment
+			     the pointer asks for it. Its gesture here is the fade below. -->
 			<AnimatedIcon
 				icon={MovingX}
 				set="moving"
+				trigger="mount"
 				size={14}
 				class={cn(
 					'transition-opacity duration-300',
@@ -175,7 +179,10 @@
 	{/each}
 
 	<IconButton size="sm" dashed aria-label="New tab" class="ml-1">
-		<AnimatedIcon icon={MovingPlus} set="moving" />
+		<!-- Drawn in once as it appears, never under the pointer: the plus writes
+		     itself stroke by stroke from nothing, and on hover that reads as the
+		     glyph going missing rather than as a gesture. -->
+		<AnimatedIcon icon={MovingPlus} set="moving" trigger="mount" />
 	</IconButton>
 </div>
 

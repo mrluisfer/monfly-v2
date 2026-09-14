@@ -31,6 +31,7 @@
 	import CategoryIcon from './CategoryIcon.svelte';
 	import LedgerToolbar from './LedgerToolbar.svelte';
 	import { toolColumns, type Kind } from './LedgerTools.svelte';
+	import RowActions from './RowActions.svelte';
 	import SortHeader from './SortHeader.svelte';
 	import { formatMoney, type Currency } from '$lib/finance';
 	import { pop } from '$lib/transitions';
@@ -55,9 +56,13 @@
 		categoryChoices?: Record<string, PaletteColor>;
 		/** A line under every row. Off for a quieter table. */
 		dividers?: boolean;
+		/** The user's active accounts: what a card-less row can be given. */
+		accounts?: { id: string; name: string }[];
 		/** The row opened in the detail panel, if any. */
 		selectedId?: string | null;
 		onSelect?: (row: TransactionRow) => void;
+		/** Opens a row in the panel with its fields ready to change. */
+		onEdit?: (row: TransactionRow) => void;
 		class?: string;
 	};
 
@@ -68,10 +73,17 @@
 		colors = {},
 		categoryChoices,
 		dividers = true,
+		accounts = [],
 		selectedId = null,
 		onSelect,
+		onEdit,
 		class: className
 	}: Props = $props();
+
+	/** What a row's actions couldn't do, said under the list until the next try. */
+	let problem = $state<string | null>(null);
+	/** The row whose actions are open: it stays marked while its menu has the pointer. */
+	let acting = $state<string | null>(null);
 
 	// One pass over the rows, so a category is placed once however many times it
 	// appears — and every row of it wears the same colour.
@@ -215,12 +227,16 @@
 	const HEADS = [
 		// The glyph column heads nothing and sorts by nothing: it is the category
 		// beside it, drawn. Its label is there for a screen reader alone.
-		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '7%', color: 'mint' },
-		{ id: 'category', label: 'Category', align: 'text-left', width: '18%', color: 'mint' },
-		{ id: 'what', label: 'Description', align: 'text-left', width: '24%', color: 'sky' },
-		{ id: 'account', label: 'Account', align: 'text-left', width: '18%', color: 'lavender' },
-		{ id: 'date', label: 'Date', align: 'text-left', width: '14%', color: 'teal' },
-		{ id: 'amount', label: 'Amount', align: 'text-right', width: '19%', color: 'coral' }
+		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '6%', color: 'mint' },
+		{ id: 'category', label: 'Category', align: 'text-left', width: '17%', color: 'mint' },
+		{ id: 'what', label: 'Description', align: 'text-left', width: '22%', color: 'sky' },
+		{ id: 'account', label: 'Account', align: 'text-left', width: '17%', color: 'lavender' },
+		{ id: 'date', label: 'Date', align: 'text-left', width: '13%', color: 'teal' },
+		{ id: 'amount', label: 'Amount', align: 'text-right', width: '18%', color: 'coral' },
+		// What can be done to the row, at the end of it — where a table's actions
+		// are everywhere else. It heads nothing, sorts by nothing and can't be
+		// hidden: a row always has something that can be done to it.
+		{ id: 'actions', label: 'Actions', align: 'text-right', width: '7%', color: 'lavender' }
 	] as const satisfies readonly { color: PaletteColor; [k: string]: string }[];
 
 	/** Columns hidden from the columns menu — for this visit only. */
@@ -231,10 +247,11 @@
 	/** What the drawn columns' shares come to, so they spread back over the whole width. */
 	const spread = $derived(heads.reduce((sum, h) => sum + parseFloat(h.width), 0));
 
-	// Any column can go, the amount too; the last one shown stays.
+	// Any column can go, the amount too; the last one shown stays. The glyph
+	// goes with its category, and the actions stay put.
 	const menuColumns = $derived(
 		toolColumns(
-			HEADS.filter((h) => h.id !== 'icon'),
+			HEADS.filter((h) => h.id !== 'icon' && h.id !== 'actions'),
 			hidden
 		)
 	);
@@ -391,7 +408,7 @@
 								head.align
 							)}
 						>
-							{#if head.id === 'icon'}
+							{#if head.id === 'icon' || head.id === 'actions'}
 								<span class="sr-only">{head.label}</span>
 							{:else}
 								<SortHeader
@@ -419,7 +436,14 @@
 					{@const t = row.original}
 					{@const cell = cn(
 						'px-3 py-3 transition-colors duration-150 first:rounded-l-lg last:rounded-r-lg',
-						selectedId === t.id ? 'bg-blue/8' : 'group-hover:bg-sunken'
+						// A row holds its highlight while its own menu is open: the
+						// pointer has left for the layer, so hover alone would drop it
+						// and lose the row that was pressed.
+						selectedId === t.id
+							? 'bg-blue/8'
+							: acting === t.id
+								? 'bg-sunken'
+								: 'group-hover:bg-sunken'
 					)}
 					<!-- The highlight is each cell's, so the two at the ends can round it off. -->
 					<!-- An open row tells its date the ground behind it (DateLabel). -->
@@ -480,14 +504,37 @@
 									t.type === 'income' ? 'text-positive' : 'text-spent'
 								)}
 							>
-								{signed(signedAmount(t))}
+								<!-- The figure steps aside for the whole date, not the cell: fading
+								     the cell would take its share of the row's highlight with it and
+								     leave a hole in the middle of the row. -->
+								<span class="amount">{signed(signedAmount(t))}</span>
 							</td>
 						{/if}
+						<!-- Less air than the other cells, so the button it holds doesn't
+						     make every row taller than the category chips ask for. -->
+						<td class={cn(cell, 'py-1.5 text-right')}>
+							<RowActions
+								row={t}
+								{currency}
+								{accounts}
+								{colors}
+								open={selectedId === t.id}
+								held={acting === t.id}
+								onHeldChange={(next) => (acting = next ? t.id : null)}
+								onView={(row) => onSelect?.(row)}
+								onEdit={(row) => onEdit?.(row)}
+								onProblem={(message) => (problem = message)}
+							/>
+						</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
 	</div>
+
+	{#if problem}
+		<p class="mt-4 text-sm text-negative" role="alert">{problem}</p>
+	{/if}
 
 	{#if rows.length === 0}
 		<p class="mt-8 text-[0.9375rem] text-fg-muted">
@@ -632,6 +679,20 @@
 			opacity: 0;
 			translate: 0 6px;
 		}
+	}
+
+	/* The whole date unrolls over the amount beside it, and its ground only
+	   reaches as far as its own words: a wider amount was left with its last
+	   digits showing past the end. The figure steps aside for it instead, and
+	   comes back as the date rolls shut — the figure, not its cell, which holds
+	   its share of the row's highlight. The card-less lists keep room for the
+	   whole date instead (`DateLabel`'s `room`), so theirs never has to. */
+	.row:has(:global(time):hover) .amount {
+		opacity: 0;
+	}
+
+	.amount {
+		transition: opacity 0.2s var(--ease-out-quint);
 	}
 
 	/* The rule under a row stays on the columns while the highlight overhangs

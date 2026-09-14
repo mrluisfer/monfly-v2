@@ -1,9 +1,13 @@
 import { error, json } from '@sveltejs/kit';
-import { currentMonth, isMonthKey, toCurrency } from '$lib/finance';
+import { currentMonth, isMonthKey, toCurrency, todayKey } from '$lib/finance';
 import { requireMonflyUser } from '$lib/server/auth';
 import { db } from '$lib/server/db';
-import { getTransactions } from '$lib/server/transactions';
+import { createTransaction, getTransactions } from '$lib/server/transactions';
+import { MAX_AMOUNT, isTransactionNew } from '$lib/transactions';
 import type { RequestHandler } from './$types';
+
+// Personal data: never stored by a shared cache.
+const NO_STORE = { 'cache-control': 'private, no-store' };
 
 /**
  * The signed-in person's transactions, newest first. `?month=2026-09` narrows
@@ -25,6 +29,36 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		month: asked,
 		timeZone: locals.timeZone
 	});
-	// Personal data: never stored by a shared cache.
-	return json(list, { headers: { 'cache-control': 'private, no-store' } });
+	return json(list, { headers: NO_STORE });
+};
+
+/**
+ * Writes a new transaction: `{ amount, type, category, description, date,
+ * accountId }` — the amount in whole cents, the date as `YYYY-MM-DD` read in
+ * the viewer's zone and no later than today, and `accountId` null for one with
+ * no account yet. Its amount moves that account's balance and the total, as v1
+ * moves them. Answers with the new id. 404 when the account isn't the
+ * signed-in user's, or isn't active.
+ */
+export const POST: RequestHandler = async ({ locals, request }) => {
+	const profile = await requireMonflyUser(locals);
+
+	if (!request.headers.get('content-type')?.startsWith('application/json')) {
+		error(415, 'Send the transaction as JSON');
+	}
+	const body: unknown = await request.json().catch(() => undefined);
+	if (!isTransactionNew(body, todayKey(locals.timeZone))) {
+		error(
+			400,
+			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, a type of "income" or "expense", a category, a description or null, a date of YYYY-MM-DD no later than today, and an accountId or null`
+		);
+	}
+
+	const { outcome, id } = await createTransaction(db, {
+		userEmail: profile.email,
+		entry: body,
+		timeZone: locals.timeZone
+	});
+	if (outcome === 'missing') error(404, 'No such account');
+	return json({ id }, { headers: NO_STORE });
 };

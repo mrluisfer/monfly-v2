@@ -14,6 +14,7 @@ record and mark the old one superseded.
 - [0008. Savings are a running total, not a monthly allowance](0008-savings-are-cumulative.md)
 - [0009. A savings goal can read an account, and adding is a transfer](0009-savings-account-link.md)
 - [0010. Animated icons: three Svelte 5 sets beside Lucide](0010-animated-icons.md)
+- [0011. The transactions panel is kept per browser, in localStorage](0011-transactions-panel-in-local-storage.md)
 
 ## Template
 

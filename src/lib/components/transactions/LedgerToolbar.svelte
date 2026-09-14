@@ -46,10 +46,13 @@
 		class="flex h-11 min-w-0 flex-1 basis-64 items-center gap-2.5 rounded-full border border-hairline px-4 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue"
 	>
 		<Search class="size-4 shrink-0 stroke-[1.5] text-fg-subtle" aria-hidden="true" />
+		<!-- Capped: a search only narrows what is already here, but a field with no
+		     bound on it is a field nobody has thought about. -->
 		<input
 			value={search}
 			oninput={(event) => onSearch(event.currentTarget.value)}
 			type="search"
+			maxlength={120}
 			{placeholder}
 			aria-label={placeholder}
 			class="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-fg-subtle"

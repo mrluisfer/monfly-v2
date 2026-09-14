@@ -8,7 +8,10 @@ export { incomeKeys, incomeQuery } from './income';
 export { addSavingsMutation, savingsKeys, savingsQuery, setSavingsGoalMutation } from './savings';
 export { monthSpendingQuery, spendingKeys } from './spending';
 export {
+	addTransactionMutation,
 	assignAccountMutation,
+	deleteTransactionMutation,
+	editTransactionMutation,
 	transactionKeys,
 	transactionsQuery,
 	unassignedQuery

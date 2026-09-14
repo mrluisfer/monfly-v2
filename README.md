@@ -318,6 +318,14 @@ that reads data:
   reads it, so the prefetch asks for the chosen split and SSR draws the chosen
   view with nothing shifting on hydration. Keeping them on the account instead
   would take a v1 migration.
+- **The transactions panel is per browser, in localStorage.**
+  `$lib/transaction-panel` keeps what it is doing — the row it reads, or the
+  fields half written for a row or a new transaction — under
+  `monfly:transactions-panel:<User.id>`, so a reload or a trip to another page
+  brings it back. The server never reads it: the page restores it after
+  hydration, once the ledger has loaded. Fields are kept as typed, and the
+  category by name, never a `Category.id`, so the format holds when the field
+  becomes a select ([0011](docs/decisions/0011-transactions-panel-in-local-storage.md)).
 
 ## Conventions carried over from v1
 

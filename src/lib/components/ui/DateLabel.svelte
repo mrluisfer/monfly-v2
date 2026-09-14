@@ -45,6 +45,10 @@
 	 * padding, nothing that reads as a surface — only so what it passes over
 	 * doesn't show through. Clipped shut, it isn't there to point at.
 	 *
+	 * A table that can spare the width passes `room` instead: the whole date
+	 * then keeps its place in the flow, so its column is as wide as it and it
+	 * unrolls over nothing but the short date beneath it.
+	 *
 	 * Assistive tech reads the whole date once, and `datetime` carries the
 	 * machine-readable instant.
 	 *
@@ -55,10 +59,12 @@
 		date: string;
 		/** The viewer's zone: the day and the time are drawn in it. */
 		timeZone: string;
+		/** Keep room for the whole date, so it never reaches into the next column. */
+		room?: boolean;
 		class?: string;
 	};
 
-	let { date, timeZone, class: className }: Props = $props();
+	let { date, timeZone, room = false, class: className }: Props = $props();
 
 	const at = $derived(new Date(date));
 	const format = $derived(formats(timeZone));
@@ -100,6 +106,7 @@
 <time
 	datetime={date}
 	class={cn('tabular relative whitespace-nowrap', className)}
+	class:room
 	onpointerenter={() => extend(true)}
 	onpointerleave={() => extend(false)}
 	><span aria-hidden="true">{short}</span><span class="sr-only">{whole}</span><span
@@ -121,5 +128,20 @@
 		left: 0;
 		background: var(--date-ground, var(--color-sunken));
 		clip-path: inset(0 100% 0 0);
+	}
+
+	/* With `room` the whole date stays in the flow: both dates share one grid
+	   cell, so the label — and the column it sits in — is as wide as the whole
+	   one, and unrolled it covers only the short one. */
+	.room {
+		display: inline-grid;
+	}
+
+	.room > span {
+		grid-area: 1 / 1;
+	}
+
+	.room .whole {
+		position: static;
 	}
 </style>

@@ -3,7 +3,9 @@ import type { MonthKey } from '$lib/finance';
 import type {
 	AssignAccount,
 	AssignResult,
+	TransactionEdit,
 	TransactionList,
+	TransactionNew,
 	UnassignedList
 } from '$lib/transactions';
 import { accountKeys } from './accounts';
@@ -63,6 +65,74 @@ export const assignAccountMutation = (queryClient: QueryClient) =>
 			if (snapshot?.previous)
 				queryClient.setQueryData(transactionKeys.unassigned(), snapshot.previous);
 		},
+		onSettled: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
+				queryClient.invalidateQueries({ queryKey: accountKeys.all })
+			])
+	});
+
+/**
+ * Writes a new transaction. Everything it touches is read again rather than
+ * patched in place: it lands in the ledger where its date puts it, in a month
+ * that may not be the one on screen, and the balances moved with it.
+ */
+export const addTransactionMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: (entry: TransactionNew) =>
+			sendJson<{ id: string }>('/api/transactions', 'POST', entry),
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
+				queryClient.invalidateQueries({ queryKey: accountKeys.all })
+			])
+	});
+
+/**
+ * Rewrites one transaction. Nothing is guessed at here: the amount or the
+ * direction may have changed, so the account balances and the headline totals
+ * are all read again rather than patched in place.
+ */
+export const editTransactionMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: ({ id, edit }: { id: string; edit: TransactionEdit }) =>
+			sendJson<{ id: string }>(`/api/transactions/${id}`, 'PATCH', edit),
+		onSuccess: () =>
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
+				queryClient.invalidateQueries({ queryKey: accountKeys.all })
+			])
+	});
+
+/** Every list a transaction can be in: the ledger's, and the card-less one. */
+type CachedList = TransactionList | UnassignedList;
+
+/**
+ * The same row dropped from whichever list holds it. The two are spread apart
+ * rather than as a union: a spread union widens to a shape TypeScript can no
+ * longer place back in either.
+ */
+const without = (id: string) => (list: CachedList | undefined) => {
+	if (!list) return list;
+	return 'totals' in list
+		? { ...list, transactions: list.transactions.filter((t) => t.id !== id) }
+		: { ...list, transactions: list.transactions.filter((t) => t.id !== id) };
+};
+
+/**
+ * Removes one transaction. Not optimistic, unlike assigning an account: the row
+ * asking the question is the one that would disappear, and with it the layer
+ * holding the answer — a refusal would have nowhere to be read. Gone, it leaves
+ * every list at once (the ledger, whichever months are cached, the card-less
+ * ones) rather than waiting on the refetch behind it, and the figures that
+ * counted it follow.
+ */
+export const deleteTransactionMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: (id: string) =>
+			sendJson<{ id: string }>(`/api/transactions/${id}`, 'DELETE', undefined),
+		onSuccess: (_answer, id) =>
+			queryClient.setQueriesData<CachedList>({ queryKey: transactionKeys.all }, without(id)),
 		onSettled: () =>
 			Promise.all([
 				queryClient.invalidateQueries({ queryKey: transactionKeys.all }),

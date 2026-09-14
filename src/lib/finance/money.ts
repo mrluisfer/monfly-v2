@@ -119,6 +119,23 @@ export function parseMoney(input: string): Cents | null {
 	return Number(whole.replace(/[.,]/g, '') || '0') * 100 + Number(fraction.padEnd(2, '0'));
 }
 
+/**
+ * The most characters a money field holds. The largest amount anyone can
+ * record is under a million units — "999,999.99", ten characters — so this is
+ * room to spare, and a bound on what a paste can put in.
+ */
+export const MAX_MONEY_LENGTH = 15;
+
+/**
+ * A money field's text as it is typed: digits and the separators between them,
+ * and nothing else. A pasted "$1,234.00 MXN" keeps its number; letters never
+ * land at all, so the figure above can't read as money it isn't. `parseMoney`
+ * still decides what the separators mean.
+ */
+export function moneyInput(text: string): string {
+	return text.replace(/[^\d.,]/g, '').slice(0, MAX_MONEY_LENGTH);
+}
+
 /** Cents as a plain editable number: 754000 → "7540", 754050 → "7540.50". */
 export function toMoneyInput(amount: Cents): string {
 	return amount % 100 === 0 ? String(amount / 100) : (amount / 100).toFixed(2);

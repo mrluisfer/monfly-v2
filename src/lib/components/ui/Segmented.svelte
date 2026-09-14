@@ -1,8 +1,17 @@
 <script lang="ts" generics="T extends string">
 	import { RadioGroup } from 'bits-ui';
+	import type { ComponentProps } from 'svelte';
 	import { cn } from '$lib/utils';
+	import AnimatedIcon from './AnimatedIcon.svelte';
 
-	type Option = { value: T; label: string };
+	type Option = {
+		value: T;
+		label: string;
+		/** An animated glyph, in a chip before the label (DESIGN.md → Icons). */
+		icon?: Pick<ComponentProps<typeof AnimatedIcon>, 'icon' | 'set'>;
+		/** The chip's tint, as the menus' chips wear theirs: `bg-positive/12 text-positive`. */
+		chip?: string;
+	};
 
 	type Props = {
 		/** Two to four short choices, in order. */
@@ -55,12 +64,28 @@
 		<RadioGroup.Item
 			value={option.value}
 			class={cn(
-				'relative rounded-full px-3 text-sm whitespace-nowrap text-fg-muted transition-colors duration-200',
+				'group relative rounded-full px-3 text-sm whitespace-nowrap text-fg-muted transition-colors duration-200',
 				'hover:text-fg data-[state=checked]:text-fg',
 				'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue'
 			)}
 		>
-			{option.label}
+			<span class="flex items-center justify-center gap-2">
+				{#if option.icon}
+					<!-- What the option is, drawn: its colour carries the meaning, so it
+					     stays coloured either way and only steps back while unchosen. -->
+					<span
+						class={cn(
+							'grid size-6 shrink-0 place-items-center rounded-md opacity-55 transition-opacity duration-200',
+							'group-data-[state=checked]:opacity-100',
+							option.chip
+						)}
+						aria-hidden="true"
+					>
+						<AnimatedIcon {...option.icon} size={14} />
+					</span>
+				{/if}
+				{option.label}
+			</span>
 		</RadioGroup.Item>
 	{/each}
 </RadioGroup.Root>
