@@ -34,9 +34,11 @@ Every changed line should trace back to what was asked.
 - **Data work:** read README → Data flow and Database first. Money is integer
   cents (`$lib/finance/money`); months are drawn in the viewer's time zone;
   endpoints live under `/api` and call `requireMonflyUser`.
-- **The database is shared with v1 and is live.** Never run `drizzle-kit push`
-  or `migrate`. Schema changes are Prisma migrations in v1; v1's `.env` points
-  at the Neon `develop` branch, production is the URL in v1's `.env.local`.
+- **The database is live, and shared with v1 until v1 is retired.** v2 owns
+  the schema: edit `schema.ts`, `pnpm db:generate`, read the SQL, `pnpm
+db:migrate` (develop), then `pnpm db:migrate:production`. Never
+  `drizzle-kit push` or a hand-written `ALTER`, and only additive changes while
+  v1 runs ([0015](docs/decisions/0015-drizzle-kit-owns-migrations.md)).
 - **Shortcuts** are added to `src/lib/hotkeys/registry.ts`, nowhere else.
 - **Icons** are Lucide (`@lucide/svelte`). Animated ones come from the three
   Svelte 5 sets in [DESIGN.md → Icons](DESIGN.md#icons); React-only icon

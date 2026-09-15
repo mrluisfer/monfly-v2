@@ -1,6 +1,6 @@
 # 0001. v2 shares v1's database; Prisma owns migrations
 
-Status: accepted · 2026-09-10
+Status: superseded by [0015](0015-drizzle-kit-owns-migrations.md) · 2026-09-14
 
 **Context** — v1 (React + Prisma) is live on the Neon project `monfly`. v2 is a
 rewrite that has to read and write the same data while v1 keeps running.

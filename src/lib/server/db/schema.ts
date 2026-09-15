@@ -43,11 +43,19 @@ const updatedAt = () =>
 		.notNull()
 		.$onUpdate(now);
 
-/** Ownership goes through the user's email, not the id — v1's design. */
-const userEmail = () =>
+/**
+ * Ownership goes through the user's email, not the id — v1's design. Each key
+ * keeps the name Prisma gave it, `<Table>_userEmail_fkey`, so Drizzle Kit sees
+ * the database it describes rather than eleven keys to create.
+ */
+const userEmail = (table: string) =>
 	text()
 		.notNull()
-		.references(() => user.email, { onDelete: 'restrict', onUpdate: 'cascade' });
+		.references(() => user.email, {
+			name: `${table}_userEmail_fkey`,
+			onDelete: 'restrict',
+			onUpdate: 'cascade'
+		});
 
 export const user = pgTable(
 	'User',
@@ -72,7 +80,13 @@ export const user = pgTable(
 		monthlyBudgetCents: integer(),
 		// Colours picked in v2 (PATCH /api/me/colors), one JSON document — see
 		// $lib/colors. v1 ignores it.
-		colors: jsonb().$type<ColorChoices>()
+		colors: jsonb().$type<ColorChoices>(),
+		// Header shortcuts pinned in v2 (PATCH /api/me/shortcuts), by id — see
+		// $lib/shortcuts. Overview is always shown, so it's never stored. v1
+		// ignores it.
+		shortcuts: text()
+			.array()
+			.default(sql`ARRAY['overview', 'transactions']::text[]`)
 	},
 	(table) => [uniqueIndex('User_email_key').using('btree', table.email.asc().nullsLast())]
 );
@@ -81,16 +95,21 @@ export const transaction = pgTable(
 	'Transaction',
 	{
 		id: id(),
-		userEmail: userEmail(),
+		userEmail: userEmail('Transaction'),
 		amount: doublePrecision().notNull(),
 		type: text().notNull(),
 		category: text().notNull(),
 		description: text(),
 		date: datetime().notNull(),
-		cardId: text().references(() => card.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+		cardId: text().references(() => card.id, {
+			name: 'Transaction_cardId_fkey',
+			onDelete: 'set null',
+			onUpdate: 'cascade'
+		}),
 		createdAt: createdAt(),
 		updatedAt: updatedAt(),
 		appliedToLoanId: text().references((): AnyPgColumn => loan.id, {
+			name: 'Transaction_appliedToLoanId_fkey',
 			onDelete: 'set null',
 			onUpdate: 'cascade'
 		})
@@ -133,7 +152,7 @@ export const card = pgTable(
 	'Card',
 	{
 		id: id(),
-		userEmail: userEmail(),
+		userEmail: userEmail('Card'),
 		name: text().notNull(),
 		type: text(),
 		last4: text(),
@@ -163,7 +182,7 @@ export const category = pgTable(
 		id: id(),
 		name: text().notNull(),
 		icon: text().notNull(),
-		userEmail: userEmail(),
+		userEmail: userEmail('Category'),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -174,7 +193,7 @@ export const loan = pgTable(
 	'Loan',
 	{
 		id: id(),
-		userEmail: userEmail(),
+		userEmail: userEmail('Loan'),
 		debtor: text().notNull(),
 		amount: doublePrecision().notNull(),
 		amountPaid: doublePrecision().default(0).notNull(),
@@ -186,6 +205,7 @@ export const loan = pgTable(
 		paidAt: datetime(),
 		notes: text(),
 		transactionId: text().references((): AnyPgColumn => transaction.id, {
+			name: 'Loan_transactionId_fkey',
 			onDelete: 'set null',
 			onUpdate: 'cascade'
 		}),
@@ -216,7 +236,7 @@ export const loan = pgTable(
 
 export const budget = pgTable('Budget', {
 	id: id(),
-	userEmail: userEmail(),
+	userEmail: userEmail('Budget'),
 	category: text().notNull(),
 	amountLimit: doublePrecision().notNull(),
 	amountSpent: doublePrecision().default(0).notNull(),
@@ -227,7 +247,7 @@ export const budget = pgTable('Budget', {
 
 export const pot = pgTable('Pot', {
 	id: id(),
-	userEmail: userEmail(),
+	userEmail: userEmail('Pot'),
 	title: text().notNull(),
 	goalAmount: doublePrecision().notNull(),
 	currentAmount: doublePrecision().default(0).notNull(),
@@ -238,7 +258,7 @@ export const pot = pgTable('Pot', {
 
 export const recurringBill = pgTable('RecurringBill', {
 	id: id(),
-	userEmail: userEmail(),
+	userEmail: userEmail('RecurringBill'),
 	title: text().notNull(),
 	amount: doublePrecision().notNull(),
 	frequency: text().notNull(),
@@ -250,7 +270,7 @@ export const recurringBill = pgTable('RecurringBill', {
 
 export const monthlySummary = pgTable('MonthlySummary', {
 	id: id(),
-	userEmail: userEmail(),
+	userEmail: userEmail('MonthlySummary'),
 	month: integer().notNull(),
 	year: integer().notNull(),
 	incomeTotal: doublePrecision().default(0).notNull(),
