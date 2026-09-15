@@ -19,6 +19,7 @@ record and mark the old one superseded.
 - [0013. Storybook shows the design system](0013-storybook.md)
 - [0014. Header shortcuts live on the User row](0014-shortcuts-on-the-user.md)
 - [0015. v2 owns the schema: Drizzle Kit writes and runs migrations](0015-drizzle-kit-owns-migrations.md)
+- [0016. Shortcut changes are kept as events](0016-shortcut-events.md)
 
 ## Template
 

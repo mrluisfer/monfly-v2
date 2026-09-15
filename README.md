@@ -266,6 +266,7 @@ that reads data:
 | endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                   |
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                        |
 | endpoint              | `src/routes/api/me/shortcuts/+server.ts`                  | GET the pinned shortcuts; PATCH one on or off (Overview is always pinned)                                                    |
+| endpoint              | `src/routes/api/me/shortcuts/activity/+server.ts`         | GET the last eight weeks of shortcut changes: by week, by shortcut, by source                                                |
 | endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them |
 | endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null                                                                         |
 | endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                   |
@@ -307,6 +308,11 @@ that reads data:
   session's profile carries the array and `(app)/+layout.ts` seeds the query
   with it, so the header draws on the server
   ([0014](docs/decisions/0014-shortcuts-on-the-user.md)).
+- **Every real shortcut change is a `ShortcutEvent`**: which shortcut, which way,
+  from where (`page`, `header` or `lock`) and when, written by the same
+  statement that changes `User.shortcuts` and only when membership changed.
+  `GET /api/me/shortcuts/activity` counts the last eight weeks in SQL for the
+  shortcuts page's charts ([0016](docs/decisions/0016-shortcut-events.md)).
 - **Featured accounts use `Card.role`** (v1 migration
   `20260910230000_add_card_role`): `main` or `secondary`, unique per user —
   NULLs never collide. `PATCH /api/accounts/[id]` moves a role, and the

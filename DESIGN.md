@@ -256,6 +256,12 @@ counts what's in the header. Overview wears a lock where the others have a
 switch: it's home. Pressed four times in a row, reddening a little more with each
 press, it springs open and asks in a `ConfirmDialog` whether to take it out;
 taken out, it gets a switch like the rest, and pinning it again locks it.
+Under the cards, **Activity** reads the last eight weeks of changes in three
+cards on the same grid: changes by week (the income chart's columns), the
+shortcuts changed most, and where changes are made — a switch, a tab's ✕, the
+lock. Each card is one series, so one colour, violet, configuration's; the
+most-changed bars wear each shortcut's own colour, beside its glyph and name.
+Every count is written out, and tooltips add the pinned and taken-out split.
 
 **The transactions page** starts with what never got an account: one card
 listing every card-less transaction in two groups. _Counted in your total_
