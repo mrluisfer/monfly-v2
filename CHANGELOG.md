@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/mrluisfer/monfly-v2/compare/v1.7.0...v1.8.0) (2026-09-15)
+
+
+### Features
+
+* Storybook for the design system, and the latest transactions name their accounts ([#37](https://github.com/mrluisfer/monfly-v2/issues/37)) ([044e749](https://github.com/mrluisfer/monfly-v2/commit/044e749485bb0b6cf656d75b1979dbfed6d3bf23))
+
 ## [1.7.0](https://github.com/mrluisfer/monfly-v2/compare/v1.6.0...v1.7.0) (2026-09-15)
 
 
