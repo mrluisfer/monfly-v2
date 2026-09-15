@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/mrluisfer/monfly-v2/compare/v1.9.0...v1.10.0) (2026-09-15)
+
+
+### Features
+
+* a history of shortcut changes, and three charts of it on the shortcuts page ([#41](https://github.com/mrluisfer/monfly-v2/issues/41)) ([650f213](https://github.com/mrluisfer/monfly-v2/commit/650f213aa41db2cc006767081cc142d6d07edbd8))
+
 ## [1.9.0](https://github.com/mrluisfer/monfly-v2/compare/v1.8.0...v1.9.0) (2026-09-15)
 
 
