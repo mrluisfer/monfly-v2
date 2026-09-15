@@ -53,6 +53,9 @@ export async function getAccounts(
 				id: card.id,
 				name: card.name,
 				role: card.role,
+				provider: card.provider,
+				last4: card.last4,
+				type: card.type,
 				balance:
 					balanceAt === 'now'
 						? sql<string>`${current}`
@@ -98,6 +101,9 @@ export async function getAccounts(
 		id: row.id,
 		name: row.name,
 		role: isAccountRole(row.role) ? row.role : null,
+		provider: row.provider,
+		last4: row.last4,
+		type: row.type,
 		balance: Number(row.balance),
 		tracked: Number(row.tracked),
 		change: Number(row.change),

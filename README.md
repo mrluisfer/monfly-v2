@@ -326,6 +326,10 @@ that reads data:
   hydration, once the ledger has loaded. Fields are kept as typed, and the
   category by name, never a `Category.id`, so the format holds when the field
   becomes a select ([0011](docs/decisions/0011-transactions-panel-in-local-storage.md)).
+- **Dismissed notices are per browser, in localStorage.** A `Notice` put away
+  writes `monfly:notice:<id>` = `dismissed` and reads it as it mounts, so it
+  never shows again in that browser; clearing site data brings it back. It
+  isn't per user: a tip holds nothing private, and nothing else is kept.
 
 ## Conventions carried over from v1
 
