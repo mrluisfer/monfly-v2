@@ -38,16 +38,14 @@
 	 * unrolling out of it left to right, and rolling back when the pointer
 	 * leaves.
 	 *
-	 * The short date holds the label's place. The whole one is plain text laid
-	 * over it, clipped to nothing until asked for: it may reach past its column,
-	 * and being out of the flow, no row reflows and no column keeps room for it.
-	 * Behind its words it wears the hovered row's own ground — no rim, no
-	 * padding, nothing that reads as a surface — only so what it passes over
-	 * doesn't show through. Clipped shut, it isn't there to point at.
-	 *
-	 * A table that can spare the width passes `room` instead: the whole date
-	 * then keeps its place in the flow, so its column is as wide as it and it
-	 * unrolls over nothing but the short date beneath it.
+	 * The whole date shares the short one's place, clipped to nothing until asked
+	 * for: both sit in one grid cell, so the label is as wide as the whole date
+	 * and its column keeps room for it. Unrolled, it covers the short date and
+	 * nothing beside it — no row reflows, and no amount has to make way. Behind
+	 * its words it wears the hovered row's own ground — no rim, no padding,
+	 * nothing that reads as a surface — only so the short date doesn't show
+	 * through. Clipped shut, it isn't there to point at. A table laid out by
+	 * shares, as the ledger is, gives the date column that width itself.
 	 *
 	 * Assistive tech reads the whole date once, and `datetime` carries the
 	 * machine-readable instant.
@@ -59,12 +57,10 @@
 		date: string;
 		/** The viewer's zone: the day and the time are drawn in it. */
 		timeZone: string;
-		/** Keep room for the whole date, so it never reaches into the next column. */
-		room?: boolean;
 		class?: string;
 	};
 
-	let { date, timeZone, room = false, class: className }: Props = $props();
+	let { date, timeZone, class: className }: Props = $props();
 
 	const at = $derived(new Date(date));
 	const format = $derived(formats(timeZone));
@@ -106,7 +102,6 @@
 <time
 	datetime={date}
 	class={cn('tabular relative whitespace-nowrap', className)}
-	class:room
 	onpointerenter={() => extend(true)}
 	onpointerleave={() => extend(false)}
 	><span aria-hidden="true">{short}</span><span class="sr-only">{whole}</span><span
@@ -117,31 +112,21 @@
 >
 
 <style>
-	/* Exactly over the short date, above the next cells and below the table's
-	   sticky header. Its ground is the hovered row's — `sunken`, or what a
-	   picked or open row sets as `--date-ground` — so it reads as the row's own
-	   text rather than something laid on it. */
-	.whole {
-		position: absolute;
-		z-index: 1;
-		top: 0;
-		left: 0;
-		background: var(--date-ground, var(--color-sunken));
-		clip-path: inset(0 100% 0 0);
-	}
-
-	/* With `room` the whole date stays in the flow: both dates share one grid
-	   cell, so the label — and the column it sits in — is as wide as the whole
-	   one, and unrolled it covers only the short one. */
-	.room {
+	/* Both dates share one grid cell, so the label is as wide as the whole one,
+	   which unrolls over the short one and nothing else. */
+	time {
 		display: inline-grid;
 	}
 
-	.room > span {
+	time > span {
 		grid-area: 1 / 1;
 	}
 
-	.room .whole {
-		position: static;
+	/* Its ground is the hovered row's — `sunken`, or what a picked or open row
+	   sets as `--date-ground` — so it reads as the row's own text rather than
+	   something laid on it. */
+	.whole {
+		background: var(--date-ground, var(--color-sunken));
+		clip-path: inset(0 100% 0 0);
 	}
 </style>

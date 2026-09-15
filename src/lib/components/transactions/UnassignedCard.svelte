@@ -134,9 +134,9 @@
 	// The ledger's columns as these lists draw them, in the ledger's pastels.
 	const LIST_COLUMNS = [
 		{ id: 'category', label: 'Category', color: 'mint' },
+		{ id: 'amount', label: 'Amount', color: 'coral' },
 		{ id: 'what', label: 'Description', color: 'sky' },
-		{ id: 'date', label: 'Date', color: 'teal' },
-		{ id: 'amount', label: 'Amount', color: 'coral' }
+		{ id: 'date', label: 'Date', color: 'teal' }
 	] as const;
 
 	function toggleColumn(key: Group['key'], id: string) {

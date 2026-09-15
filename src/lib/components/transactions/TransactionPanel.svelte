@@ -10,6 +10,7 @@
 		Figure,
 		FIGURE_SIZES,
 		IconButton,
+		Notice,
 		Orb,
 		type FigureSize,
 		type PaletteColor
@@ -355,10 +356,11 @@
 				<p class="mt-1 text-[0.9375rem] leading-relaxed text-fg-muted">{row.description}</p>
 			{/if}
 		{:else}
-			<p class="mt-6 text-[0.9375rem] leading-relaxed text-fg-muted">
+			<!-- What writing one does, said once: put away, it stays away in this browser. -->
+			<Notice id="new-transaction" title="Adding a transaction" class="mt-6">
 				What it was worth, what it was for, and the day it happened. It joins the ledger below, and
 				the account you name takes it into its balance.
-			</p>
+			</Notice>
 		{/if}
 
 		{#if fields}

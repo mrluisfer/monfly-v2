@@ -51,13 +51,13 @@
 	/** What each column sorts on, and which way it goes when first asked. */
 	const COLUMNS = {
 		category: { label: 'Category', of: (t: UnassignedTransaction) => t.category, first: false },
+		amount: { label: 'Amount', of: (t: UnassignedTransaction) => signedAmount(t), first: true },
 		what: {
 			label: 'Description',
 			of: (t: UnassignedTransaction) => t.description ?? '',
 			first: false
 		},
-		date: { label: 'Date', of: (t: UnassignedTransaction) => t.date, first: true },
-		amount: { label: 'Amount', of: (t: UnassignedTransaction) => signedAmount(t), first: true }
+		date: { label: 'Date', of: (t: UnassignedTransaction) => t.date, first: true }
 	} as const satisfies Record<
 		Column,
 		{ label: string; of: (t: UnassignedTransaction) => string | number; first: boolean }
@@ -65,18 +65,22 @@
 
 	const drawn = (id: Column) => !hidden.has(id);
 
-	/** Each column's tracks, after the box's: the glyph rides with its category. */
+	/**
+	 * Each column's tracks, after the box's: the glyph rides with its category.
+	 * The description takes what's left, as the ledger's does, so width goes to
+	 * the words rather than between a row's facts.
+	 */
 	const TRACKS: Record<Column, string> = {
 		category: 'auto minmax(0,10rem)',
+		amount: 'auto',
 		what: 'minmax(0,1fr)',
-		date: 'auto',
-		amount: 'auto'
+		date: 'auto'
 	};
 
 	const template = $derived.by(() => {
 		const tracks = (Object.keys(TRACKS) as Column[]).filter(drawn).map((id) => TRACKS[id]);
 		// With the description hidden nothing stretches, so the last column does
-		// and the amount keeps to the right edge.
+		// and the day keeps to the right edge.
 		const last = tracks.length - 1;
 		if (!drawn('what') && last >= 0)
 			tracks[last] = tracks[last].replace(/auto$/, 'minmax(max-content,1fr)');
@@ -141,8 +145,8 @@
 	     list's, so a short day and a long one leave the category in the same
 	     place down every row. `subgrid` hands those tracks to each row, which
 	     still needs a box of its own for the label and its highlight. The order
-	     is the ledger's — glyph, what it was, what it was for, the day, what it
-	     cost — so the three tables read the same way. -->
+	     is the ledger's — glyph, what it was, what it cost, what it was for, the
+	     day — so the three tables read the same way. -->
 	<div class="grid" style="grid-template-columns: {template}">
 		<!-- The ledger's header, on the list's own tracks. The boxes and the glyph
 		     head nothing: one is the row's control, the other is the category
@@ -201,17 +205,6 @@
 								{#if row.category}{row.category}{:else}<span class="text-fg-subtle">—</span>{/if}
 							</span>
 						{/if}
-						{#if drawn('what')}
-							<span class="truncate text-[0.9375rem] text-fg-muted">
-								{#if row.description}{row.description}{:else}<span class="text-fg-subtle">—</span
-									>{/if}
-							</span>
-						{/if}
-						{#if drawn('date')}
-							<!-- Its column keeps room for the whole date, so it unrolls over
-							     nothing but its own short one: the amount beside it stays put. -->
-							<DateLabel date={row.date} {timeZone} room class="text-sm text-fg-muted" />
-						{/if}
 						{#if drawn('amount')}
 							<span
 								class={cn(
@@ -221,6 +214,15 @@
 							>
 								{signed(row)}
 							</span>
+						{/if}
+						{#if drawn('what')}
+							<span class="truncate text-[0.9375rem] text-fg-muted">
+								{#if row.description}{row.description}{:else}<span class="text-fg-subtle">—</span
+									>{/if}
+							</span>
+						{/if}
+						{#if drawn('date')}
+							<DateLabel date={row.date} {timeZone} class="text-sm text-fg-muted" />
 						{/if}
 					</label>
 				</li>

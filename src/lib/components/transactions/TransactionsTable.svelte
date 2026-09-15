@@ -21,13 +21,21 @@
 		type SortingState
 	} from '@tanstack/svelte-table';
 	import { DropdownMenu } from 'bits-ui';
-	import { animate } from 'motion';
+	import { animate, scroll } from 'motion';
 	import { tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { SvelteSet } from 'svelte/reactivity';
+	import type { Account, AccountRole } from '$lib/accounts';
 	import { categoryColor } from '$lib/categories';
-	import { DateLabel, IconButton, Orb, PALETTE, type PaletteColor } from '$lib/components/ui';
+	import {
+		DateLabel,
+		IconButton,
+		Orb,
+		PALETTE,
+		Tooltip,
+		type PaletteColor
+	} from '$lib/components/ui';
 	import CategoryIcon from './CategoryIcon.svelte';
 	import LedgerToolbar from './LedgerToolbar.svelte';
 	import { toolColumns, type Kind } from './LedgerTools.svelte';
@@ -56,8 +64,11 @@
 		categoryChoices?: Record<string, PaletteColor>;
 		/** A line under every row. Off for a quieter table. */
 		dividers?: boolean;
-		/** The user's active accounts: what a card-less row can be given. */
-		accounts?: { id: string; name: string }[];
+		/**
+		 * The user's active accounts: what a card-less row can be given, and what
+		 * an account's name tells of itself under the pointer.
+		 */
+		accounts?: Account[];
 		/** The row opened in the detail panel, if any. */
 		selectedId?: string | null;
 		onSelect?: (row: TransactionRow) => void;
@@ -84,6 +95,37 @@
 	let problem = $state<string | null>(null);
 	/** The row whose actions are open: it stays marked while its menu has the pointer. */
 	let acting = $state<string | null>(null);
+
+	/** The accounts by id, for what an account's name tells under the pointer. */
+	const accountById = $derived(Object.fromEntries(accounts.map((a) => [a.id, a])));
+
+	const ROLE_LABEL: Record<AccountRole, string> = {
+		main: 'Main account',
+		secondary: 'Secondary account',
+		savings: 'Savings account'
+	};
+	/** v1's card kinds, named as its card form names them. */
+	const TYPE_LABEL: Record<string, string> = {
+		debit: 'Debit',
+		credit: 'Credit',
+		cash: 'Cash',
+		other: 'Other'
+	};
+
+	/**
+	 * What an account is, in one line, in v1's own terms for its cards: the role
+	 * it plays here, who issues it, its last four digits and its kind — "Main
+	 * account · BBVA · •••• 4821 · Debit". Only what was filled in.
+	 */
+	const identity = (a: Account) =>
+		[
+			a.role && ROLE_LABEL[a.role],
+			a.provider,
+			a.last4 && `•••• ${a.last4}`,
+			a.type && (TYPE_LABEL[a.type] ?? a.type)
+		]
+			.filter(Boolean)
+			.join(' · ');
 
 	// One pass over the rows, so a category is placed once however many times it
 	// appears — and every row of it wears the same colour.
@@ -218,34 +260,65 @@
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
 
 	/**
-	 * Every column states its own share of the table and the pastel its mark
-	 * wears — the palette the overview paints with, not the brand's flat three.
-	 * The widths are what `table-fixed` lays the columns out on, so the header's
-	 * line and the rows beneath it agree; a column added later names one more
-	 * share here and nothing else has to move.
+	 * Every column states its width and the pastel its mark wears — the palette
+	 * the overview paints with, not the brand's flat three. They run in the
+	 * order a row is read (DESIGN.md → Layout): what it was, what it cost right
+	 * beside it, where it came from, the note, and the day closing the row, as a
+	 * mail list keeps its timestamps at the end.
+	 *
+	 * Widths are rems, what `table-fixed` lays the columns out on, so the
+	 * header's line and the rows beneath it agree. Each holds its widest value,
+	 * measured: the date its whole one, "September 30, 2026 · 12:59 AM" — 235 px
+	 * with its cell's padding — so it unrolls inside its own column; the amount
+	 * "−999.999,99 €", 125 px; the category and account the longest names on
+	 * record. The description's is only its floor: it takes whatever the others
+	 * leave, so width a wider screen adds goes to the words rather than pulling a
+	 * row's facts apart.
 	 */
 	const HEADS = [
 		// The glyph column heads nothing and sorts by nothing: it is the category
 		// beside it, drawn. Its label is there for a screen reader alone.
-		{ id: 'icon', label: 'Category icon', align: 'text-left', width: '6%', color: 'mint' },
-		{ id: 'category', label: 'Category', align: 'text-left', width: '17%', color: 'mint' },
-		{ id: 'what', label: 'Description', align: 'text-left', width: '22%', color: 'sky' },
-		{ id: 'account', label: 'Account', align: 'text-left', width: '17%', color: 'lavender' },
-		{ id: 'date', label: 'Date', align: 'text-left', width: '13%', color: 'teal' },
-		{ id: 'amount', label: 'Amount', align: 'text-right', width: '18%', color: 'coral' },
+		{ id: 'icon', label: 'Category icon', align: 'text-left', width: 3.25, color: 'mint' },
+		{ id: 'category', label: 'Category', align: 'text-left', width: 9, color: 'mint' },
+		{ id: 'amount', label: 'Amount', align: 'text-right', width: 8, color: 'coral' },
+		{ id: 'account', label: 'Account', align: 'text-left', width: 10, color: 'lavender' },
+		{ id: 'what', label: 'Description', align: 'text-left', width: 8, color: 'sky' },
+		{ id: 'date', label: 'Date', align: 'text-left', width: 15, color: 'teal' },
 		// What can be done to the row, at the end of it — where a table's actions
 		// are everywhere else. It heads nothing, sorts by nothing and can't be
 		// hidden: a row always has something that can be done to it.
-		{ id: 'actions', label: 'Actions', align: 'text-right', width: '7%', color: 'lavender' }
-	] as const satisfies readonly { color: PaletteColor; [k: string]: string }[];
+		{ id: 'actions', label: 'Actions', align: 'text-right', width: 3.75, color: 'lavender' }
+	] as const satisfies readonly {
+		color: PaletteColor;
+		width: number;
+		[k: string]: string | number;
+	}[];
 
 	/** Columns hidden from the columns menu — for this visit only. */
 	const hidden = new SvelteSet<string>();
 	/** Whether a head is drawn: the glyph goes with the category it draws. */
 	const drawn = (id: string) => !hidden.has(id === 'icon' ? 'category' : id);
 	const heads = $derived(HEADS.filter((h) => drawn(h.id)));
-	/** What the drawn columns' shares come to, so they spread back over the whole width. */
-	const spread = $derived(heads.reduce((sum, h) => sum + parseFloat(h.width), 0));
+	/**
+	 * The one column that takes whatever width the others leave: the
+	 * description, or with it hidden the last one drawn before the actions, so
+	 * they still close the row at its right edge.
+	 */
+	const grows = $derived.by(() => {
+		if (drawn('what')) return 'what';
+		const content = heads.filter((h) => h.id !== 'actions');
+		return content[content.length - 1]?.id;
+	});
+	/** The ledger's floor: every drawn column at its width, the growing one at its least. */
+	const floor = $derived(heads.reduce((sum, h) => sum + h.width, 0));
+
+	/**
+	 * The category's glyph and name stay pinned at the left while the ledger
+	 * scrolls sideways, so a row never loses its name however far the rest has
+	 * gone: the glyph at the edge, the name after it.
+	 */
+	const pinned = (id: string) => id === 'icon' || id === 'category';
+	const pinLeft = (id: string) => (id === 'category' ? HEADS[0].width : 0);
 
 	// Any column can go, the amount too; the last one shown stays. The glyph
 	// goes with its category, and the actions stay put.
@@ -357,6 +430,21 @@
 		window.addEventListener('resize', replace);
 		return () => window.removeEventListener('resize', replace);
 	});
+
+	/**
+	 * Scrolled sideways, the pinned category casts an edge over what slides
+	 * under it. Tied to the scroll rather than timed (Motion): none at rest, full
+	 * once the columns are 16 px under, so it is there exactly while something is.
+	 */
+	$effect(() => {
+		const node = scroller;
+		if (!node) return;
+		return scroll(
+			(_progress: number, info: { x: { current: number } }) =>
+				node.style.setProperty('--edge', String(Math.min(info.x.current / 16, 1))),
+			{ container: node, axis: 'x' }
+		);
+	});
 </script>
 
 <div class={cn('flex flex-col', className)}>
@@ -382,16 +470,21 @@
 	     scrollbar rides there rather than over the amounts. Laid out `separate`,
 	     since a collapsed table ignores a cell's radius. -->
 	<div bind:this={scroller} class="-mx-3 mt-6 max-h-[32rem] overflow-auto">
-		<!-- The drawn columns' shares spread back over the whole width, and the
-		     floor under them shrinks by what the hidden ones took. -->
+		<!-- Every drawn column at its width is the floor, and the one that grows
+		     takes the rest: a column without a width, which `table-fixed` hands
+		     whatever the others leave. -->
 		<table
 			class="w-full table-fixed border-separate border-spacing-0 text-left"
-			style="min-width: {(53.5 * spread) / 100}rem"
+			style="min-width: {floor}rem"
 		>
 			<colgroup>
 				{#each heads as head (head.id)}
-					<col style="width: {(parseFloat(head.width) / spread) * 100}%" />
+					<col style={head.id === grows ? undefined : `width: ${head.width}rem`} />
 				{/each}
+				<!-- At nothing, for the rule under each row: Chrome counts that `::after`
+				     as a column of its own, and left without a width it took half of
+				     what the growing column is owed. -->
+				<col style="width: 0" />
 			</colgroup>
 			<thead class="sticky top-0 z-10 bg-card">
 				<!-- `relative`, so the mark below can be measured and placed against the
@@ -405,8 +498,11 @@
 							class={cn(
 								// The cells draw the line: a separate table ignores a row's border.
 								'border-b border-line px-3 pb-3 text-sm font-medium text-fg-muted',
-								head.align
+								head.align,
+								pinned(head.id) && 'sticky z-[1] bg-card',
+								head.id === 'category' && 'pin-edge'
 							)}
+							style={pinned(head.id) ? `left: ${pinLeft(head.id)}rem` : undefined}
 						>
 							{#if head.id === 'icon' || head.id === 'actions'}
 								<span class="sr-only">{head.label}</span>
@@ -419,8 +515,10 @@
 								/>
 							{/if}
 
-							{#if i === 0}
-								<!-- It rides on the row's own line, under whichever column is sorted. -->
+							{#if i === heads.length - 1}
+								<!-- It rides on the row's own line, under whichever column is sorted.
+								     The actions' cell carries it: that one never pins, so the mark is
+								     placed against the row rather than a cell that holds still. -->
 								<span
 									bind:this={mark}
 									aria-hidden="true"
@@ -445,6 +543,17 @@
 								? 'bg-sunken'
 								: 'group-hover:bg-sunken'
 					)}
+					{@const pin = cn(
+						'sticky z-[1] px-3 py-3 transition-colors duration-150 first:rounded-l-lg',
+						// Pinned, the other columns scroll under it, so it wears the same
+						// highlight made solid: the open row's blue mixed into the card,
+						// and the card itself at rest.
+						selectedId === t.id
+							? 'bg-[color-mix(in_oklab,var(--color-blue)_8%,var(--color-card))]'
+							: acting === t.id
+								? 'bg-sunken'
+								: 'bg-card group-hover:bg-sunken'
+					)}
 					<!-- The highlight is each cell's, so the two at the ends can round it off. -->
 					<!-- An open row tells its date the ground behind it (DateLabel). -->
 					<tr
@@ -454,10 +563,10 @@
 						class={cn('row group relative', dividers && 'divided')}
 					>
 						{#if drawn('category')}
-							<td class={cell}>
+							<td class={cn(pin, 'left-0')}>
 								<CategoryIcon category={t.category} color={tint[t.category]} />
 							</td>
-							<td class={cell}>
+							<td class={cn(pin, 'pin-edge')} style="left: {HEADS[0].width}rem">
 								<!-- The row's way in: pressing the category opens the whole entry. -->
 								<button
 									type="button"
@@ -466,6 +575,83 @@
 								>
 									{#if t.category}{t.category}{:else}<span class="text-fg-subtle">—</span>{/if}
 								</button>
+							</td>
+						{/if}
+						{#if drawn('amount')}
+							<!-- What it cost, right beside what it was. -->
+							<td
+								class={cn(
+									cell,
+									'tabular text-right text-[0.9375rem] whitespace-nowrap',
+									// Money in reads green, money out the pastel red: which way a row
+									// went is the first thing anyone scans a ledger for.
+									t.type === 'income' ? 'text-positive' : 'text-spent'
+								)}
+							>
+								{signed(signedAmount(t))}
+							</td>
+						{/if}
+						{#if drawn('account')}
+							<td class={cell}>
+								{#if t.account}
+									{@const account = t.account}
+									{@const detail = accountById[account.id] as Account | undefined}
+									<!-- The column cuts a long name short; under the pointer or focus the
+									     account tells the rest above it: its whole name, the card behind
+									     it, and where its money stands this month. -->
+									<Tooltip side="top" delay={150} class="px-3 py-2.5">
+										{#snippet content()}
+											<div class="grid w-56 gap-2 font-normal">
+												<div class="flex items-start gap-2">
+													<Orb color={colors[account.id] ?? 'blue'} class="mt-px size-4 shrink-0" />
+													<div class="min-w-0">
+														<p class="font-medium break-words">{account.name}</p>
+														{#if detail && identity(detail)}
+															<p class="mt-0.5 text-fg-muted">{identity(detail)}</p>
+														{/if}
+													</div>
+												</div>
+												{#if detail}
+													<dl class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+														<dt class="text-fg-muted">Bank balance</dt>
+														<dd class="tabular text-right">
+															{formatMoney(detail.balance, currency)}
+														</dd>
+														<dt class="text-fg-muted">Tracked this month</dt>
+														<dd class="tabular text-right">
+															{formatMoney(detail.tracked, currency)}
+														</dd>
+														<dt class="text-fg-muted">Net this month</dt>
+														<dd
+															class={cn(
+																'tabular text-right',
+																detail.change > 0 && 'text-positive',
+																detail.change < 0 && 'text-spent'
+															)}
+														>
+															{signed(detail.change)}
+														</dd>
+													</dl>
+												{:else}
+													<p class="text-fg-muted">No longer among your active accounts.</p>
+												{/if}
+											</div>
+										{/snippet}
+										{#snippet children({ props })}
+											<!-- svelte-ignore a11y_no_noninteractive_tabindex — focus is how keyboard users reach the details. -->
+											<span
+												{...props}
+												tabindex="0"
+												class="flex items-center gap-2 rounded-sm text-[0.9375rem] text-fg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+											>
+												<Orb color={colors[account.id] ?? 'blue'} class="size-4 shrink-0" />
+												<span class="truncate">{account.name}</span>
+											</span>
+										{/snippet}
+									</Tooltip>
+								{:else}
+									<span class="text-[0.9375rem] text-fg-subtle">—</span>
+								{/if}
 							</td>
 						{/if}
 						{#if drawn('what')}
@@ -477,37 +663,11 @@
 								{/if}
 							</td>
 						{/if}
-						{#if drawn('account')}
-							<td class={cell}>
-								{#if t.account}
-									<span class="flex items-center gap-2 text-[0.9375rem] text-fg-muted">
-										<Orb color={colors[t.account.id] ?? 'blue'} class="size-4 shrink-0" />
-										<span class="truncate">{t.account.name}</span>
-									</span>
-								{:else}
-									<span class="text-[0.9375rem] text-fg-subtle">—</span>
-								{/if}
-							</td>
-						{/if}
 						{#if drawn('date')}
+							<!-- The day closes the row, before its actions. Left-aligned, so its
+							     whole date unrolls out of the short one (DateLabel). -->
 							<td class={cn(cell, 'text-[0.9375rem] text-fg-muted')}>
 								<DateLabel date={t.date} {timeZone} />
-							</td>
-						{/if}
-						{#if drawn('amount')}
-							<td
-								class={cn(
-									cell,
-									'tabular text-right text-[0.9375rem] whitespace-nowrap',
-									// Money in reads green, money out the pastel red: which way a row
-									// went is the first thing anyone scans a ledger for.
-									t.type === 'income' ? 'text-positive' : 'text-spent'
-								)}
-							>
-								<!-- The figure steps aside for the whole date, not the cell: fading
-								     the cell would take its share of the row's highlight with it and
-								     leave a hole in the middle of the row. -->
-								<span class="amount">{signed(signedAmount(t))}</span>
 							</td>
 						{/if}
 						<!-- Less air than the other cells, so the button it holds doesn't
@@ -681,20 +841,6 @@
 		}
 	}
 
-	/* The whole date unrolls over the amount beside it, and its ground only
-	   reaches as far as its own words: a wider amount was left with its last
-	   digits showing past the end. The figure steps aside for it instead, and
-	   comes back as the date rolls shut — the figure, not its cell, which holds
-	   its share of the row's highlight. The card-less lists keep room for the
-	   whole date instead (`DateLabel`'s `room`), so theirs never has to. */
-	.row:has(:global(time):hover) .amount {
-		opacity: 0;
-	}
-
-	.amount {
-		transition: opacity 0.2s var(--ease-out-quint);
-	}
-
 	/* The rule under a row stays on the columns while the highlight overhangs
 	   it, as the unassigned lists' does. A separate table ignores a row's own
 	   border, so the row draws it. Not under the last: the card's edge closes
@@ -702,10 +848,27 @@
 	.divided::after {
 		content: '';
 		position: absolute;
+		/* Over the pinned cells too, so the rule runs on unbroken as the rest
+		   scrolls under them. */
+		z-index: 2;
 		inset-inline: 0.75rem;
 		bottom: 0;
 		height: 1px;
 		background: var(--color-line);
+		pointer-events: none;
+	}
+
+	/* The pinned category's edge over the columns sliding under it: a short
+	   fade from the canvas, the page beneath the card, as strong as `--edge` —
+	   none at rest, full once the scroll is 16 px in. */
+	.pin-edge::after {
+		content: '';
+		position: absolute;
+		inset-block: 0;
+		right: -0.75rem;
+		width: 0.75rem;
+		background: linear-gradient(to right, var(--color-canvas), transparent);
+		opacity: var(--edge, 0);
 		pointer-events: none;
 	}
 

@@ -14,6 +14,7 @@ export { default as IconButton } from './IconButton.svelte';
 export { default as Kbd } from './Kbd.svelte';
 export { default as Logo } from './Logo.svelte';
 export { default as Meter } from './Meter.svelte';
+export { default as Notice } from './Notice.svelte';
 export { default as Orb } from './Orb.svelte';
 export { PALETTE, PALETTE_COLORS, type PaletteColor } from './palette';
 export { default as PillButton } from './PillButton.svelte';

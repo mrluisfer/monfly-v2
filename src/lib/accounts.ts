@@ -21,6 +21,14 @@ export type Account = {
 	id: string;
 	name: string;
 	role: AccountRole | null;
+	/**
+	 * v1's card details, each optional in its card form and null where left
+	 * blank: who issues it ("BBVA", "Visa"), its last four digits, and its kind
+	 * (v1's `CARD_TYPES`).
+	 */
+	provider: string | null;
+	last4: string | null;
+	type: string | null;
 	/** Its balance now, or when the month ended — see `AccountList.balanceAt`. */
 	balance: Cents;
 	/** Spent on it in `AccountList.month`, in the viewer's time zone. */
