@@ -12,6 +12,7 @@ export { default as OrbitRing } from './OrbitRing.svelte';
 export { default as Figure, FIGURE_SIZES, type FigureSize } from './Figure.svelte';
 export { default as IconButton } from './IconButton.svelte';
 export { default as Kbd } from './Kbd.svelte';
+export { default as Loader } from './Loader.svelte';
 export { default as Logo } from './Logo.svelte';
 export { default as Meter } from './Meter.svelte';
 export { default as Notice } from './Notice.svelte';

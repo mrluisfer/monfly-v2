@@ -21,6 +21,7 @@
 		type Currency,
 		type MonthKey
 	} from '$lib/finance';
+	import { accountLedgerHref } from '$lib/ledger-view';
 	import { accountsQuery } from '$lib/queries';
 	import { EASE_OUT_QUINT, cn, prefersReducedMotion } from '$lib/utils';
 	import { formatAge } from '$lib/utils/time';
@@ -91,12 +92,27 @@
 
 <!-- Fills its card: the header on top, the figures anchored to the bottom. -->
 <div class="flex flex-1 flex-col p-7">
-	<div class="mb-6 flex items-center justify-between gap-4">
-		<div class="flex min-w-0 items-center gap-2.5">
-			<!-- Alive in the account's colour; a new month flashes it, as it surges the rings. -->
-			<Sparkle {color} animated burst={period} class="size-5 shrink-0" />
-			<span class="truncate font-display text-xl font-medium">{account.name}</span>
-		</div>
+	<!-- The name is never cut short: it takes the lines it needs, balanced, and
+	     one long word breaks rather than widening the card. The filter keeps its
+	     words on one line and drops under the name once there's no room beside it. -->
+	<div class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+		<!-- Leads to the account's rows in the ledger. -->
+		<a
+			href={accountLedgerHref(account.id)}
+			class="name flex min-w-0 flex-1 basis-56 items-start gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+		>
+			<!-- Alive in the account's colour; a new month flashes it, as it surges the
+			     rings. Centred on the name's first line. -->
+			<Sparkle {color} animated burst={period} class="mt-1 size-5 shrink-0" />
+			<span class="min-w-0 font-display text-xl font-medium text-balance wrap-anywhere"
+				>{account.name}<AnimatedIcon
+					icon={MovingArrowRight}
+					set="moving"
+					size={16}
+					class="review-arrow ml-1.5 align-middle"
+				/></span
+			>
+		</a>
 		{#if options.length > 1}
 			<Select variant="ghost" label="Show the balance" {options} bind:value={period} />
 		{:else}
@@ -160,8 +176,8 @@
 			</OrbitRing>
 		</div>
 
-		<!-- Leads to the review view to come; for now, the transactions. -->
-		<a href="/transactions" class="review press self-end rounded-lg text-right">
+		<!-- Leads to the review view to come; for now, the account's rows in the ledger. -->
+		<a href={accountLedgerHref(account.id)} class="review press self-end rounded-lg text-right">
 			<Figure value={String(account.toReview)} size="lg" />
 			<span
 				class="mt-1 flex items-center justify-end gap-1 text-sm whitespace-nowrap text-fg-muted"
@@ -177,7 +193,7 @@
 	/* The arrow says "this goes somewhere": it slides in on hover or focus and
 	   plays its own push the way it points (AnimatedIcon). Touch has no hover,
 	   so it stays. */
-	.review :global(.review-arrow) {
+	:is(.review, .name) :global(.review-arrow) {
 		opacity: 0;
 		translate: -0.25rem 0;
 		transition:
@@ -185,14 +201,14 @@
 			translate 0.45s var(--ease-spring);
 	}
 
-	.review:hover :global(.review-arrow),
-	.review:focus-visible :global(.review-arrow) {
+	:is(.review, .name):hover :global(.review-arrow),
+	:is(.review, .name):focus-visible :global(.review-arrow) {
 		opacity: 1;
 		translate: 0 0;
 	}
 
 	@media (hover: none) {
-		.review :global(.review-arrow) {
+		:is(.review, .name) :global(.review-arrow) {
 			opacity: 1;
 			translate: 0 0;
 		}

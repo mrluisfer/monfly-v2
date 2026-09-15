@@ -22,7 +22,7 @@
 	} from '@tanstack/svelte-table';
 	import { DropdownMenu } from 'bits-ui';
 	import { animate, scroll } from 'motion';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { quintOut } from 'svelte/easing';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -49,6 +49,7 @@
 	import RowActions from './RowActions.svelte';
 	import SortHeader from './SortHeader.svelte';
 	import { formatMoney, parseMoney, type Currency } from '$lib/finance';
+	import type { LedgerView } from '$lib/ledger-view';
 	import { pop } from '$lib/transitions';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
@@ -81,6 +82,10 @@
 		onSelect?: (row: TransactionRow) => void;
 		/** Opens a row in the panel with its fields ready to change. */
 		onEdit?: (row: TransactionRow) => void;
+		/** What the ledger opens narrowed by: its search, kind and filters. Later, `show`. */
+		initial?: Omit<LedgerView, 'month'>;
+		/** Called with the search, kind and filters whenever one of them moves. */
+		onViewChange?: (view: Omit<LedgerView, 'month'>) => void;
 		class?: string;
 	};
 
@@ -95,8 +100,13 @@
 		selectedId = null,
 		onSelect,
 		onEdit,
+		initial,
+		onViewChange,
 		class: className
 	}: Props = $props();
+
+	/** Read once: past the first render the table's own state takes over. */
+	const opening = untrack(() => initial);
 
 	/** What a row's actions couldn't do, said under the list until the next try. */
 	let problem = $state<string | null>(null);
@@ -142,8 +152,8 @@
 		return out;
 	});
 
-	/** The advanced filter, for this visit only, as the hidden columns are. */
-	let filter = $state<LedgerFilter>(EMPTY_FILTER);
+	/** The advanced filter. The page keeps it in its address, with the search and the kind. */
+	let filter = $state<LedgerFilter>(opening?.filter ?? EMPTY_FILTER);
 
 	function setFilter(next: LedgerFilter) {
 		filter = next;
@@ -263,7 +273,9 @@
 		},
 		initialState: {
 			sorting: [{ id: 'date', desc: true }],
-			pagination: { pageIndex: 0, pageSize: 25 }
+			pagination: { pageIndex: 0, pageSize: 25 },
+			globalFilter: opening?.search ?? '',
+			columnFilters: opening && opening.kind !== 'all' ? [{ id: 'type', value: opening.kind }] : []
 		},
 		globalFilterFn: filterFn_includesString
 	});
@@ -288,6 +300,16 @@
 		table.setGlobalFilter('');
 		setKind('all');
 	}
+
+	/** Narrows the ledger as a navigation asks, keeping its sort and columns. */
+	export function show(view: Omit<LedgerView, 'month'>) {
+		filter = view.filter;
+		table.setGlobalFilter(view.search);
+		setKind(view.kind);
+	}
+
+	// The page keeps these in its address.
+	$effect(() => onViewChange?.({ search, kind, filter }));
 
 	const rows = $derived(table.getRowModel().rows);
 	const pageCount = $derived(table.getPageCount());
@@ -552,8 +574,14 @@
 		{/snippet}
 	</LedgerToolbar>
 
-	<!-- What the filters narrow by, each chip its own way out. -->
-	<AppliedFilters {filter} onChange={setFilter} accounts={offered.accounts} {currency} />
+	<!-- What the filters narrow by, each chip its own way out. Names come from the
+	     active accounts too: a link can pick one no row here names. -->
+	<AppliedFilters
+		{filter}
+		onChange={setFilter}
+		accounts={[...offered.accounts, ...accounts]}
+		{currency}
+	/>
 
 	<!-- Columns keep their air down to `min-w`; past that the ledger scrolls
 	     sideways rather than crushing a description against an orb. The

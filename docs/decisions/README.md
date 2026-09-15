@@ -15,6 +15,7 @@ record and mark the old one superseded.
 - [0009. A savings goal can read an account, and adding is a transfer](0009-savings-account-link.md)
 - [0010. Animated icons: three Svelte 5 sets beside Lucide](0010-animated-icons.md)
 - [0011. The transactions panel is kept per browser, in localStorage](0011-transactions-panel-in-local-storage.md)
+- [0012. The ledger's filters live in the page's address](0012-ledger-filters-in-the-address.md)
 
 ## Template
 
