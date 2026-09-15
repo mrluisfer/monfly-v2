@@ -91,7 +91,7 @@
 							{...props}
 							in:pop
 							out:pop
-							class="z-50 w-64 origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none"
+							class="z-50 w-max max-w-[calc(100vw-2rem)] min-w-64 origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none"
 						>
 							<div class="flex items-center gap-3 px-1.5 py-2">
 								<Avatar {seed} class="size-9" />
