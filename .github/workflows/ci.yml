@@ -37,3 +37,5 @@ jobs:
       # The bar: 0 errors and 0 warnings.
       - run: pnpm check --fail-on-warnings
       - run: pnpm build
+      # Stories still compile against the components they show (0013).
+      - run: pnpm build-storybook

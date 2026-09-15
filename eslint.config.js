@@ -1,6 +1,7 @@
 import prettier from 'eslint-config-prettier';
 import path from 'node:path';
 import js from '@eslint/js';
+import storybook from 'eslint-plugin-storybook';
 import svelte from 'eslint-plugin-svelte';
 import { defineConfig, includeIgnoreFile } from 'eslint/config';
 import globals from 'globals';
@@ -55,5 +56,7 @@ export default defineConfig(
 		// Reading state inside $effect is how Svelte tracks it as a dependency.
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		rules: { '@typescript-eslint/no-unused-expressions': 'off' }
-	}
+	},
+	// Stories (*.stories.svelte) and the .storybook config.
+	storybook.configs['flat/recommended']
 );
