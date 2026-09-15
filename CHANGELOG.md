@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/mrluisfer/monfly-v2/compare/v1.8.0...v1.9.0) (2026-09-15)
+
+
+### Features
+
+* pin your own header shortcuts, and v2 owns its database migrations ([#39](https://github.com/mrluisfer/monfly-v2/issues/39)) ([d076d91](https://github.com/mrluisfer/monfly-v2/commit/d076d911d837ee293fa8c532e9bc7475f52d5c21))
+
 ## [1.8.0](https://github.com/mrluisfer/monfly-v2/compare/v1.7.0...v1.8.0) (2026-09-15)
 
 
