@@ -1,39 +1,76 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { quintOut } from 'svelte/easing';
+	import { slide } from 'svelte/transition';
 	import gsap from 'gsap';
+	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { animate, scroll } from 'motion';
 	import MovingPlus from '@jis3r/icons/icons/plus';
 	import MovingX from '@jis3r/icons/icons/x';
+	import { ShortcutIcon } from '$lib/components/shortcuts';
 	import { AnimatedIcon, IconButton } from '$lib/components/ui';
+	import { setShortcutMutation, shortcutsQuery } from '$lib/queries';
+	import { DEFAULT_SHORTCUTS, SHORTCUTS, inHeader, type Shortcut } from '$lib/shortcuts';
+	import { pop } from '$lib/transitions';
 	import { EASE_OUT_QUINT, cn, prefersReducedMotion } from '$lib/utils';
 
-	/** Browser-style workspace tabs. Static for now — no open/close state yet. */
-	const tabs = [
-		{ href: '/dashboard', label: 'Overview' },
-		{ href: '/transactions', label: 'Transactions' },
-		{ href: '/insights', label: 'Insights' }
-	];
+	/**
+	 * Browser-style tabs for the person's shortcuts, as pinned on /shortcuts and
+	 * in the catalog's order: Overview first, unless they took it out.
+	 * The plus opens that page; a tab's ✕ takes its shortcut away, on every
+	 * device. The app layout seeds the query from the session, so the tabs draw
+	 * on the server.
+	 */
+	const query = createQuery(() => ({
+		...shortcutsQuery(),
+		enabled: browser && page.data.profile != null
+	}));
+
+	// Read the client during setup: Svelte context is out of reach from the
+	// mutation's lazily evaluated options.
+	const queryClient = useQueryClient();
+	const pin = createMutation(() => setShortcutMutation(queryClient));
+
+	const tabs = $derived(
+		SHORTCUTS.filter((shortcut) => inHeader(shortcut, query.data ?? DEFAULT_SHORTCUTS))
+	);
 
 	// Exact match or a nested path — '/cards' must not match '/cardsomething'.
 	const isActive = (href: string) =>
 		page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
 
-	const activeIndex = $derived(tabs.findIndex((t) => isActive(t.href)));
+	const activeId = $derived(tabs.find((tab) => isActive(tab.href))?.id);
 
-	let tabEls = $state<HTMLElement[]>([]);
+	/** Takes a shortcut out of the header. Closing the tab you're on moves you to the one before it, as a browser does. */
+	function close(tab: Shortcut) {
+		// A locked tab has no ✕: only its lock on /shortcuts takes it out.
+		if (tab.locked) return;
+		if (isActive(tab.href)) {
+			const at = tabs.findIndex((t) => t.id === tab.id);
+			goto(tabs[at - 1]?.href ?? '/dashboard');
+		}
+		pin.mutate({ id: tab.id, pinned: false });
+	}
+
+	let strip = $state<HTMLElement>();
 	let surface = $state<HTMLElement | null>(null);
 	let placed = false;
+	let gliding = false;
 
 	/**
 	 * One shared surface carries the tab shape and slides between tabs, rather
 	 * than each tab morphing on its own. That keeps the shoulders — which are
 	 * pseudo-elements and so unreachable from JS — intact throughout the move.
+	 * The tab is looked up rather than bound, so one sliding out of the strip
+	 * never stands in for the one that's open.
 	 */
 	function place(animated: boolean) {
 		if (!surface) return;
 
-		const el = tabEls[activeIndex];
+		const el = strip?.querySelector<HTMLElement>('[data-tab][data-active]');
 		if (!el) {
 			// Routes outside the strip (e.g. /settings) have no active tab.
 			surface.style.opacity = '0';
@@ -50,13 +87,32 @@
 			return;
 		}
 
-		animate(surface, { x, width, opacity: 1 }, { duration: 0.45, ease: [...EASE_OUT_QUINT] });
+		gliding = true;
+		animate(
+			surface,
+			{ x, width, opacity: 1 },
+			{ duration: 0.45, ease: [...EASE_OUT_QUINT] }
+		).finished.then(() => (gliding = false));
 	}
 
 	$effect(() => {
-		activeIndex; // re-place whenever the route changes
+		activeId; // re-place whenever the open tab changes
 		place(placed);
 		placed = true;
+	});
+
+	// A tab arriving or leaving makes room, so the tabs beside it glide over;
+	// the surface rides along with the one it's on, frame by frame, until they
+	// settle — except while it's gliding to a new tab on its own.
+	$effect(() => {
+		tabs; // whenever what's in the strip changes
+		if (!untrack(() => placed)) return;
+		const until = performance.now() + 700;
+		let frame = requestAnimationFrame(function follow() {
+			if (!gliding) place(false);
+			if (performance.now() < until) frame = requestAnimationFrame(follow);
+		});
+		return () => cancelAnimationFrame(frame);
 	});
 
 	$effect(() => {
@@ -130,10 +186,15 @@
 			{ type: 'spring', bounce: 0.5, duration: 0.7, delay: 0.1 }
 		);
 	});
+
+	const motion = (ms: number) => (prefersReducedMotion() ? 0 : ms);
 </script>
 
 <!-- pl-5 leaves room for the surface's left shoulder to overhang. -->
-<div class={cn('relative flex h-full min-w-0 items-center gap-6 pl-5', !settled && 'settling')}>
+<div
+	bind:this={strip}
+	class={cn('relative flex h-full min-w-0 items-center pl-5', !settled && 'settling')}
+>
 	<!-- The active tab's surface: x and width from place(), its shape from data-docked -->
 	<div
 		bind:this={surface}
@@ -146,39 +207,64 @@
 		<span bind:this={drop} class="tab-drop"></span>
 	</div>
 
-	{#each tabs as tab, i (tab.href)}
+	{#each tabs as tab (tab.id)}
 		{@const active = isActive(tab.href)}
-		<a
-			bind:this={tabEls[i]}
-			href={tab.href}
-			aria-current={active ? 'page' : undefined}
-			class={cn(
-				'group relative z-10 flex h-11 shrink-0 items-center gap-3 px-5',
-				'rounded-[var(--radius-chip)] text-[0.9375rem] whitespace-nowrap',
-				'transition-[color,background-color] duration-300 ease-[var(--ease-out-quint)]',
-				active ? 'bg-transparent text-fg' : 'bg-sunken text-fg-muted hover:text-fg'
-			)}
+		<!-- The wrapper makes room and carries the gap after the tab, so the gap
+		     closes with it instead of snapping shut once it's gone. -->
+		<div
+			class="shrink-0 pr-6"
+			transition:slide={{ axis: 'x', duration: motion(350), easing: quintOut }}
 		>
-			{tab.label}
-			<!-- Always rendered so tab widths stay fixed; a width change mid-slide
-			     would reflow the strip and fight the surface animation.
-			     `mount`, not the pointer: this glyph's gesture draws it in from
-			     nothing, so playing it on hover would take the ✕ away at the moment
-			     the pointer asks for it. Its gesture here is the fade below. -->
-			<AnimatedIcon
-				icon={MovingX}
-				set="moving"
-				trigger="mount"
-				size={14}
-				class={cn(
-					'transition-opacity duration-300',
-					active ? 'opacity-45 group-hover:opacity-80' : 'opacity-0 group-hover:opacity-35'
-				)}
-			/>
-		</a>
+			<div
+				data-tab
+				data-active={active || undefined}
+				class="group relative z-10"
+				in:pop={{ scale: 0.9, duration: 0.4, bounce: 0.35 }}
+				out:pop={{ scale: 0.9, duration: 0.3 }}
+			>
+				<a
+					href={tab.href}
+					aria-current={active ? 'page' : undefined}
+					class={cn(
+						'flex h-11 items-center gap-2.5 pl-4',
+						'rounded-[var(--radius-chip)] text-[0.9375rem] whitespace-nowrap',
+						'transition-[color,background-color] duration-300 ease-[var(--ease-out-quint)]',
+						// The close button sits over the end of the tab, outside the link.
+						tab.locked ? 'pr-5' : 'pr-11',
+						active ? 'bg-transparent text-fg' : 'bg-sunken text-fg-muted hover:text-fg'
+					)}
+				>
+					<!-- The glyph its card on /shortcuts wears, from the same place. -->
+					<ShortcutIcon shortcut={tab} size={16} />
+					{tab.label}
+				</a>
+
+				{#if !tab.locked}
+					<!-- A sibling of the link, not inside it: a button can't nest in an <a>.
+					     `mount`, not the pointer: this glyph's gesture draws it in from
+					     nothing, so playing it on hover would take the ✕ away at the moment
+					     the pointer asks for it. Its gesture here is the fade. -->
+					<button
+						type="button"
+						aria-label="Remove {tab.label} from the header"
+						onclick={() => close(tab)}
+						class={cn(
+							'absolute top-1/2 right-3.5 grid size-6 -translate-y-1/2 place-items-center rounded-full',
+							'transition-[opacity,background-color] duration-300 ease-[var(--ease-out-quint)] hover:bg-fg/8',
+							'focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-blue',
+							active
+								? 'opacity-45 hover:opacity-80'
+								: 'opacity-0 group-hover:opacity-35 hover:opacity-80 [@media(hover:none)]:opacity-35'
+						)}
+					>
+						<AnimatedIcon icon={MovingX} set="moving" trigger="mount" size={14} />
+					</button>
+				{/if}
+			</div>
+		</div>
 	{/each}
 
-	<IconButton size="sm" dashed aria-label="New tab" class="ml-1">
+	<IconButton size="sm" dashed href="/shortcuts" aria-label="Add a shortcut" class="ml-1">
 		<!-- Drawn in once as it appears, never under the pointer: the plus writes
 		     itself stroke by stroke from nothing, and on hover that reads as the
 		     glyph going missing rather than as a gesture. -->

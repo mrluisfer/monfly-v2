@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { QueryClient } from '@tanstack/svelte-query';
-import { ApiError } from '$lib/queries';
+import { ApiError, shortcutKeys } from '$lib/queries';
+import { DEFAULT_SHORTCUTS } from '$lib/shortcuts';
 import type { LayoutLoad } from './$types';
 
 /**
@@ -23,6 +24,12 @@ export const load: LayoutLoad = async ({ data }) => {
 			}
 		}
 	});
+
+	// The header's shortcuts come with the profile, so the shell draws them on
+	// the server without a request of its own.
+	if (data.profile) {
+		queryClient.setQueryData(shortcutKeys.all, data.profile.shortcuts ?? [...DEFAULT_SHORTCUTS]);
+	}
 
 	return { ...data, queryClient };
 };

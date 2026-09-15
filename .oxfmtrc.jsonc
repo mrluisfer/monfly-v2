@@ -18,6 +18,9 @@
 		"/static/",
 		// Agent skills, kept exactly as published.
 		".claude/skills/",
+		// Written by Drizzle Kit: a migration is checked by its hash, so it stays byte for byte.
+		"drizzle/",
+		"drizzle-pull/",
 		// Written by release-please.
 		"CHANGELOG.md",
 		".release-please-manifest.json"

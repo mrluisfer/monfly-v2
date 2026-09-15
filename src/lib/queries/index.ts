@@ -6,6 +6,7 @@ export { expenseBreakdownQuery, expenseKeys } from './expenses';
 export { ApiError, getJson, sendJson, type Fetch } from './http';
 export { incomeKeys, incomeQuery } from './income';
 export { addSavingsMutation, savingsKeys, savingsQuery, setSavingsGoalMutation } from './savings';
+export { setShortcutMutation, shortcutKeys, shortcutsQuery } from './shortcuts';
 export { monthSpendingQuery, spendingKeys } from './spending';
 export {
 	addTransactionMutation,

@@ -1,23 +1,8 @@
-import { config } from 'dotenv';
-import { defineConfig } from 'drizzle-kit';
-
-config({ quiet: true });
-
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
+import { databaseConfig } from './drizzle.shared';
 
 /**
- * This database is shared with monfly-v1, and Prisma owns its migrations.
- * Until v1 is retired, Drizzle only reads its structure: `pnpm db:pull`, never
- * `drizzle-kit push` or `migrate` — those reconcile the database to this schema
- * with ALTERs and DROPs.
+ * Develop, from `.env.develop` — where every migration is rehearsed first, and
+ * what `pnpm db:generate`, `db:migrate`, `db:pull` and `db:studio` read.
+ * Production has its own config: see drizzle.shared.ts.
  */
-export default defineConfig({
-	dialect: 'postgresql',
-	schema: './src/lib/server/db/schema.ts',
-	out: './drizzle',
-	dbCredentials: { url: process.env.DATABASE_URL },
-	// Prisma's own bookkeeping table: never introspect it, never diff against it.,
-	tablesFilter: ['!_prisma_migrations'],
-	strict: true,
-	verbose: true
-});
+export default databaseConfig('.env.develop');

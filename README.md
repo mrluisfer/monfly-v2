@@ -103,8 +103,11 @@ pnpm lint         # Oxfmt + ESLint
 pnpm format       # format the whole repo
 pnpm storybook    # Storybook on :6006: the design system, a story per component
 pnpm build-storybook # static Storybook in storybook-static/
-pnpm db:pull      # introspect the shared DB into drizzle/ (read-only)
-pnpm db:studio    # Drizzle Studio — it can edit rows: shared DB, careful
+pnpm db:generate  # write the next migration from schema.ts into drizzle/
+pnpm db:migrate   # apply pending migrations to develop
+pnpm db:migrate:production # …then to production
+pnpm db:pull      # develop's structure into drizzle-pull/ (read-only)
+pnpm db:studio    # Drizzle Studio on develop — it can edit rows
 ```
 
 ## Layout
@@ -212,26 +215,34 @@ compare case-sensitively: with the Auth0 spelling, that user sees an empty accou
 ## Database
 
 Drizzle ORM on Neon Postgres, over Neon's HTTP driver. **The database is shared
-with monfly-v1, and Prisma owns its migrations.**
+with monfly-v1 while v1 lives, and v2 owns its schema:** Drizzle Kit writes and
+runs the migrations ([0015](docs/decisions/0015-drizzle-kit-owns-migrations.md)).
 
-| File                             | Role                                            |
-| -------------------------------- | ----------------------------------------------- |
-| `src/lib/server/db/schema.ts`    | tables, curated from `db:pull`                  |
-| `src/lib/server/db/relations.ts` | relations for `db.query.*`, named after Prisma  |
-| `src/lib/server/db/index.ts`     | the `db` client — server-only via `$lib/server` |
-| `drizzle.config.ts`              | drizzle-kit, used for introspection only        |
+| File                             | Role                                                               |
+| -------------------------------- | ------------------------------------------------------------------ |
+| `src/lib/server/db/schema.ts`    | the tables: the source of truth for migrations                     |
+| `src/lib/server/db/relations.ts` | relations for `db.query.*`, named after Prisma                     |
+| `src/lib/server/db/index.ts`     | the `db` client — server-only via `$lib/server`                    |
+| `drizzle/`                       | migrations, a folder each: `migration.sql` and its `snapshot.json` |
+| `drizzle.config.ts`              | develop (`.env.develop`): generate, migrate, pull, studio          |
+| `drizzle.production.config.ts`   | production (`.env`): `db:migrate:production` only                  |
 
-- **Never run `drizzle-kit push` or `migrate` against this database** while v1
-  is live: they reconcile the database to the schema with ALTERs and DROPs.
-  There are no scripts for them on purpose.
-- **When v1's schema changes,** `pnpm db:pull` writes the database's current
-  shape to `drizzle/` (gitignored); port the change into `schema.ts` by hand.
-- **Two Neon branches** (project `monfly`): `production` is what this app's
-  `.env` and v1's `.env.local` point to; v1's `.env` points to `develop`.
-  Prisma's CLI reads only `.env`, so a bare `prisma migrate deploy` in v1
-  migrates `develop`. Rehearse there, then deploy to production with
-  `DATABASE_URL` set to its direct host (`-pooler` removed), and check the host
-  in Prisma's `Datasource` line before trusting the result.
+- **A schema change is a migration.** Edit `schema.ts`, run `pnpm db:generate`
+  and read the SQL it wrote; a backfill goes in the same `migration.sql`. Then
+  `pnpm db:migrate` applies it to develop, and `pnpm db:migrate:production` to
+  production once develop is right. Never `drizzle-kit push`, and never an
+  `ALTER` by hand: the database would drift from Drizzle's history.
+- **Additive only while v1 lives.** v1's Prisma Client reads these tables: add
+  columns, defaults and backfills, but don't rename or drop until v1 is retired.
+  `_prisma_migrations` stays as history; don't run `prisma migrate` in v1.
+- **Two Neon branches** (project `monfly`): `production`, in this app's
+  `.env`, and `develop`, in `.env.develop` (gitignored, as every env file
+  is). Each Drizzle config reads only its own file — an exported
+  `DATABASE_URL` can't send a migration elsewhere — and runs on the direct host
+  (`-pooler` removed), not the pooler.
+- **`pnpm db:pull`** writes develop's structure to `drizzle-pull/`
+  (gitignored), for comparing the database with `schema.ts` when something
+  looks off.
 - **Prisma generated some values client-side,** so the schema recreates them:
   ids through `$defaultFn`, `updatedAt` through `$onUpdate`. Without them an
   insert from v2 fails (no id) and `updatedAt` never moves.
@@ -254,6 +265,7 @@ that reads data:
 | endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear                                                                             |
 | endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                   |
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                        |
+| endpoint              | `src/routes/api/me/shortcuts/+server.ts`                  | GET the pinned shortcuts; PATCH one on or off (Overview is always pinned)                                                    |
 | endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them |
 | endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null                                                                         |
 | endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                   |
@@ -287,6 +299,14 @@ that reads data:
   key in a single statement, so concurrent edits don't overwrite each other.
   The Expenses card's chips set them — optimistically, rolled back on error —
   and the dial's wedges follow.
+- **Header shortcuts live in `User.shortcuts`**: a text array of ids from
+  `$lib/shortcuts`, defaulting to `{overview,transactions}`. Overview is
+  stored like the rest but locked: the page takes it out only after four presses
+  on its lock and a confirmation. `PATCH /api/me/shortcuts` appends or removes
+  one id in a single statement, so two devices can't overwrite each other. The
+  session's profile carries the array and `(app)/+layout.ts` seeds the query
+  with it, so the header draws on the server
+  ([0014](docs/decisions/0014-shortcuts-on-the-user.md)).
 - **Featured accounts use `Card.role`** (v1 migration
   `20260910230000_add_card_role`): `main` or `secondary`, unique per user —
   NULLs never collide. `PATCH /api/accounts/[id]` moves a role, and the

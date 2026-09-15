@@ -4,7 +4,7 @@ One short file per decision that someone would otherwise reopen, named
 `NNNN-short-title.md` and never renumbered. When a decision changes, add a new
 record and mark the old one superseded.
 
-- [0001. v2 shares v1's database; Prisma owns migrations](0001-shared-database.md)
+- [0001. v2 shares v1's database; Prisma owns migrations](0001-shared-database.md) — superseded by 0015
 - [0002. Auth0 Universal Login with a server-side session](0002-auth0-universal-login.md)
 - [0003. Repo tooling that works on GitHub Free](0003-github-free-tooling.md)
 - [0004. Proprietary code, commercial-friendly dependencies](0004-proprietary-code.md)
@@ -17,6 +17,8 @@ record and mark the old one superseded.
 - [0011. The transactions panel is kept per browser, in localStorage](0011-transactions-panel-in-local-storage.md)
 - [0012. The ledger's filters live in the page's address](0012-ledger-filters-in-the-address.md)
 - [0013. Storybook shows the design system](0013-storybook.md)
+- [0014. Header shortcuts live on the User row](0014-shortcuts-on-the-user.md)
+- [0015. v2 owns the schema: Drizzle Kit writes and runs migrations](0015-drizzle-kit-owns-migrations.md)
 
 ## Template
 

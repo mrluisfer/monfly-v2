@@ -10,6 +10,8 @@ export type MonflyUser = {
 	name: string | null;
 	avatarSeed: string | null;
 	preferredCurrency: string | null;
+	/** The header's pinned shortcuts, by id ($lib/shortcuts): the shell draws them on the server. */
+	shortcuts: string[] | null;
 };
 
 const profileColumns = {
@@ -17,7 +19,8 @@ const profileColumns = {
 	email: user.email,
 	name: user.name,
 	avatarSeed: user.avatarSeed,
-	preferredCurrency: user.preferredCurrency
+	preferredCurrency: user.preferredCurrency,
+	shortcuts: user.shortcuts
 };
 
 const IMPORTED_PREFIX = 'auth0|';
