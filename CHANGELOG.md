@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/mrluisfer/monfly-v2/compare/v1.6.0...v1.7.0) (2026-09-15)
+
+
+### Features
+
+* filters that stay in the ledger's link, and the latest transactions on the dashboard ([#35](https://github.com/mrluisfer/monfly-v2/issues/35)) ([9639322](https://github.com/mrluisfer/monfly-v2/commit/9639322b26d681b377839647de0e685ccdbbf45e))
+
 ## [1.6.0](https://github.com/mrluisfer/monfly-v2/compare/v1.5.0...v1.6.0) (2026-09-15)
 
 
