@@ -7,6 +7,7 @@ export { default as IncomeBars } from './IncomeBars.svelte';
 export { default as IncomeCard } from './IncomeCard.svelte';
 export { default as LoansCard } from './LoansCard.svelte';
 export { default as MeterStat } from './MeterStat.svelte';
+export { default as RecentTransactionsCard } from './RecentTransactionsCard.svelte';
 export { default as SavingsEditor } from './SavingsEditor.svelte';
 export { default as SavingsGoal } from './SavingsGoal.svelte';
 export { default as SpentThisMonth } from './SpentThisMonth.svelte';

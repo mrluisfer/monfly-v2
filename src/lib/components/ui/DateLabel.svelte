@@ -57,10 +57,16 @@
 		date: string;
 		/** The viewer's zone: the day and the time are drawn in it. */
 		timeZone: string;
+		/**
+		 * Unroll the whole date under the pointer. Off where a column can't keep
+		 * room for it — a third of the dashboard's grid: the short date alone,
+		 * still read out whole.
+		 */
+		unroll?: boolean;
 		class?: string;
 	};
 
-	let { date, timeZone, class: className }: Props = $props();
+	let { date, timeZone, unroll = true, class: className }: Props = $props();
 
 	const at = $derived(new Date(date));
 	const format = $derived(formats(timeZone));
@@ -104,11 +110,11 @@
 	class={cn('tabular relative whitespace-nowrap', className)}
 	onpointerenter={() => extend(true)}
 	onpointerleave={() => extend(false)}
-	><span aria-hidden="true">{short}</span><span class="sr-only">{whole}</span><span
-		bind:this={layer}
-		class="whole"
-		aria-hidden="true">{whole}</span
-	></time
+	><span aria-hidden="true">{short}</span><span class="sr-only">{whole}</span>{#if unroll}<span
+			bind:this={layer}
+			class="whole"
+			aria-hidden="true">{whole}</span
+		>{/if}</time
 >
 
 <style>

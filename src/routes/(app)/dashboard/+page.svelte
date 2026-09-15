@@ -5,6 +5,7 @@
 		ExpensesCard,
 		IncomeCard,
 		LoansCard,
+		RecentTransactionsCard,
 		SavingsGoal,
 		SpentThisMonth
 	} from '$lib/components/dashboard';
@@ -13,11 +14,13 @@
 
 	let { data } = $props();
 
-	// Tips and Loans share the one slot under Income, so the column keeps the
-	// height the grid gives it and the row stays level across all three.
+	// Tips, Loans and the latest transactions share the one slot under Income,
+	// so the column keeps the height the grid gives it and the row stays level
+	// across all three.
 	const asides = [
 		{ value: 'tips', label: 'Tips' },
-		{ value: 'loans', label: 'Loans' }
+		{ value: 'loans', label: 'Loans' },
+		{ value: 'transactions', label: 'Transactions' }
 	] as const;
 	let aside = $state<(typeof asides)[number]['value']>('tips');
 </script>
@@ -50,16 +53,27 @@
 			<AccountsCard timeZone={data.timeZone} enabled={data.profile !== null} />
 		</div>
 
-		<!-- Income + the Tips / Loans aside -->
+		<!-- Income + the Tips / Loans / Transactions aside -->
 		<div class="flex flex-col gap-4" use:reveal={{ delay: 0.15 }}>
 			<IncomeCard enabled={data.profile !== null} view={data.incomeView} />
 
-			<CardTabs options={[...asides]} bind:value={aside} label="Tips and loans" class="flex-1">
+			<CardTabs
+				options={[...asides]}
+				bind:value={aside}
+				label="Tips, loans and transactions"
+				class="flex-1"
+			>
 				{#snippet panel(value)}
 					{#if value === 'tips'}
 						<DeskFreedomTip />
-					{:else}
+					{:else if value === 'loans'}
 						<LoansCard />
+					{:else}
+						<RecentTransactionsCard
+							timeZone={data.timeZone}
+							open={aside === 'transactions'}
+							enabled={data.profile !== null}
+						/>
 					{/if}
 				{/snippet}
 			</CardTabs>

@@ -7,6 +7,8 @@
 	import { slide } from 'svelte/transition';
 	import { createQuery, keepPreviousData } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
+	import { afterNavigate, replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { reveal } from '$lib/actions';
 	import { accountColors } from '$lib/accounts';
 	import {
@@ -26,6 +28,7 @@
 		monthName,
 		type MonthKey
 	} from '$lib/finance';
+	import { ledgerSearch, readLedgerView } from '$lib/ledger-view';
 	import { accountsQuery, colorChoicesQuery, transactionsQuery } from '$lib/queries';
 	import {
 		blankDraft,
@@ -41,10 +44,20 @@
 
 	let { data } = $props();
 
-	// The page opens on the whole record; the filter narrows it to one month, a
-	// second query. Stepping past December simply lands in the next year: a
-	// month key is an index, not a pair of fields.
-	let filter = $state<'all' | MonthKey>('all');
+	/**
+	 * What the address asks the ledger to narrow by (`$lib/ledger-view`). In the
+	 * browser it's read from `location`, not `page.url`: going back to an address
+	 * this page rewrote, SvelteKit loads the one it first arrived at, while
+	 * `location` holds the last.
+	 */
+	const asked = () =>
+		readLedgerView((browser ? new URL(location.href) : page.url).searchParams, data.month);
+	const arrival = untrack(asked);
+
+	// The page opens on the whole record, or the month its address names; the
+	// filter narrows it to one month, a second query. Stepping past December
+	// simply lands in the next year: a month key is an index, not a pair of fields.
+	let filter = $state<'all' | MonthKey>(arrival.month);
 	/**
 	 * This month is as far forward as there is: the endpoint refuses later ones.
 	 * Derived, so a load that runs again — or a clock that rolls over — moves it.
@@ -58,6 +71,36 @@
 		dir = next !== 'all' && filter !== 'all' && next < filter ? -1 : 1;
 		filter = next;
 	}
+
+	/** The ledger's search, kind and filters, as the table last said them. */
+	let ledger = $state({ kind: arrival.kind, search: arrival.search, filter: arrival.filter });
+	let table = $state<ReturnType<typeof TransactionsTable>>();
+	/** The query the address last carried, so it's rewritten only when something moves. */
+	let said = ledgerSearch(arrival);
+
+	// Replaced, not pushed: Back leaves the page rather than stepping back
+	// through every filter. Shallow, so no load runs.
+	$effect(() => {
+		const query = ledgerSearch({ month: filter, ...ledger });
+		if (query === said) return;
+		said = query;
+		replaceState(`${page.url.pathname}${query}`, page.state);
+	});
+
+	/**
+	 * A navigation that lands here again — the Transactions tab, `g t`, Back to
+	 * an earlier address — narrows the ledger to what its address asks, keeping
+	 * its sort and columns. Arriving, the two already agree.
+	 */
+	afterNavigate(() => {
+		const next = asked();
+		const query = ledgerSearch(next);
+		if (query === said) return;
+		said = query;
+		show(next.month);
+		ledger = { kind: next.kind, search: next.search, filter: next.filter };
+		table?.show(next);
+	});
 
 	const enabled = $derived(browser && data.profile !== null);
 	// Each month is its own cache entry, so walking to one not yet fetched would
@@ -355,6 +398,9 @@
 				</div>
 
 				<TransactionsTable
+					bind:this={table}
+					initial={arrival}
+					onViewChange={(next) => (ledger = next)}
 					transactions={rows}
 					{currency}
 					timeZone={data.timeZone}

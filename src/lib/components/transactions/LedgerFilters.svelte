@@ -6,7 +6,8 @@
 
 	/**
 	 * The ledger's advanced filter. Its parts narrow together, a part left empty
-	 * lets every row through, and it lasts the visit, as hidden columns do.
+	 * lets every row through, and the page keeps it in its address
+	 * (`$lib/ledger-view`).
 	 */
 	export type LedgerFilter = {
 		/** Account ids, and `NO_ACCOUNT` for rows with none. Empty: any account. */
@@ -181,7 +182,7 @@
 								</span>
 								<div class="min-w-0">
 									<p class="text-sm font-medium">Filters</p>
-									<p class="text-xs text-fg-muted">They narrow together, for this visit.</p>
+									<p class="text-xs text-fg-muted">They narrow together and stay in the link.</p>
 								</div>
 							</div>
 

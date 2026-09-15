@@ -61,7 +61,8 @@
 					type="button"
 					aria-label="{label}: {selected?.label ?? 'none'}"
 					class={cn(
-						'group press inline-flex items-center gap-2 rounded-md text-sm text-fg-muted hover:text-fg',
+						// One line: squeezed, it moves as a whole rather than breaking its words.
+						'group press inline-flex items-center gap-2 rounded-md text-sm whitespace-nowrap text-fg-muted hover:text-fg',
 						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
 						className
 					)}
