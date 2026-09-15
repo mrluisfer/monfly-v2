@@ -1,5 +1,7 @@
 <script lang="ts" module>
+	import { animate, stagger } from 'motion';
 	import type { PaletteColor } from '$lib/components/ui';
+	import { EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
 
 	/** Which way the money went, or both. */
 	export type Kind = 'all' | 'income' | 'expense';
@@ -29,6 +31,34 @@
 			locked: shown === 1 && !hidden.has(c.id)
 		}));
 	}
+
+	/**
+	 * A pastel taken to a chip, the way `CategoryIcon` wears a category's: the
+	 * colour at 15% behind, the glyph that colour taken down to one weight.
+	 * `--tint` names the colour.
+	 */
+	export const pastel =
+		'bg-[color-mix(in_oklab,var(--tint)_15%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:bg-[color-mix(in_oklab,var(--tint)_20%,transparent)] dark:text-(--tint)';
+
+	/**
+	 * A pill while it narrows the list, in the colour of what it keeps: the
+	 * tint behind, the glyph and words that colour at a glyph's weight, and its
+	 * rim the colour a step darker — the hairline's shape, in colour. The rim
+	 * and fill ease across with the press transition. The ledger's filters and
+	 * the chips that say them wear it too.
+	 */
+	export const narrowing =
+		'bg-[color-mix(in_oklab,var(--tint)_14%,transparent)] hover:bg-[color-mix(in_oklab,var(--tint)_24%,transparent)] border-[oklch(from_var(--tint)_calc(l_-_0.12)_c_h)] text-[oklch(from_var(--tint)_0.5_calc(c*1.6)_h)] dark:text-(--tint)';
+
+	/** As a layer opens, its rows deal in one after another behind the surface's pop (Motion). */
+	export function deal(node: HTMLElement) {
+		if (prefersReducedMotion()) return;
+		animate(
+			node.querySelectorAll('[data-deal]'),
+			{ opacity: [0, 1], y: [4, 0] },
+			{ delay: stagger(0.03, { startDelay: 0.05 }), duration: 0.3, ease: EASE_OUT_QUINT }
+		);
+	}
 </script>
 
 <script lang="ts">
@@ -46,12 +76,11 @@
 	import MovingTag from '@jis3r/icons/icons/tag';
 	import MovingCheck from '@jis3r/icons/icons/check';
 	import { DropdownMenu } from 'bits-ui';
-	import { animate, stagger } from 'motion';
 	import type { ComponentProps } from 'svelte';
 	import { blur } from 'svelte/transition';
 	import { AnimatedIcon, PALETTE, PillButton } from '$lib/components/ui';
 	import { pop } from '$lib/transitions';
-	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
+	import { cn } from '$lib/utils';
 
 	/**
 	 * The ledger's tools beside its search: what kind of money to show, and
@@ -83,23 +112,6 @@
 		onShowAllColumns,
 		class: className
 	}: Props = $props();
-
-	/**
-	 * A pastel taken to a chip, the way `CategoryIcon` wears a category's: the
-	 * colour at 15% behind, the glyph that colour taken down to one weight.
-	 * `--tint` names the colour.
-	 */
-	const pastel =
-		'bg-[color-mix(in_oklab,var(--tint)_15%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:bg-[color-mix(in_oklab,var(--tint)_20%,transparent)] dark:text-(--tint)';
-
-	/**
-	 * The pill while it narrows the list, in the colour of what it keeps: the
-	 * tint behind, the glyph and words that colour at a glyph's weight, and its
-	 * rim the colour a step darker — the hairline's shape, in colour. The rim
-	 * and fill ease across with the press transition.
-	 */
-	const narrowing =
-		'bg-[color-mix(in_oklab,var(--tint)_14%,transparent)] hover:bg-[color-mix(in_oklab,var(--tint)_24%,transparent)] border-[oklch(from_var(--tint)_calc(l_-_0.12)_c_h)] text-[oklch(from_var(--tint)_0.5_calc(c*1.6)_h)] dark:text-(--tint)';
 
 	/** An animated Lucide glyph and its set, as `AnimatedIcon` takes them (DESIGN.md → Icons). */
 	type Glyph = Pick<ComponentProps<typeof AnimatedIcon>, 'icon' | 'set'>;
@@ -147,7 +159,7 @@
 
 	// The menu's rows, as the user menu has them.
 	const surface =
-		'z-50 w-64 origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none';
+		'z-50 w-max min-w-64 max-w-[calc(100vw-2rem)] origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none';
 	const heading = 'px-1.5 pt-1.5 pb-1 text-xs font-medium text-fg-muted';
 	const item = [
 		'group flex h-10 cursor-default items-center gap-3 rounded-[0.625rem] px-1.5 text-[0.9375rem] outline-none select-none',
@@ -164,16 +176,6 @@
 			'ml-auto size-4 stroke-[1.75] text-blue transition-[opacity,scale] duration-300 ease-[var(--ease-spring)]',
 			on ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
 		);
-
-	/** As a menu opens, its rows deal in one after another behind the surface's pop (Motion). */
-	function deal(node: HTMLElement) {
-		if (prefersReducedMotion()) return;
-		animate(
-			node.querySelectorAll('[data-deal]'),
-			{ opacity: [0, 1], y: [4, 0] },
-			{ delay: stagger(0.03, { startDelay: 0.05 }), duration: 0.3, ease: EASE_OUT_QUINT }
-		);
-	}
 </script>
 
 <div class={cn('flex items-center gap-2', className)}>

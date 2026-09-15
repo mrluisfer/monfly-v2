@@ -129,7 +129,7 @@
 
 	// The menu's rows, as the ledger tools and the user menu have them.
 	const surface =
-		'z-50 w-60 origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none';
+		'z-50 w-max min-w-60 max-w-[calc(100vw-2rem)] origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-1.5 shadow-lg outline-none';
 	// `whitespace-nowrap`: a row is one line high, so a long label — or a long
 	// account name beside it — truncates rather than pushing the row open.
 	const item = [

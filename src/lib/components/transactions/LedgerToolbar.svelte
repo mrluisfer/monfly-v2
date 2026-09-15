@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Search from '@lucide/svelte/icons/search';
+	import type { Snippet } from 'svelte';
 	import { countUp } from '$lib/actions';
 	import { cn } from '$lib/utils';
 	import LedgerTools, { type Kind, type ToolColumn } from './LedgerTools.svelte';
@@ -23,6 +24,8 @@
 		columns: ToolColumn[];
 		onToggleColumn: (id: string) => void;
 		onShowAllColumns: () => void;
+		/** Filters beyond the kind, before the other tools — the ledger's. The lists have none. */
+		filters?: Snippet;
 		class?: string;
 	};
 
@@ -37,6 +40,7 @@
 		columns,
 		onToggleColumn,
 		onShowAllColumns,
+		filters,
 		class: className
 	}: Props = $props();
 </script>
@@ -58,15 +62,19 @@
 			class="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-fg-subtle"
 		/>
 	</div>
-	<LedgerTools
-		{kind}
-		{onKindChange}
-		searching={search !== ''}
-		{onReset}
-		{columns}
-		{onToggleColumn}
-		{onShowAllColumns}
-	/>
+	<!-- One group, so the filters pill keeps the tools' own spacing. -->
+	<div class="flex items-center gap-2">
+		{@render filters?.()}
+		<LedgerTools
+			{kind}
+			{onKindChange}
+			searching={search !== ''}
+			{onReset}
+			{columns}
+			{onToggleColumn}
+			{onShowAllColumns}
+		/>
+	</div>
 	<!-- The count counts over to what the search and filter leave (GSAP), and
 	     is read out once, in whole, rather than tick by tick. -->
 	<p class="tabular ml-auto text-sm text-fg-muted">

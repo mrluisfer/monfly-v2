@@ -36,12 +36,19 @@
 		Tooltip,
 		type PaletteColor
 	} from '$lib/components/ui';
+	import AppliedFilters from './AppliedFilters.svelte';
 	import CategoryIcon from './CategoryIcon.svelte';
+	import LedgerFilters, {
+		EMPTY_FILTER,
+		filterCount,
+		NO_ACCOUNT,
+		type LedgerFilter
+	} from './LedgerFilters.svelte';
 	import LedgerToolbar from './LedgerToolbar.svelte';
 	import { toolColumns, type Kind } from './LedgerTools.svelte';
 	import RowActions from './RowActions.svelte';
 	import SortHeader from './SortHeader.svelte';
-	import { formatMoney, type Currency } from '$lib/finance';
+	import { formatMoney, parseMoney, type Currency } from '$lib/finance';
 	import { pop } from '$lib/transitions';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
@@ -135,6 +142,73 @@
 		return out;
 	});
 
+	/** The advanced filter, for this visit only, as the hidden columns are. */
+	let filter = $state<LedgerFilter>(EMPTY_FILTER);
+
+	function setFilter(next: LedgerFilter) {
+		filter = next;
+		table.setPageIndex(0);
+	}
+
+	const dayFormat = $derived(
+		new Intl.DateTimeFormat('en-US', {
+			timeZone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit'
+		})
+	);
+
+	/** A transaction's day as the viewer's zone reads it: `YYYY-MM-DD`, one formatter for every row. */
+	function dayOf(date: string) {
+		const parts = dayFormat.formatToParts(new Date(date));
+		const part = (type: string) => parts.find((p) => p.type === type)?.value;
+		return `${part('year')}-${part('month')}-${part('day')}`;
+	}
+
+	/**
+	 * The rows the advanced filter lets through, before the search, the kind and
+	 * the pages see them: accounts and categories by what's picked, days as the
+	 * viewer's zone reads them, amounts by size whichever way the money went.
+	 */
+	const filtered = $derived.by(() => {
+		const { accounts: picked, categories, from, to } = filter;
+		const least = parseMoney(filter.min);
+		const most = parseMoney(filter.max);
+		return transactions.filter((t) => {
+			if (picked.length > 0 && !picked.includes(t.account?.id ?? NO_ACCOUNT)) return false;
+			if (categories.length > 0 && !categories.includes(t.category)) return false;
+			if (least !== null && t.amount < least) return false;
+			if (most !== null && t.amount > most) return false;
+			if (from === '' && to === '') return true;
+			const day = dayOf(t.date);
+			return (from === '' || day >= from) && (to === '' || day <= to);
+		});
+	});
+
+	/** What the filters offer: the accounts and categories the rows name, and the days they span. */
+	const offered = $derived.by(() => {
+		const names: Record<string, string> = {};
+		const counts: Record<string, number> = {};
+		let noAccount = false;
+		for (const t of transactions) {
+			if (t.account) names[t.account.id] ??= t.account.name;
+			else noAccount = true;
+			counts[t.category] = (counts[t.category] ?? 0) + 1;
+		}
+		return {
+			accounts: Object.entries(names).map(([id, name]) => ({ id, name })),
+			noAccount,
+			// Most used first: the ones someone reaches for sit at the top.
+			categories: Object.entries(counts)
+				.map(([name, count]) => ({ name, count }))
+				.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+			// The rows arrive newest first.
+			oldest: transactions.length > 0 ? dayOf(transactions[transactions.length - 1].date) : '',
+			newest: transactions.length > 0 ? dayOf(transactions[0].date) : ''
+		};
+	});
+
 	// v9 is modular: the feature set is declared once and carries the row
 	// models with it, and it types everything downstream — hence `typeof features`.
 	const features = tableFeatures({
@@ -185,7 +259,7 @@
 		features,
 		columns,
 		get data() {
-			return transactions;
+			return filtered;
 		},
 		initialState: {
 			sorting: [{ id: 'date', desc: true }],
@@ -460,7 +534,26 @@
 		columns={menuColumns}
 		onToggleColumn={toggleColumn}
 		onShowAllColumns={showAllColumns}
-	/>
+	>
+		{#snippet filters()}
+			<LedgerFilters
+				{filter}
+				onChange={setFilter}
+				accounts={offered.accounts}
+				noAccount={offered.noAccount}
+				categories={offered.categories}
+				{colors}
+				{tint}
+				oldest={offered.oldest}
+				newest={offered.newest}
+				{currency}
+				count={shown}
+			/>
+		{/snippet}
+	</LedgerToolbar>
+
+	<!-- What the filters narrow by, each chip its own way out. -->
+	<AppliedFilters {filter} onChange={setFilter} accounts={offered.accounts} {currency} />
 
 	<!-- Columns keep their air down to `min-w`; past that the ledger scrolls
 	     sideways rather than crushing a description against an orb. The
@@ -702,6 +795,8 @@
 				Nothing recorded yet.
 			{:else if search !== ''}
 				Nothing matches that search.
+			{:else if filterCount(filter) > 0}
+				Nothing matches these filters.
 			{:else}
 				No {kind === 'income' ? 'income' : 'expenses'} here.
 			{/if}
