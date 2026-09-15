@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0](https://github.com/mrluisfer/monfly-v2/compare/v1.5.0...v1.6.0) (2026-09-15)
+
+
+### Features
+
+* a ledger read left to right, account details and a dismissible notice ([#32](https://github.com/mrluisfer/monfly-v2/issues/32)) ([b7c4bf8](https://github.com/mrluisfer/monfly-v2/commit/b7c4bf81d39dffe4fce3ef655ccc80911fe77814))
+* advanced filters for the ledger, and menus that grow with their content ([#34](https://github.com/mrluisfer/monfly-v2/issues/34)) ([61de866](https://github.com/mrluisfer/monfly-v2/commit/61de8660d73afb7a101507d7581ac8dbd4a2a77a))
+
 ## [1.5.0](https://github.com/mrluisfer/monfly-v2/compare/v1.4.0...v1.5.0) (2026-09-14)
 
 
