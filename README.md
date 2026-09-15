@@ -101,6 +101,8 @@ pnpm preview      # preview the build
 pnpm check        # svelte-check (types + a11y)
 pnpm lint         # Oxfmt + ESLint
 pnpm format       # format the whole repo
+pnpm storybook    # Storybook on :6006: the design system, a story per component
+pnpm build-storybook # static Storybook in storybook-static/
 pnpm db:pull      # introspect the shared DB into drizzle/ (read-only)
 pnpm db:studio    # Drizzle Studio — it can edit rows: shared DB, careful
 ```

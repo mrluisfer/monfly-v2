@@ -1,22 +1,25 @@
 <script lang="ts">
 	import MovingArrowLeftRight from '@jis3r/icons/icons/arrow-left-right';
+	import MovingArrowRight from '@jis3r/icons/icons/arrow-right';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { animate, stagger } from 'motion';
 	import { browser } from '$app/environment';
+	import { accountColors } from '$lib/accounts';
 	import { countUp } from '$lib/actions';
 	import { categoryColor } from '$lib/categories';
 	import CategoryIcon from '$lib/components/transactions/CategoryIcon.svelte';
-	import { AnimatedIcon, DateLabel, Loader } from '$lib/components/ui';
+	import { AnimatedIcon, DateLabel, Loader, Orb, Tooltip } from '$lib/components/ui';
 	import { DEFAULT_CURRENCY, formatMoney } from '$lib/finance';
-	import { colorChoicesQuery, transactionsQuery } from '$lib/queries';
+	import { accountsQuery, colorChoicesQuery, transactionsQuery } from '$lib/queries';
 	import { signedAmount } from '$lib/transactions';
 	import { EASE_OUT_QUINT, cn, prefersReducedMotion } from '$lib/utils';
 
 	/**
 	 * The last five transactions, newest first, in the ledger's own order — the
-	 * category's glyph and name, what it cost, the day — with nothing to do to
-	 * them. It reads the ledger's cache entry, so a visit here fills the
-	 * transactions page's too, and a write there shows here.
+	 * category's glyph and name, what it cost, the account's orb, the day — with
+	 * nothing to do to them but go on to the whole ledger. It reads the ledger's
+	 * cache entry, so a visit here fills the transactions page's too, and a write
+	 * there shows here.
 	 */
 	type Props = {
 		/** The viewer's zone: dates are drawn in it. */
@@ -38,9 +41,13 @@
 		enabled: browser && enabled && open
 	}));
 	const choices = createQuery(() => ({ ...colorChoicesQuery(), enabled: browser && enabled }));
+	// The dashboard prefetches the accounts, so this is the cache's: each orb
+	// wears the colour its account wears in the blocks beside this card.
+	const accounts = createQuery(() => ({ ...accountsQuery(), enabled: browser && enabled }));
 
 	const currency = $derived(query.data?.currency ?? DEFAULT_CURRENCY);
 	const rows = $derived(query.data?.transactions.slice(0, SHOWN) ?? []);
+	const colors = $derived(accountColors(accounts.data?.accounts ?? [], choices.data?.account));
 
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
@@ -92,27 +99,43 @@
 			The last five you record will show here, newest first.
 		</p>
 	{:else if query.data}
-		<p class="text-[0.9375rem] text-fg-muted">Your last five, newest first</p>
+		<!-- The way on to the whole ledger closes the label's line; with no room
+		     beside the words it drops under them rather than squeezing them. Its
+		     arrow is always there — it's the card's one way on — and pushes under
+		     the pointer or focus. -->
+		<div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+			<p class="text-[0.9375rem] text-fg-muted">Your last five, newest first</p>
+			<a
+				href="/transactions"
+				class="press flex items-center gap-1 rounded-md text-sm font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+			>
+				See all
+				<AnimatedIcon icon={MovingArrowRight} set="moving" size={14} />
+			</a>
+		</div>
 
 		<!-- The unassigned lists' tracks with the description gone: the category
-		     capped, the amount right beside it, and the day taking the rest. The
-		     rows hold no action, so they don't highlight, and the date's ground
-		     is the card's. -->
+		     capped, the amount right beside it, the account's orb, and the day
+		     taking the rest. The rows hold no action, so they don't highlight,
+		     and the date's ground is the card's. -->
 		<div
 			class="mt-auto grid gap-x-6 pt-5 [--date-ground:var(--color-card)]"
-			style="grid-template-columns: auto minmax(0,10rem) auto minmax(max-content,1fr)"
+			style="grid-template-columns: auto minmax(0,10rem) auto auto minmax(max-content,1fr)"
 		>
-			<!-- The columns named in words: five rows, newest first, have no order to pick. -->
+			<!-- The columns named in words: five rows, newest first, have no order to
+			     pick. The orb's column is too narrow for its word: read out only. -->
 			<div
 				class="col-span-full grid grid-cols-subgrid border-b border-line pb-2 text-sm font-medium text-fg-muted"
 			>
 				<span class="col-start-2">Category</span>
 				<span class="text-right">Amount</span>
+				<span><span class="sr-only">Account</span></span>
 				<span>Date</span>
 			</div>
 
 			<ul bind:this={list} class="col-span-full grid grid-cols-subgrid gap-y-0.5">
 				{#each rows as row (row.id)}
+					{@const account = row.account?.name ?? 'No account'}
 					<li
 						class="col-span-full grid grid-cols-subgrid items-center border-b border-line py-2.5 last:border-0"
 					>
@@ -138,6 +161,29 @@
 						>
 							{signed(signedAmount(row))}
 						</span>
+						<!-- Which account it went through, in the colour that account wears on
+						     the dashboard; its name in a tip under the pointer or focus. -->
+						<Tooltip label={account} delay={150}>
+							{#snippet children({ props })}
+								<!-- svelte-ignore a11y_no_noninteractive_tabindex — focus is how keyboard users reach the name. -->
+								<span
+									{...props}
+									tabindex="0"
+									class="grid size-6 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-blue"
+								>
+									{#if row.account}
+										<Orb color={colors[row.account.id] ?? 'blue'} class="size-4" />
+									{:else}
+										<!-- An empty ring where an orb would be: no account to wear. -->
+										<span
+											class="size-4 rounded-full border border-dashed border-line-strong"
+											aria-hidden="true"
+										></span>
+									{/if}
+									<span class="sr-only">{account}</span>
+								</span>
+							{/snippet}
+						</Tooltip>
 						<DateLabel date={row.date} {timeZone} unroll={false} class="text-sm text-fg-muted" />
 					</li>
 				{/each}

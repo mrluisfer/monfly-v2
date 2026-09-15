@@ -41,6 +41,10 @@ Every changed line should trace back to what was asked.
 - **Icons** are Lucide (`@lucide/svelte`). Animated ones come from the three
   Svelte 5 sets in [DESIGN.md → Icons](DESIGN.md#icons); React-only icon
   registries (shadcn `.tsx`, `motion/react`) don't run here.
+- **Stories:** a component in `$lib/components/ui` has a `*.stories.svelte`
+  beside it, in Svelte CSF; a new primitive, or a new variant of one, gets its
+  story in the same change ([0013](docs/decisions/0013-storybook.md)). While
+  `pnpm storybook` runs, its MCP server is at `localhost:6006/mcp`.
 - **Why things are the way they are:** [docs/decisions](docs/decisions/). Don't
   reopen a recorded decision without a new reason; record new ones there.
 
@@ -50,6 +54,7 @@ Node 24 (`.nvmrc`): run `nvm use` first — `pnpm install` refuses other majors.
 
 ```sh
 pnpm dev       # dev server on :5173
+pnpm storybook # Storybook on :6006
 pnpm check     # svelte-check: types + a11y
 pnpm lint      # Oxfmt + ESLint
 pnpm format    # format the whole repo
@@ -58,7 +63,8 @@ pnpm build     # production build
 
 ## Done means
 
-- `pnpm check` (0 errors, 0 warnings), `pnpm lint` and `pnpm build` pass.
+- `pnpm check` (0 errors, 0 warnings), `pnpm lint`, `pnpm build` and
+  `pnpm build-storybook` pass.
 - The PR title is a Conventional Commit (`feat: …`, `fix: …`): it becomes the
   squash commit and the changelog entry.
 - GitHub Actions steps pin actions by commit SHA

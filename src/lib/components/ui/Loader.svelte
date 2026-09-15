@@ -6,12 +6,13 @@
 
 	/**
 	 * Something on its way: a ring whose arc turns and crossfades through the
-	 * brand's three colours, a halo breathing behind it in the colour it's in,
-	 * and its words waving letter by letter. For what hasn't arrived the first
-	 * time; a figure loading over the last one dims instead.
+	 * brand's three colours, a glow behind the whole of it — ring and words —
+	 * breathing in the colour the arc is in, and its words waving letter by
+	 * letter. For what hasn't arrived the first time; a figure loading over the
+	 * last one dims instead.
 	 *
-	 * Motion carries presence and the ring — the pop in and out, the turn, the
-	 * crossfade, the halo, the letters blurring in — and GSAP the wave, one
+	 * Motion carries presence and colour — the pop in and out, the turn, the
+	 * crossfade, the glow, the letters blurring in — and GSAP the wave, one
 	 * timeline running along the letters. Each letter is two spans so the two
 	 * never write the same property. Under reduced motion nothing travels: the
 	 * colours still crossfade and the letters still brighten in turn.
@@ -33,22 +34,25 @@
 
 	const letters = $derived(Array.from(label));
 
+	let root = $state<HTMLElement>();
+	let glow = $state<HTMLElement>();
 	let rotor = $state<HTMLElement>();
 	let word = $state<HTMLElement>();
 
 	$effect(() => {
-		if (!rotor) return;
+		if (!root || !glow || !rotor) return;
+		const host = root;
 		const still = prefersReducedMotion();
 
 		// Every colour runs the same keyframes, a share of the cycle after the
 		// one before: it fades in over the start of its share, holds, and fades
 		// out over the start of the next one's — exactly while that one fades in.
-		const tints = rotor.querySelectorAll<HTMLElement>('[data-tint]');
-		const share = 1 / tints.length;
+		// A colour is its arc and its glow together, so the two change as one.
+		const share = 1 / TINTS.length;
 		const fade = share * 0.45;
-		const running = [...tints].map((tint, i) =>
+		const running = TINTS.map((tint, i) =>
 			animate(
-				tint,
+				host.querySelectorAll(`[data-tint='${tint}']`),
 				{ opacity: [0, 1, 1, 0, 0] },
 				{
 					duration: CYCLE,
@@ -63,9 +67,10 @@
 		if (!still) {
 			running.push(
 				animate(rotor, { rotate: [0, 360] }, { duration: 0.9, ease: 'linear', repeat: Infinity }),
+				// Gentle: it's as wide as the loader, and a big glow swells a long way.
 				animate(
-					rotor.querySelectorAll('[data-halo]'),
-					{ scale: [0.75, 1.2], opacity: [0.3, 0.7] },
+					glow,
+					{ scale: [0.94, 1.04], opacity: [0.6, 1] },
 					{ duration: 1.2, ease: 'easeInOut', repeat: Infinity, repeatType: 'mirror' }
 				)
 			);
@@ -99,18 +104,32 @@
 				ease: 'power2.out',
 				stagger: 0.06
 			})
-			.to(inner, { opacity: 0.4, y: 0, duration: 0.5, ease: 'power2.inOut', stagger: 0.06 }, 0.3);
+			.to(inner, { opacity: 0.55, y: 0, duration: 0.5, ease: 'power2.inOut', stagger: 0.06 }, 0.3);
 
 		return () => wave.kill();
 	});
 </script>
 
 <div
+	bind:this={root}
 	role="status"
-	class={cn('inline-flex items-center gap-2.5 text-sm text-fg-muted', className)}
+	class={cn('relative isolate inline-flex items-center gap-2.5 text-sm text-fg', className)}
 	in:pop={{ scale: 0.92, duration: 0.3 }}
 	out:pop={{ scale: 0.92, duration: 0.3 }}
 >
+	<!-- The glow behind all of it, ring and words, in the colour the arc is in.
+	     Wider than the loader, so it fades out past the words rather than on
+	     them; out of the flow, so it takes no room. -->
+	<span
+		bind:this={glow}
+		class="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10"
+		aria-hidden="true"
+	>
+		{#each TINTS as tint, i (tint)}
+			<span data-tint={tint} class={cn('tint halo absolute inset-0', i > 0 && 'opacity-0')}></span>
+		{/each}
+	</span>
+
 	<span class="relative size-5 shrink-0" aria-hidden="true">
 		<svg viewBox="0 0 20 20" class="absolute inset-0 size-full">
 			<circle cx="10" cy="10" r="8" fill="none" stroke-width="2" class="track" />
@@ -120,7 +139,6 @@
 		<span bind:this={rotor} class="absolute inset-0">
 			{#each TINTS as tint, i (tint)}
 				<span data-tint={tint} class={cn('tint absolute inset-0', i > 0 && 'opacity-0')}>
-					<span data-halo class="halo absolute -inset-2 rounded-full"></span>
 					<svg viewBox="0 0 20 20" class="absolute inset-0 size-full">
 						<circle
 							cx="10"
@@ -142,7 +160,7 @@
 	<span class="sr-only">{label}</span>
 	<span bind:this={word} class="whitespace-pre" aria-hidden="true"
 		>{#each letters as letter, i (i)}<span class="inline-block"
-				><span data-letter class="inline-block opacity-40">{letter}</span></span
+				><span data-letter class="inline-block opacity-55">{letter}</span></span
 			>{/each}</span
 	>
 </div>
@@ -176,10 +194,12 @@
 		stroke: var(--stroke);
 	}
 
+	/* An ellipse the size of its box, strongest in the middle of the loader and
+	   gone before the edge, so it has no rim to read as a surface. */
 	.halo {
 		background: radial-gradient(
 			closest-side,
-			color-mix(in oklab, var(--tint) 45%, transparent),
+			color-mix(in oklab, var(--tint) 35%, transparent),
 			transparent
 		);
 	}
