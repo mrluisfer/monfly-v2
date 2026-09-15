@@ -3,7 +3,7 @@
 	import { animate, stagger } from 'motion';
 	import { browser } from '$app/environment';
 	import { countUp, reveal } from '$lib/actions';
-	import { ShortcutCard } from '$lib/components/shortcuts';
+	import { ShortcutActivity, ShortcutCard } from '$lib/components/shortcuts';
 	import { HOTKEYS } from '$lib/hotkeys';
 	import { setShortcutMutation, shortcutsQuery } from '$lib/queries';
 	import { DEFAULT_SHORTCUTS, SHORTCUTS, inHeader } from '$lib/shortcuts';
@@ -75,8 +75,10 @@
 				hotkey={hotkeyFor(shortcut.href)}
 				disabled={data.profile === null}
 				error={refused === shortcut.id ? "Couldn't save that. Try again." : null}
-				onPinnedChange={(next) => pin.mutate({ id: shortcut.id, pinned: next })}
+				onPinnedChange={(next, source) => pin.mutate({ id: shortcut.id, pinned: next, source })}
 			/>
 		{/each}
 	</div>
+
+	<ShortcutActivity enabled={data.profile !== null} />
 </div>

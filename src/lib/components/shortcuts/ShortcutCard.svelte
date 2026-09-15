@@ -27,8 +27,8 @@
 		shortcut: Shortcut;
 		/** In the header right now. */
 		pinned: boolean;
-		/** The person turned it on or off — for a locked one, off only once they confirm. */
-		onPinnedChange?: (pinned: boolean) => void;
+		/** The person turned it on or off, and where: its switch, or — off only once they confirm — its lock. */
+		onPinnedChange?: (pinned: boolean, source: 'page' | 'lock') => void;
 		/** Its keys, when a "go to" hotkey leads there. */
 		hotkey?: readonly string[];
 		/** Why the last change didn't stick, said on the card. */
@@ -203,7 +203,7 @@
 						checked={pinned}
 						{disabled}
 						label="Show {shortcut.label} in the header"
-						onCheckedChange={(next) => onPinnedChange?.(next)}
+						onCheckedChange={(next) => onPinnedChange?.(next, 'page')}
 					/>
 				</div>
 			{/if}
@@ -256,7 +256,7 @@
 		tone="danger"
 		onConfirm={() => {
 			asking = false;
-			onPinnedChange?.(false);
+			onPinnedChange?.(false, 'lock');
 		}}
 	>
 		<div class="flex items-center gap-3">

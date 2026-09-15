@@ -52,7 +52,7 @@
 			const at = tabs.findIndex((t) => t.id === tab.id);
 			goto(tabs[at - 1]?.href ?? '/dashboard');
 		}
-		pin.mutate({ id: tab.id, pinned: false });
+		pin.mutate({ id: tab.id, pinned: false, source: 'header' });
 	}
 
 	let strip = $state<HTMLElement>();

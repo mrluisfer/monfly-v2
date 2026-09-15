@@ -1,8 +1,12 @@
 import { mutationOptions, queryOptions, type QueryClient } from '@tanstack/svelte-query';
-import type { ShortcutId } from '$lib/shortcuts';
+import type { ShortcutActivity, ShortcutId, ShortcutSource } from '$lib/shortcuts';
 import { getJson, sendJson, type Fetch } from './http';
 
-export const shortcutKeys = { all: ['shortcuts'] as const };
+export const shortcutKeys = {
+	all: ['shortcuts'] as const,
+	// Its own root, so pinning — which cancels and sets `all` — leaves it be.
+	activity: ['shortcut-activity'] as const
+};
 
 /**
  * The shortcuts pinned to the header, by id. The app layout seeds it from the
@@ -16,11 +20,19 @@ export const shortcutsQuery = (fetcher: Fetch = fetch) =>
 		queryFn: () => getJson<string[]>('/api/me/shortcuts', fetcher)
 	});
 
-type Pin = { id: ShortcutId; pinned: boolean };
+/** The last weeks of shortcut changes, for the shortcuts page's charts. Pass SvelteKit's `fetch` from a load. */
+export const shortcutActivityQuery = (fetcher: Fetch = fetch) =>
+	queryOptions({
+		queryKey: shortcutKeys.activity,
+		queryFn: () => getJson<ShortcutActivity>('/api/me/shortcuts/activity', fetcher)
+	});
+
+type Pin = { id: ShortcutId; pinned: boolean; source: ShortcutSource };
 
 /**
  * Pins a shortcut or takes it away. The header and the list change at once and
- * go back if the server refuses; the server's answer then replaces the cache.
+ * go back if the server refuses; the server's answer then replaces the cache,
+ * and the charts read the history again.
  */
 export const setShortcutMutation = (queryClient: QueryClient) =>
 	mutationOptions({
@@ -42,5 +54,6 @@ export const setShortcutMutation = (queryClient: QueryClient) =>
 		},
 		onSuccess: (pinned) => {
 			queryClient.setQueryData(shortcutKeys.all, pinned);
-		}
+		},
+		onSettled: () => queryClient.invalidateQueries({ queryKey: shortcutKeys.activity })
 	});

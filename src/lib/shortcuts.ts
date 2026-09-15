@@ -91,3 +91,25 @@ export const isShortcutId = (value: unknown): value is ShortcutId =>
 /** Whether a shortcut is in the header. Stored ids the catalog no longer knows are never matched. */
 export const inHeader = (shortcut: Shortcut, pinned: readonly string[]) =>
 	pinned.includes(shortcut.id);
+
+/** Where a shortcut was pinned or taken away: this page's switch, a header tab's ✕, or Overview's lock. */
+export const SHORTCUT_SOURCES = ['page', 'header', 'lock'] as const;
+export type ShortcutSource = (typeof SHORTCUT_SOURCES)[number];
+
+export const isShortcutSource = (value: unknown): value is ShortcutSource =>
+	SHORTCUT_SOURCES.includes(value as ShortcutSource);
+
+/** How many weeks the activity charts cover, this one included. */
+export const ACTIVITY_WEEKS = 8;
+
+/** `GET /api/me/shortcuts/activity`: the changes of the last `ACTIVITY_WEEKS` weeks, counted three ways. */
+export type ShortcutActivity = {
+	/** Every change in the window. */
+	total: number;
+	/** Oldest first, one a week, empty weeks included; `start` is its Monday, `YYYY-MM-DD`, in the viewer's zone. */
+	weeks: { start: string; pinned: number; unpinned: number }[];
+	/** Shortcuts that changed, most first. */
+	shortcuts: { id: string; pinned: number; unpinned: number }[];
+	/** Every source, most used first. */
+	sources: { source: ShortcutSource; count: number }[];
+};

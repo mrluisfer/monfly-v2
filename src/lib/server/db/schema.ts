@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
 	type AnyPgColumn,
 	boolean,
+	check,
 	doublePrecision,
 	index,
 	integer,
@@ -279,3 +280,32 @@ export const monthlySummary = pgTable('MonthlySummary', {
 	// The one updatedAt with no database default: Prisma always supplied it.
 	updatedAt: datetime().notNull().$defaultFn(now).$onUpdate(now)
 });
+
+/**
+ * A shortcut going into the header or out of it: who, which, which way, from
+ * where and when. Written in the same statement that changes `User.shortcuts`,
+ * and only when the array really changed, so it's the history the shortcuts
+ * page draws its charts from. v2's alone; v1 never reads it.
+ */
+export const shortcutEvent = pgTable(
+	'ShortcutEvent',
+	{
+		id: id(),
+		userEmail: userEmail('ShortcutEvent'),
+		// An id from $lib/shortcuts.
+		shortcutId: text().notNull(),
+		// True when it went into the header, false when it came out.
+		pinned: boolean().notNull(),
+		// Where it was changed: the page's switch, the header's ✕, or the lock.
+		source: text().notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		index('ShortcutEvent_userEmail_createdAt_idx').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.createdAt.asc().nullsLast()
+		),
+		check('ShortcutEvent_source_check', sql`${table.source} in ('page', 'header', 'lock')`)
+	]
+);
