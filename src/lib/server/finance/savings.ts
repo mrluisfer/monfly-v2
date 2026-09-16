@@ -4,7 +4,7 @@ import { addMonths, type MonthKey } from '../../finance/period';
 import { savingsArrival, savingsProgress, type Savings } from '../../finance/savings';
 import type { db as appDb } from '../db';
 import { card, pot, transaction } from '../db/schema';
-import { INCOME, amountCents, signedCents, utcMidnight } from './fragments';
+import { INCOME, amountCents, notTransfer, signedCents, utcMidnight } from './fragments';
 
 /** Prisma's `@updatedAt` writes UTC wall-clock time into a zone-less column; so does this. */
 const nowUtc = sql`(now() at time zone 'utc')`;
@@ -89,9 +89,10 @@ export async function getSavings(
 				thisMonth: sql<string>`coalesce(sum(${signedCents}) filter (where ${inMonth}), 0)`,
 				recent: sql<string>`coalesce(sum(${signedCents}) filter (where ${inWindow}), 0)`,
 				// What left it this month, counted apart: the net above hides a
-				// charge behind a deposit, and a forgotten one is worth naming.
-				outAmount: sql<string>`coalesce(sum(${amountCents}) filter (where ${inMonth} and ${transaction.type} <> ${INCOME}), 0)`,
-				outCount: sql<number>`count(${transaction.id}) filter (where ${inMonth} and ${transaction.type} <> ${INCOME})::int`,
+				// charge behind a deposit, and a forgotten one is worth naming. A
+				// transfer out was moved on purpose, so it isn't a charge.
+				outAmount: sql<string>`coalesce(sum(${amountCents}) filter (where ${inMonth} and ${transaction.type} <> ${INCOME} and ${notTransfer}), 0)`,
+				outCount: sql<number>`count(${transaction.id}) filter (where ${inMonth} and ${transaction.type} <> ${INCOME} and ${notTransfer})::int`,
 				first: sql<string | null>`to_char(min(${transaction.date}), 'YYYY-MM')`
 			})
 			.from(card)
@@ -170,9 +171,10 @@ export async function addToSavings(
 
 /**
  * Moves money into the savings account: a transfer, not income. One expense on
- * the account it comes from, one income on the savings account, both in a
- * single statement so neither can land without the other and the balances move
- * by exactly what was written. `User.totalBalance` is deliberately left alone —
+ * the account it comes from, one income on the savings account, sharing a
+ * `transferId` as every transfer's sides do, both in a single statement so
+ * neither can land without the other and the balances move by exactly what was
+ * written. `User.totalBalance` is deliberately left alone —
  * v1 moves it per transaction, and the two rows cancel out: the money changed
  * places, it wasn't earned. False when either account is missing or they are
  * the same one.
@@ -185,6 +187,7 @@ export async function addSavingsTransfer(
 	const major = sql`${amount / 100}::numeric`;
 	const out = crypto.randomUUID();
 	const into = crypto.randomUUID();
+	const transferId = crypto.randomUUID();
 	const note = 'Moved to savings';
 
 	const { rows } = await db.execute<{ moved: boolean }>(sql`
@@ -198,17 +201,17 @@ export async function addSavingsTransfer(
 		),
 		spent as (
 			insert into ${transaction} ("id", "userEmail", "amount", "type", "category",
-				"description", "date", "cardId", "createdAt", "updatedAt")
+				"description", "date", "cardId", "createdAt", "updatedAt", "transferId")
 			select ${out}, ${userEmail}, ${major}, 'expense', 'Savings', ${note},
-				${nowUtc}, (select id from source), ${nowUtc}, ${nowUtc}
+				${nowUtc}, (select id from source), ${nowUtc}, ${nowUtc}, ${transferId}
 			where exists (select 1 from source)
 			returning "id"
 		),
 		put as (
 			insert into ${transaction} ("id", "userEmail", "amount", "type", "category",
-				"description", "date", "cardId", "createdAt", "updatedAt")
+				"description", "date", "cardId", "createdAt", "updatedAt", "transferId")
 			select ${into}, ${userEmail}, ${major}, 'income', 'Savings', ${note},
-				${nowUtc}, (select id from savings), ${nowUtc}, ${nowUtc}
+				${nowUtc}, (select id from savings), ${nowUtc}, ${nowUtc}, ${transferId}
 			where exists (select 1 from spent)
 			returning "id"
 		),

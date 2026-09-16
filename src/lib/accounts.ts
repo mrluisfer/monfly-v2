@@ -34,10 +34,19 @@ export type Account = {
 	type: string | null;
 	/** Its balance now, or when the month ended — see `AccountList.balanceAt`. */
 	balance: Cents;
-	/** Spent on it in `AccountList.month`, in the viewer's time zone. */
+	/**
+	 * Spent on it in `AccountList.month`, in the viewer's time zone — not what
+	 * was moved to another of their accounts: that's `moved`.
+	 */
 	tracked: Cents;
-	/** Its net movement in `AccountList.month`: income on it minus spending on it. */
+	/** Its net movement in `AccountList.month`: everything in minus everything out, transfers too. */
 	change: Cents;
+	/**
+	 * The part of `change` that was money moved between their own accounts in
+	 * `AccountList.month`, signed: negative when more left for another account
+	 * than arrived from one. Income on it is `change - moved + tracked`.
+	 */
+	moved: Cents;
 	/**
 	 * Entries waiting on the person — for now, its transactions with no
 	 * description. A detailed review view will define this properly.

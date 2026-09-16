@@ -32,7 +32,8 @@
 	const categories = $derived.by(() => {
 		const out: Record<string, number> = {};
 		for (const row of transactions) {
-			if (row.type === 'income') continue;
+			// Money moved to another account wasn't spent on anything.
+			if (row.type === 'income' || row.transfer) continue;
 			out[row.category] = (out[row.category] ?? 0) + row.amount;
 		}
 		const all = Object.entries(out).sort((a, b) => b[1] - a[1]);

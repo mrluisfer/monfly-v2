@@ -66,7 +66,17 @@ export type TransactionRow = {
 	 * these rows but leaves changing them to v1.
 	 */
 	loanLinked: boolean;
+	/**
+	 * One side of a transfer between two of the user's accounts, or null for
+	 * an ordinary transaction. Both sides carry the same `id` and name the same
+	 * two accounts, so either one reads as the whole move — each null where
+	 * that account is gone or archived. Neither side is income or spending.
+	 */
+	transfer: { id: string; from: AccountRef | null; to: AccountRef | null } | null;
 };
+
+/** An account as a row names it. */
+type AccountRef = { id: string; name: string };
 
 /**
  * Every transaction on record, newest first. A person has a few hundred, so
@@ -151,5 +161,44 @@ export function isTransactionNew(value: unknown, today: DateKey): value is Trans
 	return (
 		accountId === null ||
 		(typeof accountId === 'string' && accountId.length > 0 && accountId.length <= 64)
+	);
+}
+
+/**
+ * `POST /api/transfers`, and `PATCH /api/transfers/[id]`: money moved from one
+ * of the user's active accounts to another. It is written as two
+ * transactions — money out of `from`, money in to `to` — so v1 and every
+ * balance read them as they read anything else, while the total stays put.
+ */
+export type TransferEntry = {
+	amount: Cents;
+	/** The account the money leaves. */
+	from: string;
+	/** The account it lands in: never `from`. */
+	to: string;
+	description: string | null;
+	/** The day it moved, `YYYY-MM-DD`, as the viewer's zone reads it. */
+	date: DateKey;
+};
+
+/** What every transfer is filed under, on both sides: `$lib/categories` draws it as a transfer. */
+export const TRANSFER_CATEGORY = 'Transfer';
+
+const isAccountId = (value: unknown): value is string =>
+	typeof value === 'string' && value.length > 0 && value.length <= 64;
+
+/** A complete transfer, as the endpoints take it. `today` refuses a day that hasn't come. */
+export function isTransferEntry(value: unknown, today: DateKey): value is TransferEntry {
+	if (typeof value !== 'object' || value === null) return false;
+	const { amount, from, to, description, date } = value as Record<string, unknown>;
+	return (
+		isAmount(amount) &&
+		isAccountId(from) &&
+		isAccountId(to) &&
+		from !== to &&
+		(description === null ||
+			(typeof description === 'string' && description.length <= MAX_DESCRIPTION)) &&
+		isDateKey(date) &&
+		date <= today
 	);
 }

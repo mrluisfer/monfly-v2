@@ -4,21 +4,21 @@ import type { TransactionRow } from './transactions';
 /**
  * What the Transactions page's panel is doing, kept in this browser so a
  * reload — or a trip to another page to work a figure out — brings it back as
- * it was left: the row it was reading, or the fields half written for a row or
- * for a new transaction. Why localStorage, and what the format rules out:
+ * it was left: the row it was reading, or the fields half written for a row, a
+ * new transaction or a new transfer. Why localStorage, and what the format rules out:
  * docs/decisions/0011-transactions-panel-in-local-storage.md.
  *
  * One JSON document per signed-in user, under `panelKey(User.id)`:
  *
- *     { "v": 1, "mode": "view", "id": "<transaction id>" }
- *     { "v": 1, "mode": "edit", "id": "<transaction id>", "draft": TransactionDraft }
- *     { "v": 1, "mode": "new", "draft": TransactionDraft }
+ *     { "v": 2, "mode": "view", "id": "<transaction id>" }
+ *     { "v": 2, "mode": "edit", "id": "<transaction id>", "draft": TransactionDraft }
+ *     { "v": 2, "mode": "new", "draft": TransactionDraft }
  *
  * Changing the shape means bumping `PANEL_VERSION`. A document of another
  * version is dropped on the next read rather than migrated: it is a draft,
  * cheap to lose across a release.
  */
-export const PANEL_VERSION = 1;
+export const PANEL_VERSION = 2;
 
 /** Per user, so another Monfly account in the same browser never opens on it. */
 export const panelKey = (userId: string) => `monfly:transactions-panel:${userId}`;
@@ -30,7 +30,8 @@ export type TransactionDraft = {
 	 * number yet. The editor parses it on saving, as it does what is typed.
 	 */
 	amount: string;
-	type: 'income' | 'expense';
+	/** Which way the money went — or, moved between two accounts, a transfer. */
+	type: 'income' | 'expense' | 'transfer';
 	/**
 	 * The category by its name — what `Transaction.category` stores and what
 	 * v1's category select writes as its value — never a `Category` row's id.
@@ -44,8 +45,13 @@ export type TransactionDraft = {
 	description: string;
 	/** The day, `YYYY-MM-DD`, or `''` while the date field is cleared. */
 	date: string;
-	/** A new transaction's account id, or null for none. An edit never changes it. */
+	/**
+	 * A new transaction's account id, or null for none; an edit never changes
+	 * it. For a transfer, the account the money leaves.
+	 */
 	account: string | null;
+	/** A transfer's account the money lands in, or null while none is picked. Unused otherwise. */
+	to: string | null;
 };
 
 export type PanelState =
@@ -60,17 +66,37 @@ export const blankDraft = (timeZone: string): TransactionDraft => ({
 	category: '',
 	description: '',
 	date: todayKey(timeZone),
-	account: null
+	account: null,
+	to: null
 });
 
-/** A row's fields, as the panel opens on them to edit it. */
+/**
+ * A new transfer's fields: `from` when it starts at an account, and the next
+ * account along as where it lands, so there's something to read the moment it
+ * opens rather than two empty pickers.
+ */
+export function transferDraft(
+	timeZone: string,
+	accounts: { id: string }[],
+	from: string | null = accounts[0]?.id ?? null
+): TransactionDraft {
+	return {
+		...blankDraft(timeZone),
+		type: 'transfer',
+		account: from,
+		to: accounts.find((a) => a.id !== from)?.id ?? null
+	};
+}
+
+/** A row's fields, as the panel opens on them to edit it — the whole transfer, for either of its sides. */
 export const rowDraft = (row: TransactionRow, timeZone: string): TransactionDraft => ({
 	amount: toMoneyInput(row.amount),
-	type: row.type,
+	type: row.transfer ? 'transfer' : row.type,
 	category: row.category,
 	description: row.description ?? '',
 	date: todayKey(timeZone, new Date(row.date)),
-	account: null
+	account: row.transfer?.from?.id ?? null,
+	to: row.transfer?.to?.id ?? null
 });
 
 /**
@@ -94,19 +120,23 @@ export function readPanel(userId: string): PanelState | null {
 	if (mode === 'view' && typeof id === 'string') return { mode, id };
 
 	if (typeof draft !== 'object' || draft === null) return null;
-	const { amount, type, category, description, date, account } = draft as Record<string, unknown>;
-	const kind = type === 'income' || type === 'expense' ? type : null;
+	const { amount, type, category, description, date, account, to } = draft as Record<
+		string,
+		unknown
+	>;
+	const kind = type === 'income' || type === 'expense' || type === 'transfer' ? type : null;
 	if (
 		typeof amount !== 'string' ||
 		kind === null ||
 		typeof category !== 'string' ||
 		typeof description !== 'string' ||
 		(date !== '' && !isDateKey(date)) ||
-		(account !== null && typeof account !== 'string')
+		(account !== null && typeof account !== 'string') ||
+		(to !== null && typeof to !== 'string')
 	) {
 		return null;
 	}
-	const fields: TransactionDraft = { amount, type: kind, category, description, date, account };
+	const fields: TransactionDraft = { amount, type: kind, category, description, date, account, to };
 
 	if (mode === 'edit' && typeof id === 'string') return { mode, id, draft: fields };
 	if (mode === 'new') return { mode, draft: fields };

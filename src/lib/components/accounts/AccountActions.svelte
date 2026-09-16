@@ -5,6 +5,7 @@
 	import MovingEye from '@jis3r/icons/icons/eye';
 	import MovingLandmark from '@jis3r/icons/icons/landmark';
 	import MovingPencil from '@jis3r/icons/icons/pencil';
+	import MovingSendHorizontal from '@jis3r/icons/icons/send-horizontal';
 	import MovingStar from '@jis3r/icons/icons/star';
 	import MovingTrash from '@jis3r/icons/icons/trash-2';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -36,9 +37,9 @@
 
 	/**
 	 * What can be done to one account, from the corner of its card — the order
-	 * of the day, as a ledger row's menu has it: look at it, change it, feature
-	 * it, go to its rows; then, each under a rule of its own, put it away and,
-	 * last and in `negative`, delete it.
+	 * of the day, as a ledger row's menu has it: look at it, change it, move
+	 * money from it, feature it, go to its rows; then, each under a rule of its
+	 * own, put it away and, last and in `negative`, delete it.
 	 */
 	type Props = {
 		account: Account;
@@ -50,6 +51,8 @@
 		open?: boolean;
 		onView: () => void;
 		onEdit: () => void;
+		/** Opens the panel moving money from it; absent where there's no other account to move it to. */
+		onTransfer?: () => void;
 		/** Something the menu couldn't do, for the page to say out loud. */
 		onProblem?: (message: string | null) => void;
 	};
@@ -62,6 +65,7 @@
 		open = false,
 		onView,
 		onEdit,
+		onTransfer,
 		onProblem
 	}: Props = $props();
 
@@ -147,6 +151,21 @@
 								</span>
 								Edit
 							</DropdownMenu.Item>
+
+							<!-- In the lavender a transfer's rows wear, sending — the glyph the
+							     panel turns to while it moves money. -->
+							{#if onTransfer}
+								<DropdownMenu.Item class={MENU_ITEM} onSelect={onTransfer} data-deal>
+									<span
+										class={cn(MENU_CHIP, MENU_PASTEL)}
+										style="--tint: {PALETTE.lavender.css}"
+										aria-hidden="true"
+									>
+										<AnimatedIcon icon={MovingSendHorizontal} set="moving" />
+									</span>
+									Move money
+								</DropdownMenu.Item>
+							{/if}
 
 							<!-- Blue, as the dashboard's featured-accounts picker: choosing which
 							     accounts get a place of their own. -->

@@ -14,12 +14,16 @@ const NO_STORE = { 'cache-control': 'private, no-store' };
  * balances it moved move with it — see `$lib/server/transactions/edit`.
  *
  * 404 when the transaction isn't the signed-in user's, and 409 when a loan has
- * a claim on it: loans are v1's, and so is changing what pays them.
+ * a claim on it — loans are v1's, and so is changing what pays them — or when
+ * it's one side of a transfer, which `/api/transfers/[id]` changes whole.
  */
 const answer = (outcome: WriteOutcome, id: string) => {
 	if (outcome === 'missing') error(404, 'No such transaction');
 	if (outcome === 'locked') {
 		error(409, "It pays off a loan, so it's edited in Monfly v1 where the loan lives");
+	}
+	if (outcome === 'transfer') {
+		error(409, "It's one side of a transfer, so it's changed along with the other side");
 	}
 	return json({ id }, { headers: NO_STORE });
 };

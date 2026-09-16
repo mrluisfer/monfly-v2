@@ -309,6 +309,8 @@ that reads data:
 | endpoint              | `src/routes/api/accounts/archived/+server.ts`             | archived accounts, most recently changed first, with the balance each was left with                                                         |
 | endpoint              | `src/routes/api/accounts/history/+server.ts`              | every active account's balance day by day: `?range=` 1m, 3m, 6m, 1y or all — plus openings and corrections                                  |
 | endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                                  |
+| endpoint              | `src/routes/api/transfers/+server.ts`                     | POST money from one active account to another: two transactions, both balances, the total untouched                                         |
+| endpoint              | `src/routes/api/transfers/[id]/+server.ts`                | PATCH a transfer whole (amount, accounts, day, note); DELETE both of its sides                                                              |
 | endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month                                              |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher                                                                                              |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                                                                                                                  |
@@ -383,6 +385,13 @@ that reads data:
   away; deleting one takes out the part of its balance no transaction backs,
   leaves its transactions card-less — still in the total — and forgets its
   colour choice.
+- **A transfer is two transactions sharing a `transferId`**: money out of one
+  account and into another, both filed under `Transfer`, written, rewritten and
+  deleted together in one statement (`$lib/server/transactions/transfer`). The
+  total doesn't move, and neither side is income or spending: every figure of
+  those leaves them out (`notTransfer`), while balances and the history keep
+  them. A side on its own can't be edited or deleted through
+  `/api/transactions/[id]` ([0021](docs/decisions/0021-transfers.md)).
 - **A balance set by hand is a `BalanceAdjustment`**: which account, what it
   moved by in signed cents (`bigint`) and when, written by the statement that
   rewrites the balance. `GET /api/accounts/history` winds each balance back from

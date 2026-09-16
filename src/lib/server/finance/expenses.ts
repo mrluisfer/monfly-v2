@@ -3,7 +3,7 @@ import type { ExpenseBreakdown } from '../../finance/expenses';
 import type { Currency } from '../../finance/money';
 import type { db as appDb } from '../db';
 import { transaction } from '../db/schema';
-import { EXPENSE, amountCents, utcMidnight } from './fragments';
+import { EXPENSE, amountCents, notTransfer, utcMidnight } from './fragments';
 
 type Input = {
 	/** The stored `User.email` — `profile.email`, never the Auth0 spelling. */
@@ -17,13 +17,17 @@ type Input = {
 /**
  * One user's expenses by category — for a calendar year, or all time —
  * largest first. `Transaction.category` is v1's free-text name, grouped as
- * stored. Read-only.
+ * stored; transfers between their own accounts aren't spending. Read-only.
  */
 export async function getExpenseBreakdown(
 	db: Pick<typeof appDb, 'select'>,
 	{ userEmail, year, timeZone, currency }: Input
 ): Promise<ExpenseBreakdown> {
-	const conditions: SQL[] = [eq(transaction.userEmail, userEmail), eq(transaction.type, EXPENSE)];
+	const conditions: SQL[] = [
+		eq(transaction.userEmail, userEmail),
+		eq(transaction.type, EXPENSE),
+		notTransfer
+	];
 	if (year !== null) {
 		conditions.push(
 			sql`${transaction.date} >= ${utcMidnight(`${year}-01-01`, timeZone)}`,

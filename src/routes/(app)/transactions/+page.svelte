@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MovingPlus from '@jis3r/icons/icons/plus';
+	import MovingSendHorizontal from '@jis3r/icons/icons/send-horizontal';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import { untrack } from 'svelte';
@@ -20,7 +21,15 @@
 		TransactionsTable,
 		UnassignedCard
 	} from '$lib/components/transactions';
-	import { AnimatedIcon, Card, IconButton, PillButton, Select, Sparkle } from '$lib/components/ui';
+	import {
+		AnimatedIcon,
+		Card,
+		IconButton,
+		PALETTE,
+		PillButton,
+		Select,
+		Sparkle
+	} from '$lib/components/ui';
 	import {
 		DEFAULT_CURRENCY,
 		addMonths,
@@ -34,6 +43,7 @@
 		blankDraft,
 		readPanel,
 		rowDraft,
+		transferDraft,
 		writePanel,
 		type PanelState,
 		type TransactionDraft
@@ -209,13 +219,40 @@
 		editing = next;
 	}
 
-	/** The panel takes a new transaction instead of whichever row it held. */
+	/** The panel is writing a transfer rather than a transaction. */
+	const moving = $derived(creating && draft.type === 'transfer');
+
+	/**
+	 * The panel takes a new transaction instead of whichever row it held.
+	 * Pressed again, it closes; pressed while a transfer is being written, the
+	 * transfer turns into a transaction and keeps what was typed.
+	 */
 	function writeNew() {
-		creating = !creating;
-		if (creating) draft = blankDraft(data.timeZone);
+		if (moving) draft.type = 'expense';
+		else {
+			creating = !creating;
+			if (creating) draft = blankDraft(data.timeZone);
+		}
 		selectedId = null;
 		editing = false;
 	}
+
+	/** The same for a transfer, from the first account towards the next one. */
+	function writeTransfer() {
+		const list = accounts.data?.accounts ?? [];
+		if (creating && !moving) {
+			const ends = transferDraft(data.timeZone, list, draft.account ?? undefined);
+			draft = { ...draft, type: 'transfer', account: ends.account, to: ends.to };
+		} else {
+			creating = !creating;
+			if (creating) draft = transferDraft(data.timeZone, list);
+		}
+		selectedId = null;
+		editing = false;
+	}
+
+	/** Two accounts at least, or there's nowhere to move money between. */
+	const canTransfer = $derived((accounts.data?.accounts.length ?? 0) >= 2);
 
 	/** There is something in the panel's room: a row, or a new one being written. */
 	const showing = $derived(creating || open !== null);
@@ -386,6 +423,37 @@
 							</div>
 						{/if}
 
+						<!-- Money moved between two accounts, beside writing a transaction: held
+						     down in the lavender a transfer's rows wear while the panel writes
+						     one. It makes room as it arrives, once there are two accounts. -->
+						{#if canTransfer}
+							<div
+								class="shrink-0 pl-2"
+								transition:slide={{ axis: 'x', duration: 350, easing: quintOut }}
+							>
+								<div
+									in:pop={{ scale: 0.5, bounce: 0.4, duration: 0.45 }}
+									out:pop={{ scale: 0.5, duration: 0.3 }}
+								>
+									<PillButton
+										size="sm"
+										aria-pressed={moving}
+										aria-label="Move money between your accounts"
+										onclick={writeTransfer}
+										style="--tint: {PALETTE.lavender.css}"
+										class={cn(
+											'transition-colors duration-300',
+											moving &&
+												'border-[oklch(from_var(--tint)_calc(l-0.12)_c_h)] bg-[color-mix(in_oklab,var(--tint)_25%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] hover:bg-[color-mix(in_oklab,var(--tint)_35%,transparent)] dark:text-(--tint)'
+										)}
+									>
+										<AnimatedIcon icon={MovingSendHorizontal} set="moving" />
+										Transfer
+									</PillButton>
+								</div>
+							</div>
+						{/if}
+
 						<!-- Last in the group, so it keeps the card's right edge whatever
 						     else comes and goes beside it: the month arrows push the filter
 						     left, never this. Held down in lime — what's new — while the
@@ -393,12 +461,13 @@
 						<div class="shrink-0 pl-2">
 							<PillButton
 								size="sm"
-								aria-pressed={creating}
+								aria-pressed={creating && !moving}
 								aria-label="Write a new transaction"
 								onclick={writeNew}
 								class={cn(
 									'transition-colors duration-300',
 									creating &&
+										!moving &&
 										'border-lime/50 bg-lime/25 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] hover:bg-lime/35 dark:bg-lime/15 dark:text-lime'
 								)}
 							>

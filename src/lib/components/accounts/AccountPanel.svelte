@@ -3,6 +3,7 @@
 	import MovingEye from '@jis3r/icons/icons/eye';
 	import MovingPencil from '@jis3r/icons/icons/pencil';
 	import MovingPlus from '@jis3r/icons/icons/plus';
+	import MovingSendHorizontal from '@jis3r/icons/icons/send-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import gsap from 'gsap';
@@ -15,11 +16,14 @@
 		IconButton,
 		Notice,
 		Orb,
+		PALETTE,
 		type PaletteColor
 	} from '$lib/components/ui';
+	import { TransactionEditor } from '$lib/components/transactions';
 	import { formatMoney, type Cents, type Currency } from '$lib/finance';
 	import { accountLedgerHref } from '$lib/ledger-view';
 	import { setColorMutation } from '$lib/queries';
+	import type { TransactionDraft } from '$lib/transaction-panel';
 	import { pop } from '$lib/transitions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
 	import AccountEditor from './AccountEditor.svelte';
@@ -30,24 +34,34 @@
 	 * ledger panel's three modes, in the same colours: it reads an account
 	 * (the eye, blue), edits it (the pencil, violet) or, with no account at
 	 * all, adds one (the plus, lime). Reading, it's the account's dial, this
-	 * month's movement and its facts.
+	 * month's movement and its facts. From an account it also moves money to
+	 * another one (sending, in the lavender a transfer's rows wear), with the
+	 * ledger panel's own transfer fields.
 	 */
 	type Props = {
 		/** The account on show, or nothing: then the panel adds a new one. */
 		account: Account | null;
 		/** Open on the account's fields rather than its facts. */
 		editing?: boolean;
+		/** A transfer's fields while money is being moved from it, or null. The page holds them. */
+		transfer?: TransactionDraft | null;
 		/** Every active account: the editor names who holds a role, and picks a new one's colour. */
 		accounts: Account[];
 		color: PaletteColor;
+		/** Every account's colour, by id: a transfer's two ends. */
+		colors: Record<string, PaletteColor>;
 		/** Colours people picked for their accounts (`User.colors.account`). */
 		choices?: Record<string, PaletteColor>;
 		currency: Currency;
+		/** The viewer's zone: a transfer's day is read and written in it. */
+		timeZone: string;
 		/** Its balances over the chart's range: the dial's low and high. */
 		balances?: (Cents | null)[];
 		/** What the range covers, as a phrase: "the last 3 months". */
 		span: string;
 		onEditingChange: (editing: boolean) => void;
+		/** Its send toggle: start moving money from this account, or stop. */
+		onTransferChange: (moving: boolean) => void;
 		/** A new account was added, or adding one was given up on. */
 		onDone: (id?: string) => void;
 	};
@@ -55,13 +69,17 @@
 	let {
 		account,
 		editing = false,
+		transfer = null,
 		accounts,
 		color,
+		colors,
 		choices,
 		currency,
+		timeZone,
 		balances = [],
 		span,
 		onEditingChange,
+		onTransferChange,
 		onDone
 	}: Props = $props();
 
@@ -70,8 +88,10 @@
 	const refused = $derived(recolor.isError && recolor.variables?.key === account?.id);
 
 	const writing = $derived(account === null);
-	/** What it's showing — an account's facts, its fields, or a new one's — so a change can turn it. */
-	const showing = $derived(account ? `${account.id}:${editing}` : 'new');
+	/** Money is being moved from the account on show. */
+	const moving = $derived(account !== null && transfer !== null);
+	/** What it's showing — an account's facts, its fields, a transfer's or a new one's — so a change can turn it. */
+	const showing = $derived(account ? `${account.id}:${editing}:${moving}` : 'new');
 	const subject = $derived(account?.id ?? 'new');
 
 	const money = (cents: number) => formatMoney(cents, currency);
@@ -162,6 +182,7 @@
 	$effect(() => {
 		void editing;
 		void writing;
+		void moving;
 		if (!turned) {
 			turned = true;
 			return;
@@ -186,10 +207,13 @@
 						'relative grid size-7 shrink-0 place-items-center rounded-lg transition-colors duration-300',
 						writing
 							? 'bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime'
-							: editing
-								? 'bg-violet/12 text-violet'
-								: 'bg-blue/12 text-blue'
+							: moving
+								? 'bg-[color-mix(in_oklab,var(--tint)_15%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:bg-[color-mix(in_oklab,var(--tint)_20%,transparent)] dark:text-(--tint)'
+								: editing
+									? 'bg-violet/12 text-violet'
+									: 'bg-blue/12 text-blue'
 					)}
+					style="--tint: {PALETTE.lavender.css}"
 					aria-hidden="true"
 				>
 					<span
@@ -199,7 +223,13 @@
 					{#key showing}
 						<span class="relative flex" in:pop={{ scale: 0.5, bounce: 0.5, duration: 0.45 }}>
 							<AnimatedIcon
-								icon={writing ? MovingPlus : editing ? MovingPencil : MovingEye}
+								icon={writing
+									? MovingPlus
+									: moving
+										? MovingSendHorizontal
+										: editing
+											? MovingPencil
+											: MovingEye}
 								set="moving"
 								trigger="mount"
 							/>
@@ -208,13 +238,35 @@
 				</span>
 				<span class="truncate">
 					{#if account}
-						{editing ? 'Editing' : `${kindLabel(account.type) ?? 'An'} account`}
+						{moving
+							? 'Moving money'
+							: editing
+								? 'Editing'
+								: `${kindLabel(account.type) ?? 'An'} account`}
 					{:else}
 						New account
 					{/if}
 				</span>
 			</div>
 			<div class="flex shrink-0 items-center gap-2">
+				{#if account && accounts.length > 1}
+					<!-- Moving money from it: a toggle held down in lavender while the
+					     transfer's fields are open, as the pencil is in violet. -->
+					<IconButton
+						size="sm"
+						aria-pressed={moving}
+						aria-label={moving ? 'Stop moving money' : `Move money from ${account.name}`}
+						onclick={() => onTransferChange(!moving)}
+						style="--tint: {PALETTE.lavender.css}"
+						class={cn(
+							'transition-colors duration-300',
+							moving &&
+								'border-[oklch(from_var(--tint)_calc(l-0.12)_c_h)] bg-[color-mix(in_oklab,var(--tint)_15%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] not-disabled:hover:bg-[color-mix(in_oklab,var(--tint)_25%,transparent)] dark:text-(--tint)'
+						)}
+					>
+						<AnimatedIcon icon={MovingSendHorizontal} set="moving" play={moving} />
+					</IconButton>
+				{/if}
 				{#if account}
 					<!-- A toggle, held down in violet while the fields are open, as the ledger panel's is. -->
 					<IconButton
@@ -265,7 +317,22 @@
 			</div>
 		{/if}
 
-		{#if account && !editing}
+		{#if account && transfer}
+			<Notice id="new-transfer" title="Moving money" class="mt-6">
+				From one of your accounts to another. Both balances move and your total stays where it is:
+				money that changed places isn't counted as income or spending.
+			</Notice>
+			{#key account.id}
+				<TransactionEditor
+					{currency}
+					{timeZone}
+					{accounts}
+					{colors}
+					draft={transfer}
+					onDone={() => onTransferChange(false)}
+				/>
+			{/key}
+		{:else if account && !editing}
 			<BalanceGauge
 				balance={account.balance}
 				low={bounds.low}
@@ -278,9 +345,11 @@
 				class="mt-8"
 			/>
 
-			<!-- This month on the account, one fact per column: in, out, and what it came to. -->
+			<!-- This month on the account, one fact per column: in, out, and what it came to.
+			     Money moved between the accounts is none of the three; the dial's change
+			     above counts it, and the line under them says how much it was. -->
 			<dl class="mt-8 grid grid-cols-3 gap-4 border-t border-line pt-6">
-				{#each [{ label: 'In', value: account.change + account.tracked, tone: 'text-positive' }, { label: 'Out', value: account.tracked, tone: '' }, { label: 'Net', value: account.change, tone: '' }] as fact (fact.label)}
+				{#each [{ label: 'In', value: account.change - account.moved + account.tracked, tone: 'text-positive' }, { label: 'Out', value: account.tracked, tone: '' }, { label: 'Net', value: account.change - account.moved, tone: '' }] as fact (fact.label)}
 					<div class="min-w-0">
 						<dt class="text-sm text-fg-muted">{fact.label} this month</dt>
 						<dd class="@container mt-1">
@@ -299,6 +368,15 @@
 					</div>
 				{/each}
 			</dl>
+			{#if account.moved !== 0}
+				<p class="mt-4 text-sm text-fg-muted">
+					<span
+						class="tabular text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)"
+						style="--tint: {PALETTE.lavender.css}">{signed(account.moved)}</span
+					>
+					moved between your accounts this month.
+				</p>
+			{/if}
 
 			<dl class="mt-6 grid gap-3 border-t border-line pt-6">
 				<div class="flex items-baseline justify-between gap-4">

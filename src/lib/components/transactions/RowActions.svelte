@@ -20,7 +20,11 @@
 		type PaletteColor
 	} from '$lib/components/ui';
 	import { formatMoney, type Currency } from '$lib/finance';
-	import { assignAccountMutation, deleteTransactionMutation } from '$lib/queries';
+	import {
+		assignAccountMutation,
+		deleteTransactionMutation,
+		deleteTransferMutation
+	} from '$lib/queries';
 	import { pop } from '$lib/transitions';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
 	import { cn, EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
@@ -39,7 +43,8 @@
 	 * undone.
 	 *
 	 * Rows that pay off a loan are read here and changed in v1, where the
-	 * loan's own rules live: those two items grey out and say so.
+	 * loan's own rules live: those two items grey out and say so. A side of a
+	 * transfer is edited and deleted as the whole transfer.
 	 */
 	type Props = {
 		row: TransactionRow;
@@ -82,7 +87,9 @@
 
 	const queryClient = useQueryClient();
 	const assign = createMutation(() => assignAccountMutation(queryClient));
-	const remove = createMutation(() => deleteTransactionMutation(queryClient));
+	const removeRow = createMutation(() => deleteTransactionMutation(queryClient));
+	const removeTransfer = createMutation(() => deleteTransferMutation(queryClient));
+	const remove = $derived(row.transfer ? removeTransfer : removeRow);
 
 	let confirming = $state(false);
 	let copied = $state(false);
@@ -116,8 +123,22 @@
 	}
 
 	function destroy() {
-		remove.mutate(row.id, { onSuccess: () => (confirming = false) });
+		const done = { onSuccess: () => (confirming = false) };
+		if (row.transfer) removeTransfer.mutate(row.transfer.id, done);
+		else removeRow.mutate(row.id, done);
 	}
+
+	/** What deleting it puts back, said before it happens. */
+	const consequence = $derived.by(() => {
+		const moved = row.transfer;
+		if (moved) {
+			const ends = [moved.from, moved.to].filter((a) => a !== null).map((a) => a.name);
+			return `Both of its sides leave the ledger for good, and ${ends.length ? ends.join(' and ') : 'the accounts'} go back to what they held without it. Your total doesn't move.`;
+		}
+		return row.account
+			? `It leaves the ledger for good, and ${row.account.name}'s balance goes back to what it was without it.`
+			: 'It leaves the ledger for good, and your total goes back to what it was without it.';
+	});
 
 	/**
 	 * A pastel taken to a chip, as `CategoryIcon` and the ledger tools wear one:
@@ -330,10 +351,8 @@
 		confirming = next;
 		if (!next) remove.reset();
 	}}
-	title="Delete this transaction?"
-	description={row.account
-		? `It leaves the ledger for good, and ${row.account.name}'s balance goes back to what it was without it.`
-		: 'It leaves the ledger for good, and your total goes back to what it was without it.'}
+	title={row.transfer ? 'Delete this transfer?' : 'Delete this transaction?'}
+	description={consequence}
 	action="Delete"
 	pending={remove.isPending}
 	error={remove.isError ? 'Couldn’t delete it. Try again.' : null}
@@ -344,8 +363,13 @@
 		<span
 			class={cn(
 				'tabular text-[0.9375rem] whitespace-nowrap',
-				row.type === 'income' ? 'text-positive' : 'text-spent'
+				row.transfer
+					? 'text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)'
+					: row.type === 'income'
+						? 'text-positive'
+						: 'text-spent'
 			)}
+			style={row.transfer ? `--tint: ${PALETTE.lavender.css}` : undefined}
 		>
 			{signed}
 		</span>

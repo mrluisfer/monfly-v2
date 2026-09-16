@@ -15,6 +15,13 @@ export const amountCents = sql`round(${transaction.amount}::numeric * 100)`;
 export const signedCents = sql`case when ${transaction.type} = ${INCOME} then ${amountCents} else -${amountCents} end`;
 
 /**
+ * Not one side of a transfer. Money moved between two of the user's own
+ * accounts was neither earned nor spent, so income, spending and their
+ * categories leave it out; balances, which it really moves, don't.
+ */
+export const notTransfer = sql`${transaction.transferId} is null`;
+
+/**
  * True for a transaction dated on or after the user's first account was added
  * — and for every one when they have none. Card-less ones before it are
  * already in the balance that account was opened with: they aren't among the

@@ -8,7 +8,7 @@
 	import { countUp } from '$lib/actions';
 	import { categoryColor } from '$lib/categories';
 	import CategoryIcon from '$lib/components/transactions/CategoryIcon.svelte';
-	import { AnimatedIcon, DateLabel, Loader, Orb, Tooltip } from '$lib/components/ui';
+	import { AnimatedIcon, DateLabel, Loader, Orb, PALETTE, Tooltip } from '$lib/components/ui';
 	import { DEFAULT_CURRENCY, formatMoney } from '$lib/finance';
 	import { accountsQuery, colorChoicesQuery, transactionsQuery } from '$lib/queries';
 	import { signedAmount } from '$lib/transactions';
@@ -183,8 +183,13 @@
 							<span
 								class={cn(
 									'tabular text-right text-[0.9375rem]',
-									row.type === 'income' ? 'text-positive' : 'text-spent'
+									row.transfer
+										? 'text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)'
+										: row.type === 'income'
+											? 'text-positive'
+											: 'text-spent'
 								)}
+								style={row.transfer ? `--tint: ${PALETTE.lavender.css}` : undefined}
 								use:countUp={{
 									value: signedAmount(row),
 									format: signed,
