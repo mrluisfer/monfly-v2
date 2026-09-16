@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/mrluisfer/monfly-v2/compare/v1.11.0...v1.12.0) (2026-09-16)
+
+
+### Features
+
+* installable PWA, the accounts page and dashboard fixes ([#45](https://github.com/mrluisfer/monfly-v2/issues/45)) ([cccba45](https://github.com/mrluisfer/monfly-v2/commit/cccba45f5b3a130e5fc77c8c0f0bf882d6ac5808))
+
 ## [1.11.0](https://github.com/mrluisfer/monfly-v2/compare/v1.10.0...v1.11.0) (2026-09-16)
 
 
