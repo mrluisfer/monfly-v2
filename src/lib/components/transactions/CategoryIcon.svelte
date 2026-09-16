@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { categoryIcon } from '$lib/categories';
-	import { PALETTE, type PaletteColor } from '$lib/components/ui';
+	import { categoryGlyph, categoryIcon } from '$lib/categories';
+	import { AnimatedIcon, PALETTE, type PaletteColor } from '$lib/components/ui';
 	import { cn } from '$lib/utils';
 
 	/**
@@ -13,10 +13,12 @@
 		category: string;
 		/** Its colour — `categoryColor` works it out once for the whole table. */
 		color: PaletteColor;
+		/** The glyph makes its gesture with the control around it: a row of the picker. */
+		animated?: boolean;
 		class?: string;
 	};
 
-	let { category, color, class: className }: Props = $props();
+	let { category, color, animated = false, class: className }: Props = $props();
 
 	const Glyph = $derived(categoryIcon(category));
 </script>
@@ -26,7 +28,11 @@
 	style="--tint: {PALETTE[color].css}"
 	aria-hidden="true"
 >
-	<Glyph class="size-4 stroke-[1.75]" />
+	{#if animated}
+		<AnimatedIcon icon={categoryGlyph(category)} set="color" />
+	{:else}
+		<Glyph class="size-4 stroke-[1.75]" />
+	{/if}
 </span>
 
 <style>

@@ -7,6 +7,7 @@ export { default as Card } from './Card.svelte';
 export { default as CardTabs } from './CardTabs.svelte';
 export { default as DateLabel } from './DateLabel.svelte';
 export { default as Checkbox } from './Checkbox.svelte';
+export { default as Combobox } from './Combobox.svelte';
 export { default as ConfirmDialog } from './ConfirmDialog.svelte';
 export { default as OrbitRing } from './OrbitRing.svelte';
 export { default as Figure, FIGURE_SIZES, type FigureSize } from './Figure.svelte';

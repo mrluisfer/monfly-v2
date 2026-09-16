@@ -40,6 +40,10 @@
 		colors?: Record<string, PaletteColor>;
 		/** The user's active accounts: a new transaction can name one. */
 		accounts?: { id: string; name: string }[];
+		/** Every category the record names, most used first: the category field suggests them. */
+		categories?: string[];
+		/** Colours people picked for their categories (`User.colors.category`). */
+		categoryChoices?: Record<string, PaletteColor>;
 		/** The panel is open on a row's fields rather than its facts. */
 		editing?: boolean;
 		/**
@@ -59,6 +63,8 @@
 		timeZone,
 		colors = {},
 		accounts = [],
+		categories = [],
+		categoryChoices,
 		editing = false,
 		draft,
 		onEditingChange,
@@ -372,6 +378,8 @@
 				{timeZone}
 				{accounts}
 				{colors}
+				{categories}
+				{categoryChoices}
 				{draft}
 				onDone={() => (writing ? onClose?.() : onEditingChange?.(false))}
 			/>

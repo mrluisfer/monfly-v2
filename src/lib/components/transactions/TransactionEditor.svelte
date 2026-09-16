@@ -4,7 +4,8 @@
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { animate, stagger } from 'motion';
 	import { moneyField } from '$lib/actions';
-	import { PillButton, Segmented, Select, type PaletteColor } from '$lib/components/ui';
+	import { categoryColor } from '$lib/categories';
+	import { Combobox, PillButton, Segmented, Select, type PaletteColor } from '$lib/components/ui';
 	import {
 		currencySymbol,
 		formatMoney,
@@ -23,6 +24,7 @@
 		type TransactionRow
 	} from '$lib/transactions';
 	import { EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
+	import CategoryIcon from './CategoryIcon.svelte';
 
 	/**
 	 * The panel with its fields open: what a transaction is worth, which way it
@@ -46,6 +48,15 @@
 		/** Each account's colour, by id: the dots beside their names. */
 		colors?: Record<string, PaletteColor>;
 		/**
+		 * Every category the record names, most used first — what the category
+		 * field suggests. It stays a field rather than a list of these: v1 lets
+		 * people name their own, in whichever language they think in, and a first
+		 * transaction has none of them to pick from.
+		 */
+		categories?: string[];
+		/** Colours people picked for their categories (`User.colors.category`). */
+		categoryChoices?: Record<string, PaletteColor>;
+		/**
 		 * Every field, held by the page: the panel's figure writes the amount into
 		 * it as well, so the two are one value rather than a copy kept in step,
 		 * and the page keeps it in this browser while it is half written.
@@ -61,6 +72,8 @@
 		timeZone,
 		accounts = [],
 		colors = {},
+		categories = [],
+		categoryChoices,
 		draft,
 		onDone
 	}: Props = $props();
@@ -195,17 +208,22 @@
 
 	<div class="mt-4" data-deal>
 		<label class={label} for="{uid}-category">Category</label>
-		<div class={field}>
-			<input
-				id="{uid}-category"
-				bind:value={draft.category}
-				maxlength={MAX_CATEGORY}
-				autocomplete="off"
-				spellcheck="false"
-				placeholder="Groceries"
-				class={entry}
-			/>
-		</div>
+		<!-- The categories already on record, each in the chip the ledger draws it
+		     in, and a name none of them has at the head of the list, marked new:
+		     picking an old one and writing a new one are the same gesture. The chip
+		     follows what is typed, so a category arrives wearing its glyph and its
+		     colour before it has been saved once. -->
+		<Combobox
+			id="{uid}-category"
+			options={categories}
+			bind:value={draft.category}
+			maxlength={MAX_CATEGORY}
+			placeholder="Groceries"
+		>
+			{#snippet leading(name)}
+				<CategoryIcon category={name} color={categoryColor(name, categoryChoices)} animated />
+			{/snippet}
+		</Combobox>
 	</div>
 
 	{#if !row && accounts.length > 0}

@@ -158,6 +158,21 @@
 	// same thing in both places.
 	const colors = $derived(accountColors(accounts.data?.accounts ?? [], choices.data?.account));
 
+	/**
+	 * Every category the whole record names, most used first — what the panel's
+	 * category field offers. The whole record rather than the month on show:
+	 * a category is a category whichever month it was last used in, and the
+	 * ones reached for most should head the list.
+	 */
+	const categories = $derived.by(() => {
+		const counts: Record<string, number> = {};
+		for (const t of record.data?.transactions ?? [])
+			counts[t.category] = (counts[t.category] ?? 0) + 1;
+		return Object.entries(counts)
+			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+			.map(([name]) => name);
+	});
+
 	/** The row in the panel, by id: the list holds the row itself, and a browser can keep an id. */
 	let selectedId = $state<string | null>(null);
 	/** The panel is open on its fields rather than its facts. */
@@ -438,6 +453,8 @@
 								timeZone={data.timeZone}
 								{colors}
 								accounts={accounts.data?.accounts ?? []}
+								{categories}
+								categoryChoices={choices.data?.category}
 								{editing}
 								{draft}
 								onEditingChange={edit}
