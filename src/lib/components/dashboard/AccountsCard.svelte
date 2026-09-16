@@ -12,7 +12,7 @@
 	/**
 	 * The accounts column: an overview card — the header, every account's
 	 * total, this month's movement and a share bar — then the two featured
-	 * accounts, main and secondary as the person set them (the pencil) or the
+	 * accounts, main and secondary as the person set them (the chevrons) or the
 	 * two oldest, splitting the rest of the column 50/50. Each account has one
 	 * colour everywhere — orb, sparkle, slice — from User.colors, main starting
 	 * lime and secondary blue; money that never got an account joins the total
@@ -23,9 +23,11 @@
 		timeZone: string;
 		/** False for a session with no Monfly account to read. */
 		enabled?: boolean;
+		/** What this browser leaves out of the total, as the server read it from its cookie. */
+		leftOut?: string[];
 	};
 
-	let { timeZone, enabled = true }: Props = $props();
+	let { timeZone, enabled = true, leftOut = [] }: Props = $props();
 
 	const query = createQuery(() => ({ ...accountsQuery(), enabled: browser && enabled }));
 	const choices = createQuery(() => ({ ...colorChoicesQuery(), enabled: browser && enabled }));
@@ -80,6 +82,7 @@
 			unassigned={list.unassigned}
 			colors={colorById}
 			currency={list.currency}
+			{leftOut}
 			class="mt-5"
 		/>
 	{:else if list}

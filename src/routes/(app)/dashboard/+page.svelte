@@ -16,7 +16,8 @@
 
 	// Tips, Loans and the latest transactions share the one slot under Income,
 	// so the column keeps the height the grid gives it and the row stays level
-	// across all three.
+	// across all three. Stacked, under xl, no row gives it a height, so it keeps
+	// a floor of its own: room for the tip's globe and most of the five rows.
 	const asides = [
 		{ value: 'tips', label: 'Tips' },
 		{ value: 'loans', label: 'Loans' },
@@ -50,7 +51,11 @@
 
 		<!-- Accounts: main and secondary, a card each -->
 		<div class="flex flex-col gap-4" use:reveal={{ delay: 0.1 }}>
-			<AccountsCard timeZone={data.timeZone} enabled={data.profile !== null} />
+			<AccountsCard
+				timeZone={data.timeZone}
+				enabled={data.profile !== null}
+				leftOut={data.leftOut}
+			/>
 		</div>
 
 		<!-- Income + the Tips / Loans / Transactions aside -->
@@ -61,7 +66,7 @@
 				options={[...asides]}
 				bind:value={aside}
 				label="Tips, loans and transactions"
-				class="flex-1"
+				class="min-h-96 flex-1 xl:min-h-0"
 			>
 				{#snippet panel(value)}
 					{#if value === 'tips'}

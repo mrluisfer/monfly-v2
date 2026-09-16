@@ -5,13 +5,11 @@
 	import { Card, Select, type PaletteColor } from '$lib/components/ui';
 	import {
 		DEFAULT_CURRENCY,
-		DEFAULT_INCOME_PERIOD,
 		INCOME_PERIODS,
 		INCOME_PERIOD_LABEL,
 		formatMoney,
 		formatMoneyCompact,
-		moneyParts,
-		type IncomePeriod
+		moneyParts
 	} from '$lib/finance';
 	import {
 		DEFAULT_INCOME_VIEW,
@@ -28,23 +26,24 @@
 	 * Income for a period — this quarter by default — as a total with its
 	 * lime symbol and a bar per bucket: this month by week, this quarter by
 	 * month, this year by quarter or month, all time by year. The gear sets
-	 * how the chart is drawn, for this browser. A new period counts the total
-	 * over (GSAP) and grows the new bars up (CSS). The page prefetches this
-	 * quarter during SSR.
+	 * how the chart is drawn; that and the period are kept for this browser,
+	 * so the card opens as it was left. A new period counts the total over
+	 * (GSAP) and grows the new bars up (CSS). The page prefetches the kept
+	 * period during SSR.
 	 */
 	type Props = {
 		/** False for a session with no Monfly account to read. */
 		enabled?: boolean;
-		/** The chart settings this browser saved, as the server read them from its cookie. */
+		/** The period and chart settings this browser saved, as the server read them from its cookie. */
 		view?: IncomeView;
 	};
 
 	let { enabled = true, view: saved = DEFAULT_INCOME_VIEW }: Props = $props();
 
 	const options = INCOME_PERIODS.map((value) => ({ value, label: INCOME_PERIOD_LABEL[value] }));
-	let period = $state<IncomePeriod>(DEFAULT_INCOME_PERIOD);
-	// The saved settings, until the gear changes them.
+	// The saved period and settings, until the select or the gear changes them.
 	let view = $derived(saved);
+	const period = $derived(view.period);
 
 	function changeView(next: IncomeView) {
 		view = next;
@@ -92,7 +91,12 @@
 		<h2 class="font-display text-2xl font-medium">Income</h2>
 		<div class="flex items-center gap-2">
 			<IncomeSettings {view} onChange={changeView} />
-			<Select label="Period" {options} bind:value={period} />
+			<Select
+				label="Period"
+				{options}
+				value={period}
+				onValueChange={(next) => changeView({ ...view, period: next })}
+			/>
 		</div>
 	</div>
 

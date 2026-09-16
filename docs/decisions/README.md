@@ -20,6 +20,9 @@ record and mark the old one superseded.
 - [0014. Header shortcuts live on the User row](0014-shortcuts-on-the-user.md)
 - [0015. v2 owns the schema: Drizzle Kit writes and runs migrations](0015-drizzle-kit-owns-migrations.md)
 - [0016. Shortcut changes are kept as events](0016-shortcut-events.md)
+- [0017. Monfly installs as a PWA; a desktop shell comes later](0017-installable-pwa.md)
+- [0018. The dashboard's choices are kept per browser, in cookies](0018-dashboard-choices-in-cookies.md)
+- [0019. A balance set by hand is kept as an adjustment](0019-balance-adjustments.md)
 
 ## Template
 

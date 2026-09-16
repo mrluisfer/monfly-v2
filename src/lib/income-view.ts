@@ -1,5 +1,7 @@
 import {
+	DEFAULT_INCOME_PERIOD,
 	INCOME_UNITS,
+	isIncomePeriod,
 	isIncomeUnit,
 	type IncomePeriod,
 	type IncomeUnit,
@@ -7,12 +9,15 @@ import {
 } from './finance';
 
 /**
- * How the Income card draws its chart — the settings behind its gear. They're
- * kept per browser in a cookie that the dashboard's server load reads, so the
- * page is rendered in the chosen view and nothing shifts on hydration. None of
- * it touches the shared database.
+ * What the Income card shows and how: the period picked beside its gear, and
+ * the settings behind the gear. They're kept per browser in a cookie that the
+ * dashboard's server load reads, so the page is rendered on the chosen period
+ * and view — after a reload or a trip to another page — and nothing shifts on
+ * hydration. None of it touches the shared database.
  */
 export type IncomeView = {
+	/** The period the card opens on: the last one picked. */
+	period: IncomePeriod;
 	/** Each bar of "This year": a quarter (the default) or a month. */
 	yearBy: YearUnit;
 	/** The compact amount over each bar; the exact one stays in its tooltip. */
@@ -21,9 +26,14 @@ export type IncomeView = {
 	upcoming: boolean;
 };
 
-export const DEFAULT_INCOME_VIEW: IncomeView = { yearBy: 'quarter', figures: true, upcoming: true };
+export const DEFAULT_INCOME_VIEW: IncomeView = {
+	period: DEFAULT_INCOME_PERIOD,
+	yearBy: 'quarter',
+	figures: true,
+	upcoming: true
+};
 
-/** Written by the Income card's settings, read by the dashboard's server load. */
+/** Written by the Income card's period and settings, read by the dashboard's server load. */
 export const INCOME_VIEW_COOKIE = 'income-view';
 
 /** The view a cookie holds, each setting checked on its own: a missing or unknown one keeps its default. */
@@ -36,6 +46,7 @@ export function parseIncomeView(raw: string | undefined): IncomeView {
 		// Not JSON: every default.
 	}
 	return {
+		period: isIncomePeriod(stored.period) ? stored.period : DEFAULT_INCOME_VIEW.period,
 		yearBy: isIncomeUnit('year', stored.yearBy)
 			? (stored.yearBy as YearUnit)
 			: DEFAULT_INCOME_VIEW.yearBy,

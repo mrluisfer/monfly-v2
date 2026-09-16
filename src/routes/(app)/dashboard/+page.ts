@@ -1,4 +1,4 @@
-import { DEFAULT_INCOME_PERIOD, currentMonth } from '$lib/finance';
+import { currentMonth } from '$lib/finance';
 import { incomeUnit } from '$lib/income-view';
 import {
 	accountsQuery,
@@ -15,12 +15,13 @@ import type { PageLoad } from './$types';
  * renders real figures and hydration reuses them instead of refetching.
  * Widgets read the same cache entries through createQuery. A failed prefetch
  * isn't fatal: its widget falls back or retries on the client. The Income
- * card's settings come from the server load (a cookie).
+ * card's period and settings come from the server load (a cookie).
  */
 export const load: PageLoad = async ({ parent, fetch, data }) => {
 	const { queryClient, profile, timeZone } = await parent();
 	const month = currentMonth(timeZone);
-	const unit = incomeUnit(DEFAULT_INCOME_PERIOD, data.incomeView);
+	const { period } = data.incomeView;
+	const unit = incomeUnit(period, data.incomeView);
 	// A new Auth0 user has no account row yet: nothing to read.
 	if (profile) {
 		await Promise.all([
@@ -28,7 +29,7 @@ export const load: PageLoad = async ({ parent, fetch, data }) => {
 			queryClient.prefetchQuery(expenseBreakdownQuery(null, fetch)),
 			queryClient.prefetchQuery(colorChoicesQuery(fetch)),
 			queryClient.prefetchQuery(accountsQuery(undefined, fetch)),
-			queryClient.prefetchQuery(incomeQuery(DEFAULT_INCOME_PERIOD, unit, fetch)),
+			queryClient.prefetchQuery(incomeQuery(period, unit, fetch)),
 			queryClient.prefetchQuery(savingsQuery(fetch))
 		]);
 	}
