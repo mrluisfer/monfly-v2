@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/mrluisfer/monfly-v2/compare/v1.10.0...v1.11.0) (2026-09-16)
+
+
+### Features
+
+* create categories select to use the new transactions logic ([#43](https://github.com/mrluisfer/monfly-v2/issues/43)) ([3509ba4](https://github.com/mrluisfer/monfly-v2/commit/3509ba4984f6b2ff2b923a6aca566cf26f4ec5fa))
+
 ## [1.10.0](https://github.com/mrluisfer/monfly-v2/compare/v1.9.0...v1.10.0) (2026-09-15)
 
 
