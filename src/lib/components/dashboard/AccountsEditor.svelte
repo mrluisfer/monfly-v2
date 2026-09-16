@@ -73,7 +73,12 @@
 							{:else}
 								<div class="mt-4 grid gap-3">
 									<div class="flex items-center justify-between gap-4">
-										<span class="text-sm text-fg-muted">Main</span>
+										<span class="text-sm text-fg-muted">
+											Main
+											{#if featured[0] && featured[0].role !== 'main'}
+												<span class="block text-xs text-fg-subtle">By default</span>
+											{/if}
+										</span>
 										<Select
 											label="Main account"
 											{options}
@@ -83,7 +88,12 @@
 									</div>
 									{#if accounts.length > 1}
 										<div class="flex items-center justify-between gap-4">
-											<span class="text-sm text-fg-muted">Secondary</span>
+											<span class="text-sm text-fg-muted">
+												Secondary
+												{#if featured[1] && featured[1].role !== 'secondary'}
+													<span class="block text-xs text-fg-subtle">By default</span>
+												{/if}
+											</span>
 											<Select
 												label="Secondary account"
 												{options}

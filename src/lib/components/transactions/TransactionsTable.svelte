@@ -32,6 +32,7 @@
 		DateLabel,
 		IconButton,
 		Orb,
+		OverflowText,
 		PALETTE,
 		Tooltip,
 		type PaletteColor
@@ -692,9 +693,12 @@
 								<button
 									type="button"
 									onclick={() => onSelect?.(t)}
-									class="block max-w-full truncate text-left text-[0.9375rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+									class="block max-w-full text-left text-[0.9375rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
 								>
-									{#if t.category}{t.category}{:else}<span class="text-fg-subtle">—</span>{/if}
+									<!-- A name too long for the column reads to its end in place. -->
+									{#if t.category}<OverflowText text={t.category} />{:else}<span
+											class="text-fg-subtle">—</span
+										>{/if}
 								</button>
 							</td>
 						{/if}
@@ -778,7 +782,7 @@
 						{#if drawn('what')}
 							<td class={cn(cell, 'text-[0.9375rem] text-fg-muted')}>
 								{#if t.description}
-									<span class="block truncate">{t.description}</span>
+									<OverflowText text={t.description} />
 								{:else}
 									<span class="text-fg-subtle">—</span>
 								{/if}

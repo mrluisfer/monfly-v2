@@ -7,7 +7,7 @@
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import gsap from 'gsap';
 	import { animate } from 'motion';
-	import { kindLabel, type Account } from '$lib/accounts';
+	import { accountPlace, kindLabel, type Account } from '$lib/accounts';
 	import { countUp } from '$lib/actions';
 	import {
 		AnimatedIcon,
@@ -92,6 +92,9 @@
 		secondary: 'Secondary, on the dashboard',
 		savings: 'Savings, for the goal'
 	} as const;
+
+	/** The role it holds, or the dashboard slot it fills by default: what the card's badge says. */
+	const place = $derived(account ? accountPlace(account, accounts) : null);
 
 	const added = $derived(
 		account
@@ -301,9 +304,14 @@
 				<div class="flex items-baseline justify-between gap-4">
 					<dt class="text-sm text-fg-muted">Featured as</dt>
 					<dd class="text-right text-[0.9375rem]">
-						{#if account.role}{ROLE[account.role]}{:else}<span class="text-fg-subtle"
-								>Not featured</span
-							>{/if}
+						{#if place}
+							{ROLE[place.role]}
+							{#if !place.chosen}
+								<span class="block text-xs text-fg-subtle">By default: not chosen yet</span>
+							{/if}
+						{:else}
+							<span class="text-fg-subtle">Not featured</span>
+						{/if}
 					</dd>
 				</div>
 				<div class="flex items-baseline justify-between gap-4">

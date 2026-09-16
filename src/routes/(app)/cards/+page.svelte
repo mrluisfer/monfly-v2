@@ -2,18 +2,23 @@
 	import { createQuery, keepPreviousData } from '@tanstack/svelte-query';
 	import { animate, stagger } from 'motion';
 	import { flip } from 'svelte/animate';
+	import { untrack } from 'svelte';
 	import { quintOut } from 'svelte/easing';
 	import { browser } from '$app/environment';
+	import { afterNavigate, replaceState } from '$app/navigation';
+	import { page } from '$app/state';
 	import { reveal } from '$lib/actions';
 	import {
 		DEFAULT_HISTORY_RANGE,
 		HISTORY_RANGE_SPAN,
 		accountColors,
+		accountPlace,
 		featuredAccounts,
 		type HistoryRange
 	} from '$lib/accounts';
 	import {
 		AccountActions,
+		AccountIconPicker,
 		AccountPanel,
 		AccountsSummary,
 		AccountTile,
@@ -57,8 +62,32 @@
 	// The same colour each account wears on the dashboard and in the ledger.
 	const colors = $derived(accountColors(accounts, choices.data?.account));
 
+	/**
+	 * The account the address opens (`?account=`, `accountPageHref`) — read from
+	 * `location` in the browser, as the ledger reads its filters (0012): going
+	 * back to an address rewritten below, SvelteKit loads the one first arrived at.
+	 */
+	const asked = () => (browser ? new URL(location.href) : page.url).searchParams.get('account');
+
 	/** The account picked for the panel, by id: a refetch hands back new objects. */
-	let selectedId = $state<string | null>(null);
+	let selectedId = $state<string | null>(untrack(asked));
+
+	// The address follows the pick, replaced rather than pushed, so a reload
+	// opens the same account and Back leaves the page instead of stepping
+	// through every card. Shallow, so no load runs.
+	$effect(() => {
+		const query = selectedId ? `?${new URLSearchParams({ account: selectedId })}` : '';
+		if (query === location.search) return;
+		replaceState(`${page.url.pathname}${query}`, page.state);
+	});
+
+	// A navigation that lands here again with an account named opens that one;
+	// arriving, the two already agree.
+	afterNavigate(() => {
+		const id = asked();
+		if (id && id !== selectedId) show(id);
+	});
+
 	let editing = $state(false);
 	let creating = $state(false);
 
@@ -156,9 +185,12 @@
 		<div class="flex min-w-0 flex-col gap-4" use:reveal={{ delay: 0.05 }}>
 			<div bind:this={wallet} class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
 				{#each accounts as account (account.id)}
+					<!-- The place the dashboard gives it, chosen or by default, so the two agree. -->
+					{@const place = accountPlace(account, accounts)}
 					<div animate:flip={{ duration: 450, easing: quintOut }}>
 						<AccountTile
 							{account}
+							{place}
 							color={colors[account.id]}
 							{currency}
 							selected={!adding && selected?.id === account.id}
@@ -166,9 +198,13 @@
 							onSelect={() => show(account.id)}
 							class="h-full"
 						>
+							{#snippet mark()}
+								<AccountIconPicker {account} onProblem={(message) => (problem = message)} />
+							{/snippet}
 							{#snippet actions()}
 								<AccountActions
 									{account}
+									{place}
 									color={colors[account.id]}
 									{currency}
 									open={!adding && !editing && selected?.id === account.id}

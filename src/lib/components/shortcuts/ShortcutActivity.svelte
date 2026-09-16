@@ -53,7 +53,10 @@
 			const changes = week.pinned + week.unpinned;
 			return {
 				key: week.start,
-				label: day(week.start),
+				// Each week goes by its Monday, but the one still running is "Now" — as
+				// the balance chart ends on "Today" — so a change made today doesn't read
+				// as made on that Monday. "This week" is too wide for a slot; its tip says it.
+				label: week.start === lastWeek ? 'Now' : day(week.start),
 				value: changes,
 				valueLabel: String(changes),
 				color: 'violet' as const,

@@ -1,4 +1,5 @@
 export { default as AccountActions } from './AccountActions.svelte';
+export { default as AccountIconPicker } from './AccountIconPicker.svelte';
 export { default as AccountPanel } from './AccountPanel.svelte';
 export { default as AccountsSummary } from './AccountsSummary.svelte';
 export { default as AccountTile } from './AccountTile.svelte';

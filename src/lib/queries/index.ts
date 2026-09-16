@@ -7,6 +7,7 @@ export {
 	balanceHistoryQuery,
 	deleteAccountMutation,
 	editAccountMutation,
+	setAccountIconMutation,
 	setAccountRoleMutation,
 	setAccountStatusMutation
 } from './accounts';

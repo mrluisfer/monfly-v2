@@ -1,3 +1,4 @@
+import type { AccountIcon } from './account-icons';
 import { assignColors } from './colors';
 import type { PaletteColor } from './components/ui/palette';
 import type { Cents, Currency } from './finance/money';
@@ -21,6 +22,8 @@ export type Account = {
 	id: string;
 	name: string;
 	role: AccountRole | null;
+	/** The brand icon picked for it, or null to read one from its name (`accountIcon`). */
+	icon: AccountIcon | null;
 	/**
 	 * v1's card details, each optional in its card form and null where left
 	 * blank: who issues it ("BBVA", "Visa"), its last four digits, and its kind
@@ -246,6 +249,27 @@ export function featuredAccounts<T extends { role: AccountRole | null }>(account
 	// for an unset slot here — it would be drawn twice.
 	const rest = accounts.filter((a) => a !== main && a !== secondary && a.role !== 'savings');
 	return [main ?? rest.shift(), secondary ?? rest.shift()].filter((a): a is T => a !== undefined);
+}
+
+/** The accounts page with one account open in its panel (`?account=`). */
+export const accountPageHref = (id: string) => `/cards?${new URLSearchParams({ account: id })}`;
+
+/** Where an account stands: the role it holds, or the dashboard slot it fills by default, unchosen. */
+export type AccountPlace = { role: AccountRole; chosen: boolean };
+
+/**
+ * An account's place: the role it holds, chosen — or, holding none, the slot
+ * `featuredAccounts` hands it on the dashboard, which nobody chose and which
+ * choosing another account for it takes away. Null when it has no place at all.
+ */
+export function accountPlace<T extends { id: string; role: AccountRole | null }>(
+	account: T,
+	accounts: T[]
+): AccountPlace | null {
+	if (account.role) return { role: account.role, chosen: true };
+	const slot = featuredAccounts(accounts).findIndex((a) => a.id === account.id);
+	// Slots fill in order, so an unchosen account in front holds main's.
+	return slot === -1 ? null : { role: slot === 0 ? 'main' : 'secondary', chosen: false };
 }
 
 /** Account colours by rank, for any without a choice of its own: main starts lime, secondary blue. */

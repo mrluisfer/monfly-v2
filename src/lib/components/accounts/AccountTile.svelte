@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { kindLabel, type Account } from '$lib/accounts';
+	import { kindLabel, type Account, type AccountPlace } from '$lib/accounts';
 	import { countUp } from '$lib/actions';
 	import { PALETTE, type PaletteColor } from '$lib/components/ui';
 	import { formatMoney, type Cents, type Currency } from '$lib/finance';
@@ -18,11 +18,15 @@
 		account: Account;
 		color: PaletteColor;
 		currency: Currency;
+		/** Its place (`accountPlace`): a role it holds, or a dashboard slot it fills by default. */
+		place?: AccountPlace | null;
 		/** It's the one open in the panel. */
 		selected?: boolean;
 		/** Its balances across the chart's range, oldest first; null before it was added. */
 		balances?: (Cents | null)[];
 		onSelect: () => void;
+		/** Its brand's mark, at the head of the label along the top. */
+		mark?: Snippet;
 		/** Its actions menu, in the top corner. */
 		actions?: Snippet;
 		class?: string;
@@ -32,9 +36,11 @@
 		account,
 		color,
 		currency,
+		place = null,
 		selected = false,
 		balances = [],
 		onSelect,
+		mark,
 		actions,
 		class: className
 	}: Props = $props();
@@ -135,13 +141,18 @@
 
 		<div class="pointer-events-none relative flex items-start justify-between gap-3">
 			<div class="flex min-w-0 flex-wrap items-center gap-1.5">
+				{@render mark?.()}
 				<span class="truncate text-xs font-medium tracking-[0.14em] text-fg-muted uppercase">
 					{account.provider ?? kindLabel(account.type) ?? 'Account'}
 				</span>
-				{#if account.role}
-					<span class="role rounded-md px-1.5 py-0.5 text-[0.6875rem] leading-none font-medium"
-						>{ROLE[account.role]}</span
+				{#if place}
+					<span
+						class="role rounded-md px-1.5 py-0.5 text-[0.6875rem] leading-none font-medium"
+						class:by-default={!place.chosen}
 					>
+						{ROLE[place.role]}
+						{#if !place.chosen}<span class="font-normal">by default</span>{/if}
+					</span>
 				{/if}
 			</div>
 			{#if actions}
@@ -283,6 +294,13 @@
 	.role {
 		background: color-mix(in oklab, var(--tint) 20%, transparent);
 		color: var(--glyph);
+	}
+
+	/* A slot nobody chose: a dashed rim in its colour instead of the fill, as a place still open. */
+	.role.by-default {
+		background: transparent;
+		outline: 1px dashed color-mix(in oklab, var(--glyph) 55%, transparent);
+		outline-offset: -1px;
 	}
 
 	.chip-body {

@@ -166,7 +166,10 @@ export const card = pgTable(
 		status: text().default('active').notNull(),
 		// "main" or "secondary": the accounts the dashboard features, set from
 		// v2. At most one of each per user — the unique index; NULLs never collide.
-		role: text()
+		role: text(),
+		// The brand icon picked for it in v2 — an id from $lib/account-icons. NULL
+		// leaves it to its name and issuer, which is most accounts. v1 ignores it.
+		icon: text()
 	},
 	(table) => [
 		index('Card_userEmail_idx').using('btree', table.userEmail.asc().nullsLast()),
