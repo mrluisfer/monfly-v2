@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/mrluisfer/monfly-v2/compare/v1.12.0...v1.13.0) (2026-09-16)
+
+
+### Features
+
+* account brand icons, and the accounts page agrees with the dashboard ([#48](https://github.com/mrluisfer/monfly-v2/issues/48)) ([1b050d5](https://github.com/mrluisfer/monfly-v2/commit/1b050d589fb39cc55c2b4b57667552a5b4d16a4b))
+
 ## [1.12.0](https://github.com/mrluisfer/monfly-v2/compare/v1.11.0...v1.12.0) (2026-09-16)
 
 
