@@ -23,6 +23,7 @@ record and mark the old one superseded.
 - [0017. Monfly installs as a PWA; a desktop shell comes later](0017-installable-pwa.md)
 - [0018. The dashboard's choices are kept per browser, in cookies](0018-dashboard-choices-in-cookies.md)
 - [0019. A balance set by hand is kept as an adjustment](0019-balance-adjustments.md)
+- [0020. An account's brand icon is read from its name, and kept only when picked](0020-account-brand-icons.md)
 
 ## Template
 

@@ -12,6 +12,7 @@
 		MAX_BALANCE,
 		MAX_PROVIDER,
 		accountColors,
+		accountPlace,
 		isAccountKind,
 		type Account,
 		type AccountKind,
@@ -101,6 +102,17 @@
 	const holder = $derived(
 		role === 'none' ? null : accounts.find((a) => a.role === role && a.id !== start?.id)
 	);
+
+	/** Left without a place, the dashboard slot it would still fill by default. */
+	const byDefault = $derived.by(() => {
+		if (role !== 'none') return null;
+		const self = { id: start?.id ?? '', role: null };
+		// Oldest first: an account being changed keeps its turn, a new one comes last.
+		const line: { id: string; role: AccountRole | null }[] = start
+			? accounts.map((a) => (a.id === start.id ? self : a))
+			: [...accounts, self];
+		return accountPlace(self, line)?.role ?? null;
+	});
 
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
@@ -295,6 +307,10 @@
 		/>
 		{#if holder}
 			<p class="mt-1.5 text-xs text-fg-muted">Takes the place from {holder.name}.</p>
+		{:else if byDefault}
+			<p class="mt-1.5 text-xs text-fg-muted">
+				On the dashboard as {byDefault} by default, until you pick an account for it.
+			</p>
 		{/if}
 	</div>
 

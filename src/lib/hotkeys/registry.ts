@@ -21,6 +21,8 @@ export const HOTKEYS = {
 	goOverview: { keys: ['g', 'o'], label: 'Go to Overview', href: '/dashboard' },
 	goTransactions: { keys: ['g', 't'], label: 'Go to Transactions', href: '/transactions' },
 	goInsights: { keys: ['g', 'i'], label: 'Go to Insights', href: '/insights' },
+	goAccounts: { keys: ['g', 'a'], label: 'Go to Accounts', href: '/cards' },
+	goBudgets: { keys: ['g', 'b'], label: 'Go to Budgets', href: '/budgets' },
 	goProfile: { keys: ['g', 'p'], label: 'Go to Profile', href: '/profile' },
 	goSettings: { keys: ['g', 's'], label: 'Go to Settings', href: '/settings' }
 } as const satisfies Record<string, Hotkey>;

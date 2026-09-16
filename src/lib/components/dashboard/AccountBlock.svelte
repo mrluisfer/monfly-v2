@@ -4,7 +4,7 @@
 	import { createQuery, keepPreviousData } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
 	import { countUp } from '$lib/actions';
-	import type { Account } from '$lib/accounts';
+	import { accountPageHref, type Account } from '$lib/accounts';
 	import {
 		AnimatedIcon,
 		Figure,
@@ -96,9 +96,10 @@
 	     one long word breaks rather than widening the card. The filter keeps its
 	     words on one line and drops under the name once there's no room beside it. -->
 	<div class="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-		<!-- Leads to the account's rows in the ledger. -->
+		<!-- Leads to the account itself, open on the accounts page; its rows are
+		     "To review" below. -->
 		<a
-			href={accountLedgerHref(account.id)}
+			href={accountPageHref(account.id)}
 			class="name flex min-w-0 flex-1 basis-56 items-start gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
 		>
 			<!-- Alive in the account's colour; a new month flashes it, as it surges the

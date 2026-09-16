@@ -18,6 +18,7 @@ export { default as Logo } from './Logo.svelte';
 export { default as Meter } from './Meter.svelte';
 export { default as Notice } from './Notice.svelte';
 export { default as Orb } from './Orb.svelte';
+export { default as OverflowText } from './OverflowText.svelte';
 export { PALETTE, PALETTE_COLORS, type PaletteColor } from './palette';
 export { default as PillButton } from './PillButton.svelte';
 export { default as Segmented } from './Segmented.svelte';

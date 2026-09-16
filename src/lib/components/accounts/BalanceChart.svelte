@@ -1,6 +1,4 @@
 <script lang="ts">
-	import ColorScale from '@animated-color-icons/lucide-svelte/Scale.svelte';
-	import ColorSparkles from '@animated-color-icons/lucide-svelte/Sparkles.svelte';
 	import { RadioGroup } from 'bits-ui';
 	import gsap from 'gsap';
 	import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
@@ -13,14 +11,7 @@
 		type BalanceHistory,
 		type HistoryRange
 	} from '$lib/accounts';
-	import {
-		AnimatedIcon,
-		Orb,
-		PALETTE,
-		Sparkle,
-		Tooltip,
-		type PaletteColor
-	} from '$lib/components/ui';
+	import { Orb, OrbitRing, PALETTE, Sparkle, Tooltip, type PaletteColor } from '$lib/components/ui';
 	import { formatMoney, formatMoneyCompact, type Currency } from '$lib/finance';
 	import { pop } from '$lib/transitions';
 	import { cn, prefersReducedMotion } from '$lib/utils';
@@ -604,17 +595,20 @@
 								type="button"
 								aria-label="{pinText(pin)}, {longDayFormat.format(asDate(pin.day))}"
 								class="pin absolute bottom-2.5 -translate-x-1/2 focus-visible:outline-none"
-								style="left: {pin.x}%; --i: {pin.i}; --lift: {pin.lane *
-									0.875}rem; --tint: {PALETTE[colors[pin.accountId] ?? 'blue'].css}"
+								style="left: {pin.x}%; --i: {pin.i}; --lift: {pin.lane * 0.875}rem"
 							>
-								<span
-									class="head press grid size-6 place-items-center rounded-full border border-line bg-card shadow-sm"
-								>
-									<AnimatedIcon
-										icon={pin.kind === 'opened' ? ColorSparkles : ColorScale}
-										set="color"
-										size={12}
-									/>
+								<!-- The account's orb in orbit, as its balance wears it everywhere else;
+								     neighbours take the dashboard's pair and turn opposite ways. -->
+								<span class="head press block rounded-full">
+									<OrbitRing
+										class="w-7"
+										ticks={20}
+										markers={pin.i % 2 === 0 ? [0.25, 0.75] : [0, 0.5]}
+										direction={pin.i % 2 === 0 ? 1 : -1}
+										period={pin.i % 2 === 0 ? 32 : 24}
+									>
+										<Orb color={colors[pin.accountId] ?? 'blue'} blur={3} class="size-full" />
+									</OrbitRing>
 								</span>
 								<span class="stem mx-auto block w-px bg-line-strong"></span>
 							</button>
@@ -758,15 +752,6 @@
 			opacity: 0;
 			translate: 0 0.5rem;
 		}
-	}
-
-	.pin .head {
-		color: oklch(from var(--tint) 0.55 calc(c * 1.7) h);
-		background: color-mix(in oklab, var(--tint) 16%, var(--card));
-	}
-
-	:global(.dark) .pin .head {
-		color: var(--tint);
 	}
 
 	.pin:focus-visible .head {

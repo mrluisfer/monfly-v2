@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { isAccountIcon } from '../../account-icons';
 import {
 	isAccountRole,
 	type AccountList,
@@ -58,6 +59,7 @@ export async function getAccounts(
 				id: card.id,
 				name: card.name,
 				role: card.role,
+				icon: card.icon,
 				provider: card.provider,
 				last4: card.last4,
 				type: card.type,
@@ -107,6 +109,7 @@ export async function getAccounts(
 		id: row.id,
 		name: row.name,
 		role: isAccountRole(row.role) ? row.role : null,
+		icon: isAccountIcon(row.icon) ? row.icon : null,
 		provider: row.provider,
 		last4: row.last4,
 		type: row.type,

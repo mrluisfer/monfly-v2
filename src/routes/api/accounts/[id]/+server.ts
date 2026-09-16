@@ -1,4 +1,5 @@
 import { error, json } from '@sveltejs/kit';
+import { ACCOUNT_ICONS, isAccountIcon } from '$lib/account-icons';
 import {
 	ACCOUNT_KINDS,
 	ACCOUNT_ROLES,
@@ -14,6 +15,7 @@ import { requireMonflyUser } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import {
 	deleteAccount,
+	setAccountIcon,
 	setAccountRole,
 	setAccountStatus,
 	updateAccount
@@ -37,6 +39,8 @@ const only = (body: object, key: string) => {
  *   reads. The previous holder gives it up.
  * - `{ "status": "active" | "archived" }` — archives it, or brings it back.
  *   Archived, it gives up its role.
+ * - `{ "icon": "bbva" | "nu" | … | null }` — the brand icon it wears, or null
+ *   to read one from its name again (`$lib/account-icons`).
  * - The whole account, as `POST /api/accounts` takes it — rewrites it. A new
  *   balance moves the total by the difference and is recorded as a correction.
  *
@@ -73,6 +77,16 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 		const found = await setAccountStatus(db, { userEmail: profile.email, id: params.id, status });
 		if (!found) error(404, 'No such account');
 		return json({ id: params.id, status }, { headers: NO_STORE });
+	}
+
+	if (only(body, 'icon')) {
+		const { icon } = body as { icon: unknown };
+		if (icon !== null && !isAccountIcon(icon)) {
+			error(400, `icon must be null or one of ${ACCOUNT_ICONS.map((i) => `"${i}"`).join(', ')}`);
+		}
+		const found = await setAccountIcon(db, { userEmail: profile.email, id: params.id, icon });
+		if (!found) error(404, 'No such account');
+		return json({ id: params.id, icon }, { headers: NO_STORE });
 	}
 
 	if (!isAccountDraft(body)) {

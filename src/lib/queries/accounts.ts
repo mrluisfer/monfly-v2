@@ -1,4 +1,5 @@
 import { mutationOptions, queryOptions, type QueryClient } from '@tanstack/svelte-query';
+import type { AccountIcon } from '$lib/account-icons';
 import type {
 	AccountDraft,
 	AccountList,
@@ -73,6 +74,37 @@ export const setAccountRoleMutation = (queryClient: QueryClient) =>
 			for (const [key, list] of snapshot?.previous ?? []) queryClient.setQueryData(key, list);
 		},
 		onSettled: () => queryClient.invalidateQueries({ queryKey: accountKeys.all })
+	});
+
+type IconChange = { id: string; icon: AccountIcon | null };
+
+/**
+ * Picks the brand icon an account wears. Every cached list shows it at once
+ * and rolls back if the server refuses. Nothing else moves with an icon, so
+ * nothing refetches.
+ */
+export const setAccountIconMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: ({ id, icon }: IconChange) =>
+			sendJson<IconChange>(`/api/accounts/${encodeURIComponent(id)}`, 'PATCH', { icon }),
+		onMutate: async ({ id, icon }) => {
+			await queryClient.cancelQueries({ queryKey: accountKeys.all });
+			const previous = queryClient.getQueriesData<AccountList>({ queryKey: accountKeys.all });
+			queryClient.setQueriesData<AccountList>({ queryKey: accountKeys.all }, (list) =>
+				list && 'balanceAt' in list
+					? {
+							...list,
+							accounts: list.accounts.map((account) =>
+								account.id === id ? { ...account, icon } : account
+							)
+						}
+					: list
+			);
+			return { previous };
+		},
+		onError: (_error, _change, snapshot) => {
+			for (const [key, list] of snapshot?.previous ?? []) queryClient.setQueryData(key, list);
+		}
 	});
 
 /** Archived accounts, most recently changed first. Pass SvelteKit's `fetch` from a load. */
