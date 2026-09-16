@@ -8,10 +8,11 @@
 	 * A share bar to read and press. Each segment shows its detail in a tooltip
 	 * and lights while pointed at or focused; a press hands it back to the owner
 	 * — who decides what it means and says so through `off` — and the segment
-	 * gives and springs back. The bar draws nothing of its own here: over it
-	 * lies a row of invisible, taller targets on the same tracks, easing with
-	 * the segments, so a thin bar is easy to hit and a tooltip always sits over
-	 * the colour it describes.
+	 * gives and springs back as its `off` flips, whatever flipped it: its own
+	 * press, or one on a legend the owner draws. The bar draws nothing of its
+	 * own here: over it lies a row of invisible, taller targets on the same
+	 * tracks, easing with the segments, so a thin bar is easy to hit and a
+	 * tooltip always sits over the colour it describes.
 	 */
 	type Props = {
 		segments: T[];
@@ -33,6 +34,17 @@
 	let bar = $state<ReturnType<typeof ShareBar>>();
 	/** The segment being pointed at or focused. */
 	let lit = $state<string | null>(null);
+
+	/** Each segment's `off` as last drawn, to tell a flip from a first draw. */
+	const was: Record<string, boolean> = {};
+
+	$effect(() => {
+		for (const segment of segments) {
+			const off = segment.off ?? false;
+			if (segment.id in was && was[segment.id] !== off) bar?.squash(segment.id);
+			was[segment.id] = off;
+		}
+	});
 
 	type Handler = ((event: Event) => void) | undefined;
 	/**
@@ -63,10 +75,7 @@
 							aria-pressed={!segment.off}
 							aria-label={label(segment)}
 							class="size-full cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-							onclick={chain(props.onclick, () => {
-								onToggle(segment);
-								bar?.squash(segment.id);
-							})}
+							onclick={chain(props.onclick, () => onToggle(segment))}
 							onpointerenter={chain(props.onpointerenter, () => (lit = segment.id))}
 							onpointerleave={chain(props.onpointerleave, () => (lit = null))}
 							onfocus={chain(props.onfocus, () => (lit = segment.id))}

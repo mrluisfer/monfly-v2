@@ -126,6 +126,7 @@ src/
       layout/                AppShell, TopBar, TabStrip, UserMenu, PagePlaceholder
       dashboard/             ExpensesDial, AccountBlock, CategoryChip, IncomeBars,
                              TipCard, MeterStat, SpentThisMonth, BudgetEditor
+      errors/                ErrorView picks NotFound or ServerError by status
     finance/                 money, months, budget and spending types (isomorphic)
     queries/                 TanStack Query options for our endpoints
     hotkeys/                 the shortcut registry (the dictionary) and its binder
@@ -135,14 +136,17 @@ src/
     server/db/               Drizzle client, schema, relations (server-only)
     server/finance/          spending and budget queries (server-only)
   hooks.server.ts            attaches the session, guards protected groups
+  error.html                 last-resort error page, when +error.svelte can't render
   routes/
     +layout.svelte           global only: fonts, tokens, theme
+    +error.svelte            every 404, and failures outside (app): fills the window
     (marketing)/             public — the landing, at /
     (auth)/                  public — signup page, /login, /auth/callback, /auth/logout
     (app)/                   protected — every route inside needs a session
       +layout.server.ts      user for the shell; forces a server round-trip
       +layout.ts             per-request QueryClient
       +layout.svelte         QueryClientProvider + AppShell
+      +error.svelte          a failed page, under the header so the tabs stay
       dashboard/ …           /dashboard, /transactions, /insights, …
 ```
 
@@ -212,6 +216,39 @@ do not reach Auth0.
 email. One of the six v1 emails is mixed-case, and the `userEmail` foreign keys
 compare case-sensitively: with the Auth0 spelling, that user sees an empty account.
 
+## Installing it
+
+Monfly is a PWA, so it installs to a dock or a taskbar and opens in its own
+window ([0017](docs/decisions/0017-installable-pwa.md)). Three pieces:
+`static/manifest.webmanifest`, the `icon-*.png` beside it, and
+`src/service-worker.ts`. An installed window shares the browser profile's
+cookies, so the Auth0 session carries over either way.
+
+- **The service worker writes its cache at install, and never again.** It holds
+  the shell — hashed bundles, `static/`, and the prerendered `/offline`. No
+  response to a request is cached and `/api/*` is passed straight through, so
+  nothing personal reaches the disk. The Cache API ignores the endpoints'
+  `private, no-store`, which is why the worker has to refuse as well.
+- **Try it against a build, not the dev server**: `pnpm build && pnpm preview`.
+  The worker is only bundled for production. Stop the server and reload to see
+  `/offline` — the page a navigation gets with nothing to fetch it from.
+- **`theme-color` is ModeWatcher's**, set in the root layout so it follows the
+  theme. Don't add a static one in `app.html`; the manifest's is for the
+  install and splash only.
+- **The icons come from `static/favicon.svg`**, so the artwork keeps one home.
+  Each is that mark centred in a 512 square — inset 56px for `any`, 96px over
+  `--ink` for `maskable` (well inside the 80% safe zone) — rasterised with
+  `qlmanage -t -s <size> -o <dir> <wrapper>.svg`.
+- **What a search result or a shared link shows is `Meta.svelte`**
+  (`src/lib/components/layout/`), rendered by `(marketing)` and `(auth)` — the
+  only layouts a crawler reaches. Its URLs are built on the request's origin, so
+  no domain is written down anywhere. `static/og-image.png` is the 1200×630
+  preview, the same mark on ink; QuickLook squares what it renders, so it was
+  drawn on a 1200 square and cropped to its middle 630.
+
+What comes after installing — caching, offline writes, a desktop shell — is
+planned in [Offline and desktop](docs/offline-and-desktop.md).
+
 ## Database
 
 Drizzle ORM on Neon Postgres, over Neon's HTTP driver. **The database is shared
@@ -257,23 +294,25 @@ runs the migrations ([0015](docs/decisions/0015-drizzle-kit-owns-migrations.md))
 "Spent this month" on the dashboard is the reference path for every feature
 that reads data:
 
-| Layer                 | Where                                                     | Role                                                                                                                         |
-| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| domain (isomorphic)   | `src/lib/finance/`                                        | types, `YYYY-MM` months, money in cents — no I/O                                                                             |
-| service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email`                                                                         |
-| endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                                                                                               |
-| endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear                                                                             |
-| endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                   |
-| endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                        |
-| endpoint              | `src/routes/api/me/shortcuts/+server.ts`                  | GET the pinned shortcuts; PATCH one on or off (Overview is always pinned)                                                    |
-| endpoint              | `src/routes/api/me/shortcuts/activity/+server.ts`         | GET the last eight weeks of shortcut changes: by week, by shortcut, by source                                                |
-| endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them |
-| endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH an account's role: `main`, `secondary` or null                                                                         |
-| endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                   |
-| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month                               |
-| query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher                                                                               |
-| prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                                                                                                   |
-| widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)                                                                              |
+| Layer                 | Where                                                     | Role                                                                                                                                        |
+| --------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain (isomorphic)   | `src/lib/finance/`                                        | types, `YYYY-MM` months, money in cents — no I/O                                                                                            |
+| service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email`                                                                                        |
+| endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                                                                                                              |
+| endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear                                                                                            |
+| endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                                  |
+| endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                                       |
+| endpoint              | `src/routes/api/me/shortcuts/+server.ts`                  | GET the pinned shortcuts; PATCH one on or off (Overview is always pinned)                                                                   |
+| endpoint              | `src/routes/api/me/shortcuts/activity/+server.ts`         | GET the last eight weeks of shortcut changes: by week, by shortcut, by source                                                               |
+| endpoint              | `src/routes/api/accounts/+server.ts`                      | active accounts, oldest first: now, or `?month=` for a past month's closing balances — plus what the total holds beyond them; POST adds one |
+| endpoint              | `src/routes/api/accounts/[id]/+server.ts`                 | PATCH its role (`main`, `secondary`, `savings` or null), its status (`active` or `archived`), or the whole account; DELETE removes it       |
+| endpoint              | `src/routes/api/accounts/archived/+server.ts`             | archived accounts, most recently changed first, with the balance each was left with                                                         |
+| endpoint              | `src/routes/api/accounts/history/+server.ts`              | every active account's balance day by day: `?range=` 1m, 3m, 6m, 1y or all — plus openings and corrections                                  |
+| endpoint              | `src/routes/api/transactions/unassigned/+server.ts`       | GET transactions with no account; POST `{ ids, accountId }` gives them one                                                                  |
+| endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month                                              |
+| query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher                                                                                              |
+| prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                                                                                                                  |
+| widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)                                                                                             |
 
 - **Every `/api/*` route requires a session.** The hook answers 401 JSON — a
   fetch can't follow a login redirect. Endpoints then call
@@ -336,16 +375,35 @@ that reads data:
   again would count them twice. It's one SQL statement (data-modifying CTEs),
   so the balance moves by exactly the rows it updated. Any other v2 write
   must keep `totalBalance` and the balances in step the same way.
+- **Accounts are written the way v1 writes them** (`$lib/server/accounts/write`),
+  each in one statement, with the role's previous holder cleared first in the
+  same `db.batch` where one is given. Adding one moves `totalBalance` by the
+  balance it opens with; rewriting one moves it by the difference; archiving
+  leaves it alone (the balance joins the Unknown line) and takes the role
+  away; deleting one takes out the part of its balance no transaction backs,
+  leaves its transactions card-less — still in the total — and forgets its
+  colour choice.
+- **A balance set by hand is a `BalanceAdjustment`**: which account, what it
+  moved by in signed cents (`bigint`) and when, written by the statement that
+  rewrites the balance. `GET /api/accounts/history` winds each balance back from
+  today through the transactions dated after a day and the corrections made
+  after it, so a correction shows as a step on its day instead of redrawing
+  the past. v1 never reads the table and its own hand edits leave no row;
+  deleting the card deletes its rows, so v1's delete still works
+  ([0019](docs/decisions/0019-balance-adjustments.md)).
 - **Prefetch in universal loads with SvelteKit's `fetch`.** During SSR it
   calls the endpoint in-process with the visitor's cookies and inlines the
   response, so the server renders real figures and hydration doesn't refetch.
   Widgets read the same cache through `createQuery`; after a write, invalidate
   by key (`spendingKeys.all`).
-- **Chart settings are per browser, in a cookie.** The Income card's gear
-  writes `income-view` (`$lib/income-view`); the dashboard's `+page.server.ts`
-  reads it, so the prefetch asks for the chosen split and SSR draws the chosen
-  view with nothing shifting on hydration. Keeping them on the account instead
-  would take a v1 migration.
+- **Dashboard choices are per browser, in cookies.** The Income card's period
+  and gear write `income-view` (`$lib/income-view`), and the accounts left out
+  of the total write `accounts-left-out` (`$lib/accounts-view`); the
+  dashboard's `+page.server.ts` reads both, so the prefetch asks for the chosen
+  period and split and SSR draws them with nothing shifting on hydration, after
+  a reload or a trip to another page. Why not the URL or localStorage:
+  [0018](docs/decisions/0018-dashboard-choices-in-cookies.md). Keeping them on
+  the account instead would take a v1 migration.
 - **The transactions panel is per browser, in localStorage.**
   `$lib/transaction-panel` keeps what it is doing — the row it reads, or the
   fields half written for a row or a new transaction — under

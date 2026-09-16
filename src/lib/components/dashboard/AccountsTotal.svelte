@@ -6,6 +6,7 @@
 	import { MediaQuery, SvelteSet } from 'svelte/reactivity';
 	import { countUp } from '$lib/actions';
 	import type { Account, Unassigned } from '$lib/accounts';
+	import { saveLeftOut } from '$lib/accounts-view';
 	import { PALETTE, ShareBarPicker, type PaletteColor } from '$lib/components/ui';
 	import { formatMoney, type Cents, type Currency } from '$lib/finance';
 	import { cn, prefersReducedMotion } from '$lib/utils';
@@ -18,7 +19,9 @@
 	 * neutral, hatched line, so together they come to v1's figure. The figures
 	 * count (GSAP) and the change chip springs when the numbers move (Motion);
 	 * the bar is a `ShareBarPicker`, which grows, lights, greys and springs its
-	 * slices and sends a sheen across now and then. Where a
+	 * slices and sends a sheen across now and then. A slice or its name in the
+	 * legend leaves its line out of the totals, and this browser remembers it
+	 * (`$lib/accounts-view`) until it's pressed again. Where a
 	 * pointer can hover, the change chip rests as a dot and opens into its
 	 * figure when pointed at or focused.
 	 */
@@ -29,10 +32,19 @@
 		/** Each account's colour, by id — the one its orb and sparkle wear. */
 		colors: Record<string, PaletteColor>;
 		currency: Currency;
+		/** Ids this browser leaves out of the totals, as the server read them from its cookie. */
+		leftOut?: string[];
 		class?: string;
 	};
 
-	let { accounts, unassigned = null, colors, currency, class: className }: Props = $props();
+	let {
+		accounts,
+		unassigned = null,
+		colors,
+		currency,
+		leftOut: saved = [],
+		class: className
+	}: Props = $props();
 
 	/** The id the card-less line answers to. No account can collide: theirs are UUIDs. */
 	const UNKNOWN = 'unknown';
@@ -69,8 +81,8 @@
 			: [])
 	]);
 
-	/** Lines left out of the totals by pressing their slice — for this visit only. */
-	const off = new SvelteSet<string>();
+	/** Lines left out of the totals by pressing their slice or their name: the saved ones to start. */
+	const off = $derived(new SvelteSet(saved));
 	const counted = $derived(lines.filter((line) => !off.has(line.id)));
 	const leftOut = $derived(lines.length - counted.length);
 
@@ -123,10 +135,23 @@
 
 	// Leaving an account out, or counting it again: the totals count to their
 	// new sums (GSAP, via countUp) while the bar greys the slice or gives it
-	// back its colour and springs it under the press (ShareBarPicker).
+	// back its colour and springs it under the press (ShareBarPicker). Only
+	// lines still here are kept, so a deleted account doesn't linger.
 	function toggle(id: string) {
 		if (off.has(id)) off.delete(id);
 		else off.add(id);
+		saveLeftOut(lines.filter((line) => off.has(line.id)).map((line) => line.id));
+	}
+
+	// Pressing a name does what pressing its slice does, so the slice springs
+	// just the same (ShareBarPicker); the name's dot gives and springs back
+	// with it (Motion).
+	function pressName(id: string, button: HTMLElement) {
+		toggle(id);
+		const dot = button.querySelector('.dot');
+		if (dot && !prefersReducedMotion()) {
+			animate(dot, { scale: [0.4, 1] }, { type: 'spring', bounce: 0.55, duration: 0.5 });
+		}
 	}
 
 	let chip = $state<HTMLElement>();
@@ -319,19 +344,25 @@
 			class="mt-4 h-2.5"
 		/>
 
+		<!-- The names press too: a slice can be a sliver too thin to hit. They're
+		     the pointer's way in, so they're out of the tab order and hidden from
+		     assistive tech, which already has the bar's own buttons, each labelled. -->
 		<ul class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted" aria-hidden="true">
 			{#each slices as slice (slice.line.id)}
 				<li
-					class={cn(
-						'legend flex min-w-0 items-center gap-1.5',
-						slice.line.unknown && 'unknown',
-						slice.off && 'off'
-					)}
+					class={cn('legend min-w-0', slice.line.unknown && 'unknown', slice.off && 'off')}
 					style={ink(slice)}
 				>
-					<span class="dot size-2 shrink-0 rounded-full"></span>
-					<span class="struck truncate">{slice.line.name}</span>
-					<span class="struck tabular text-fg">{percent(slice.share)}</span>
+					<button
+						type="button"
+						tabindex="-1"
+						class="press flex max-w-full cursor-pointer items-center gap-1.5 rounded-md hover:text-fg"
+						onclick={(event) => pressName(slice.id, event.currentTarget)}
+					>
+						<span class="dot size-2 shrink-0 rounded-full"></span>
+						<span class="struck truncate">{slice.line.name}</span>
+						<span class="struck tabular text-fg">{percent(slice.share)}</span>
+					</button>
 				</li>
 			{/each}
 		</ul>

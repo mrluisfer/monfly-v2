@@ -1,7 +1,7 @@
 import { assignColors } from './colors';
 import type { PaletteColor } from './components/ui/palette';
 import type { Cents, Currency } from './finance/money';
-import type { MonthKey } from './finance/period';
+import type { DateKey, MonthKey } from './finance/period';
 
 /**
  * Accounts are v1's `Card` rows. Two of them are featured on the dashboard:
@@ -42,8 +42,147 @@ export type Account = {
 	toReview: number;
 	/** The last time it changed: its own edits or a transaction on it. ISO 8601. */
 	updatedAt: string;
+	/** When it was added. ISO 8601. */
+	createdAt: string;
 	/** False when it was added after the month asked for had ended: it had no balance then. */
 	existed: boolean;
+};
+
+/** v1's kinds of account (`CARD_TYPES`), in its order. */
+export const ACCOUNT_KINDS = ['debit', 'credit', 'cash', 'other'] as const;
+export type AccountKind = (typeof ACCOUNT_KINDS)[number];
+
+export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = {
+	debit: 'Debit',
+	credit: 'Credit',
+	cash: 'Cash',
+	other: 'Other'
+};
+
+export const isAccountKind = (value: unknown): value is AccountKind =>
+	ACCOUNT_KINDS.includes(value as AccountKind);
+
+/** v1 stores the kind as free text: its own label where it's one of v1's, the text as written otherwise. */
+export const kindLabel = (type: string | null) =>
+	type === null ? null : isAccountKind(type) ? ACCOUNT_KIND_LABEL[type] : type;
+
+/** v1's bounds (`CardFormSchema`), so an account written here still fits v1's form. */
+export const MAX_ACCOUNT_NAME = 60;
+export const MAX_PROVIDER = 60;
+/** The most a balance can be set to either way: 99,999,999.99. */
+export const MAX_BALANCE: Cents = 9_999_999_999;
+
+const LAST4 = /^\d{4}$/;
+
+/**
+ * An account as a person writes it: `POST /api/accounts` takes it to add one,
+ * and `PATCH /api/accounts/[id]` takes it whole to rewrite one. A new balance
+ * on an existing account is a correction — see `BalanceHistory`.
+ */
+export type AccountDraft = {
+	name: string;
+	type: AccountKind | null;
+	provider: string | null;
+	last4: string | null;
+	/** Signed: what it holds, or below zero for what it owes. */
+	balance: Cents;
+	role: AccountRole | null;
+};
+
+/** A complete draft, as the endpoints take it. The fields check the same bounds first. */
+export function isAccountDraft(value: unknown): value is AccountDraft {
+	if (typeof value !== 'object' || value === null) return false;
+	const { name, type, provider, last4, balance, role } = value as Record<string, unknown>;
+	return (
+		typeof name === 'string' &&
+		name.trim().length > 0 &&
+		name.length <= MAX_ACCOUNT_NAME &&
+		(type === null || isAccountKind(type)) &&
+		(provider === null || (typeof provider === 'string' && provider.length <= MAX_PROVIDER)) &&
+		(last4 === null || (typeof last4 === 'string' && LAST4.test(last4))) &&
+		typeof balance === 'number' &&
+		Number.isInteger(balance) &&
+		Math.abs(balance) <= MAX_BALANCE &&
+		(role === null || isAccountRole(role))
+	);
+}
+
+/** Active accounts are drawn everywhere; archived ones only on the accounts page, to restore or delete. */
+export const ACCOUNT_STATUSES = ['active', 'archived'] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
+
+export const isAccountStatus = (value: unknown): value is AccountStatus =>
+	ACCOUNT_STATUSES.includes(value as AccountStatus);
+
+/** An archived account, as `GET /api/accounts/archived` returns it: its balance as it was left. */
+export type ArchivedAccount = Pick<
+	Account,
+	'id' | 'name' | 'provider' | 'last4' | 'type' | 'balance' | 'updatedAt' | 'createdAt'
+>;
+
+export type ArchivedList = {
+	currency: Currency;
+	/** Most recently changed first. */
+	accounts: ArchivedAccount[];
+};
+
+/** How far back the balance chart reaches. */
+export const HISTORY_RANGES = ['1m', '3m', '6m', '1y', 'all'] as const;
+export type HistoryRange = (typeof HISTORY_RANGES)[number];
+
+export const HISTORY_RANGE_LABEL: Record<HistoryRange, string> = {
+	'1m': '1M',
+	'3m': '3M',
+	'6m': '6M',
+	'1y': '1Y',
+	all: 'All'
+};
+
+/** What a range covers, as it reads in a sentence: "over the last 3 months". */
+export const HISTORY_RANGE_SPAN: Record<HistoryRange, string> = {
+	'1m': 'the last month',
+	'3m': 'the last 3 months',
+	'6m': 'the last 6 months',
+	'1y': 'the last year',
+	all: 'since your first account'
+};
+
+/** Where the chart opens. */
+export const DEFAULT_HISTORY_RANGE: HistoryRange = '3m';
+
+export const isHistoryRange = (value: unknown): value is HistoryRange =>
+	HISTORY_RANGES.includes(value as HistoryRange);
+
+/** The most points a range is drawn with; a longer one takes a point every few days. */
+export const MAX_HISTORY_POINTS = 60;
+
+/** Something that happened to an account, pinned under the chart on its day. */
+export type BalanceEvent = {
+	day: DateKey;
+	accountId: string;
+	/** `opened`: it was added. `corrected`: its balance was set by hand, from v2. */
+	kind: 'opened' | 'corrected';
+	/** What a correction moved the balance by, signed; null for an opening. */
+	amount: Cents | null;
+};
+
+/**
+ * `GET /api/accounts/history?range=`: every active account's balance at the
+ * end of each point's day, in the viewer's zone. A balance is wound back from
+ * today's by the transactions dated after that day and the corrections made
+ * after it (`BalanceAdjustment`, written by v2 whenever a balance is set by
+ * hand). v1's hand edits left no record, so they count as if they had always
+ * been there, as `AccountList.balanceAt` does.
+ */
+export type BalanceHistory = {
+	currency: Currency;
+	range: HistoryRange;
+	/** Oldest first, evenly spaced, and always ending today. */
+	days: DateKey[];
+	/** Active accounts, oldest first. Balances line up with `days`; null before the account was added. */
+	series: { id: string; balances: (Cents | null)[] }[];
+	/** Openings and corrections within `days`, oldest first. */
+	events: BalanceEvent[];
 };
 
 /** Card-less transactions going one way: how many, and their sum. */

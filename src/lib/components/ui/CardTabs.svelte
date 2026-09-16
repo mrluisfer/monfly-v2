@@ -80,8 +80,9 @@
 	/*
 	 * The card keeps its place; what's in it is what changes, so the new tab's
 	 * contents rise into it just behind the surface. bits-ui swaps panels by
-	 * hiding one and showing the other, so this waits for that, then animates
-	 * the panel now open. Not on the first draw — the page's own reveal has it.
+	 * marking one active and the other not, so this waits for that, then
+	 * animates the panel now open. Not on the first draw — the page's own
+	 * reveal has it.
 	 */
 	let swapped = false;
 
@@ -95,7 +96,7 @@
 
 		let cancelled = false;
 		tick().then(() => {
-			const open = panels?.querySelector<HTMLElement>('[role="tabpanel"]:not([hidden])');
+			const open = panels?.querySelector<HTMLElement>('[role="tabpanel"][data-state="active"]');
 			const contents = (open?.firstElementChild as HTMLElement | null) ?? open;
 			if (cancelled || !contents) return;
 
@@ -118,7 +119,10 @@
 	are on is card-coloured, a touch taller and square at the foot, so it reads
 	as the top edge of the card below it. The strip is inset by the card's own
 	radius, where its top edge stops curving — the open tab meets a straight
-	edge, with no wedge of canvas under its corner.
+	edge, with no wedge of canvas under its corner. The card is as tall as its
+	tallest panel whichever tab is open, so switching never moves what's around
+	it: a panel that should fit the card rather than size it (a long list) lets
+	its rows scroll.
 -->
 <Tabs.Root
 	bind:value={
@@ -158,15 +162,18 @@
 		</Tabs.List>
 	</div>
 
-	<div bind:this={panels} class="flex min-h-0 flex-1 flex-col">
+	<!-- Every panel is laid out in the one cell, so the tallest sets the card's
+	     height; the ones you're not on are invisible rather than removed. -->
+	<div bind:this={panels} class="grid min-h-0 flex-1 grid-cols-1 grid-rows-1">
 		{#each options as option (option.value)}
-			<!-- The panel is an ordinary Card; bits-ui hides the ones you're not on. -->
+			<!-- The panel is an ordinary Card. Invisible takes it out of sight, the
+			     pointer, the tab order and the accessibility tree, as hidden did. -->
 			<Tabs.Content
 				value={option.value}
-				class="min-h-0 flex-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+				class="col-start-1 row-start-1 min-h-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue data-[state=inactive]:invisible"
 			>
 				{#snippet child({ props })}
-					<Card {...props}>
+					<Card {...props} hidden={undefined}>
 						{@render panel(option.value)}
 					</Card>
 				{/snippet}

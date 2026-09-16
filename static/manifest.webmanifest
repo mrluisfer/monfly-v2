@@ -1,0 +1,33 @@
+{
+	"id": "/",
+	"name": "Monfly",
+	"short_name": "Monfly",
+	"description": "Where your money went, and what is left.",
+	"lang": "en",
+	"dir": "ltr",
+	"start_url": "/dashboard",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#f2f2f4",
+	"theme_color": "#f2f2f4",
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon-maskable-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}

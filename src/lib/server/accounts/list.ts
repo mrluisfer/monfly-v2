@@ -1,5 +1,10 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { isAccountRole, type AccountList, type Unassigned } from '../../accounts';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import {
+	isAccountRole,
+	type AccountList,
+	type ArchivedList,
+	type Unassigned
+} from '../../accounts';
 import type { Currency } from '../../finance/money';
 import { addMonths, type MonthKey } from '../../finance/period';
 import type { db as appDb } from '../db';
@@ -64,6 +69,7 @@ export async function getAccounts(
 				change: sql<string>`coalesce(sum(${signed}) filter (where ${inMonth}), 0)`,
 				toReview: sql<number>`count(${transaction.id}) filter (where ${transaction.description} is null or btrim(${transaction.description}) = '')::int`,
 				updatedAt: sql<string>`to_char(greatest(${card.updatedAt}, max(${transaction.updatedAt})), 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+				createdAt: sql<string>`to_char(${card.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
 				existed:
 					balanceAt === 'now' ? sql<boolean>`true` : sql<boolean>`${card.createdAt} < ${monthEnd}`
 			})
@@ -109,6 +115,7 @@ export async function getAccounts(
 		change: Number(row.change),
 		toReview: row.toReview,
 		updatedAt: row.updatedAt,
+		createdAt: row.createdAt,
 		existed: row.existed
 	}));
 
@@ -137,4 +144,31 @@ export async function getAccounts(
 				};
 
 	return { currency, month, balanceAt, accounts, unassigned };
+}
+
+/**
+ * The user's archived accounts, most recently changed first, each with the
+ * balance it was left with. Nothing moves on them — a new transaction can't
+ * name one — so there are no figures beyond that to read.
+ */
+export async function getArchivedAccounts(
+	db: Pick<typeof appDb, 'select'>,
+	{ userEmail, currency }: { userEmail: string; currency: Currency }
+): Promise<ArchivedList> {
+	const rows = await db
+		.select({
+			id: card.id,
+			name: card.name,
+			provider: card.provider,
+			last4: card.last4,
+			type: card.type,
+			balance: sql<string>`round(coalesce(${card.balance}, 0)::numeric * 100)`,
+			updatedAt: sql<string>`to_char(${card.updatedAt}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`,
+			createdAt: sql<string>`to_char(${card.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`
+		})
+		.from(card)
+		.where(and(eq(card.userEmail, userEmail), eq(card.status, 'archived')))
+		.orderBy(desc(card.updatedAt), asc(card.id));
+
+	return { currency, accounts: rows.map((row) => ({ ...row, balance: Number(row.balance) })) };
 }

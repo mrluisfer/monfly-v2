@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
 	type AnyPgColumn,
+	bigint,
 	boolean,
 	check,
 	doublePrecision,
@@ -174,6 +175,41 @@ export const card = pgTable(
 			table.userEmail.asc().nullsLast(),
 			table.role.asc().nullsLast()
 		)
+	]
+);
+
+/**
+ * A balance set by hand from v2: which account, what it moved by and when.
+ * Written in the same statement that rewrites the balance, so the history
+ * chart winds a balance back through it rather than rewriting the past — a
+ * correction today shows as a step today, not as a line that was always
+ * higher. v2's alone; v1 never reads it, and its own hand edits leave no row.
+ * Deleting the card deletes its rows, so v1's delete still works.
+ */
+export const balanceAdjustment = pgTable(
+	'BalanceAdjustment',
+	{
+		id: id(),
+		userEmail: userEmail('BalanceAdjustment'),
+		cardId: text()
+			.notNull()
+			.references(() => card.id, {
+				name: 'BalanceAdjustment_cardId_fkey',
+				onDelete: 'cascade',
+				onUpdate: 'cascade'
+			}),
+		// Signed whole cents: what the balance moved by. bigint, since a balance
+		// runs to MAX_BALANCE either way and a correction can span both.
+		amountCents: bigint({ mode: 'number' }).notNull(),
+		createdAt: createdAt()
+	},
+	(table) => [
+		index('BalanceAdjustment_cardId_createdAt_idx').using(
+			'btree',
+			table.cardId.asc().nullsLast(),
+			table.createdAt.asc().nullsLast()
+		),
+		index('BalanceAdjustment_userEmail_idx').using('btree', table.userEmail.asc().nullsLast())
 	]
 );
 

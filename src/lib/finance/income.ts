@@ -4,7 +4,7 @@ import { addMonths, daysInMonth, monthName, type MonthKey } from './period';
 export const INCOME_PERIODS = ['month', 'quarter', 'year', 'all'] as const;
 export type IncomePeriod = (typeof INCOME_PERIODS)[number];
 
-/** What the Income card opens on, and what `GET /api/income` answers without `?period=`. */
+/** What the Income card opens on until one is picked, and what `GET /api/income` answers without `?period=`. */
 export const DEFAULT_INCOME_PERIOD: IncomePeriod = 'quarter';
 
 export const isIncomePeriod = (value: unknown): value is IncomePeriod =>

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import MovingPencil from '@jis3r/icons/icons/pencil';
-	import MovingStar from '@jis3r/icons/icons/star';
+	import ColorCreditCard from '@animated-color-icons/lucide-svelte/CreditCard.svelte';
+	import MovingChevronsUpDown from '@jis3r/icons/icons/chevrons-up-down';
 	import { Popover } from 'bits-ui';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { featuredAccounts, type Account, type AccountRole } from '$lib/accounts';
@@ -8,7 +8,11 @@
 	import { setAccountRoleMutation } from '$lib/queries';
 	import { pop } from '$lib/transitions';
 
-	/** The pencil in the Accounts header: picks which accounts are main and secondary. */
+	/**
+	 * The chevrons in the Accounts header — a picker's glyph, since what opens
+	 * is two to pick from rather than anything to write: which accounts are
+	 * main and secondary.
+	 */
 	let { accounts }: { accounts: Account[] } = $props();
 
 	const queryClient = useQueryClient();
@@ -27,7 +31,12 @@
 	<Popover.Trigger>
 		{#snippet child({ props })}
 			<IconButton size="sm" {...props} aria-label="Choose the main and secondary accounts">
-				<AnimatedIcon icon={MovingPencil} set="moving" />
+				<!-- The chevrons part with the button, and hold apart while it's open. -->
+				<AnimatedIcon
+					icon={MovingChevronsUpDown}
+					set="moving"
+					play={props['data-state'] === 'open'}
+				/>
 			</IconButton>
 		{/snippet}
 	</Popover.Trigger>
@@ -44,11 +53,12 @@
 							class="z-50 w-[min(19rem,calc(100vw-2rem))] origin-(--bits-floating-transform-origin) rounded-[var(--radius-chip)] border border-line bg-card p-4 shadow-lg outline-none"
 						>
 							<div class="flex items-start gap-3">
-								<!-- Blue: picking which accounts get a card of their own. -->
+								<!-- Blue: picking which accounts get a card of their own — the card
+								     the app draws accounts with. -->
 								<span
 									class="grid size-7 shrink-0 place-items-center rounded-lg bg-blue/12 text-blue"
 								>
-									<AnimatedIcon icon={MovingStar} set="moving" trigger="mount" />
+									<AnimatedIcon icon={ColorCreditCard} set="color" trigger="mount" />
 								</span>
 								<div class="min-w-0">
 									<p class="text-sm font-medium">Featured accounts</p>
