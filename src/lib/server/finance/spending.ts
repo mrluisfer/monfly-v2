@@ -4,7 +4,7 @@ import { addMonths, type MonthKey } from '../../finance/period';
 import type { MonthSpending } from '../../finance/spending';
 import type { db as appDb } from '../db';
 import { transaction, user } from '../db/schema';
-import { EXPENSE, amountCents, utcMidnight } from './fragments';
+import { EXPENSE, amountCents, notTransfer, utcMidnight } from './fragments';
 
 type Input = {
 	/** The stored `User.email` — `profile.email`, never the Auth0 spelling. */
@@ -14,7 +14,10 @@ type Input = {
 	currency: Currency;
 };
 
-/** One user's expenses for a calendar month, and their budget, in one round trip. Read-only. */
+/**
+ * One user's expenses for a calendar month, and their budget, in one round
+ * trip. Money moved to another of their accounts wasn't spent. Read-only.
+ */
 export async function getMonthSpending(
 	db: Pick<typeof appDb, 'select'>,
 	{ userEmail, month, timeZone, currency }: Input
@@ -32,6 +35,7 @@ export async function getMonthSpending(
 			and(
 				eq(transaction.userEmail, userEmail),
 				eq(transaction.type, EXPENSE),
+				notTransfer,
 				sql`${transaction.date} >= ${utcMidnight(`${month}-01`, timeZone)}`,
 				sql`${transaction.date} < ${utcMidnight(`${addMonths(month, 1)}-01`, timeZone)}`
 			)

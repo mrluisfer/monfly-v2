@@ -709,9 +709,15 @@
 									cell,
 									'tabular text-right text-[0.9375rem] whitespace-nowrap',
 									// Money in reads green, money out the pastel red: which way a row
-									// went is the first thing anyone scans a ledger for.
-									t.type === 'income' ? 'text-positive' : 'text-spent'
+									// went is the first thing anyone scans a ledger for. A transfer's
+									// side is neither, so it wears the lavender its category is drawn in.
+									t.transfer
+										? 'text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)'
+										: t.type === 'income'
+											? 'text-positive'
+											: 'text-spent'
 								)}
+								style={t.transfer ? `--tint: ${PALETTE.lavender.css}` : undefined}
 							>
 								{signed(signedAmount(t))}
 							</td>

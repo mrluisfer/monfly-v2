@@ -17,37 +17,42 @@ import { nowUtc, signedCents, utcMidnight } from '../finance/fragments';
  * how much of it is paid, whether that settles it, which way it may be paid —
  * and they live in v1. Rather than keep a second copy of them here, the write
  * is refused and v1 stays the place to make it.
+ *
+ * So is one side of a transfer: changed or removed on its own, it would leave
+ * the other side behind and move the total by money that never arrived or
+ * left. Both sides are written together, in `./transfer`.
  */
 
-/** What became of a write: the row changed, isn't the user's, or belongs to a loan. */
-export type WriteOutcome = 'done' | 'missing' | 'locked';
+/** What became of a write: the row changed, isn't the user's, belongs to a loan, or to a transfer. */
+export type WriteOutcome = 'done' | 'missing' | 'locked' | 'transfer';
 
 type Target = { userEmail: string; id: string };
 
 /**
  * The row to write to: what it moves now (`was`), the account holding it, and
- * whether a loan has a claim on it. Scoped to the user, so another person's id
- * simply isn't found.
+ * whether a loan or a transfer has a claim on it. Scoped to the user, so
+ * another person's id simply isn't found.
  */
 const target = ({ userEmail, id }: Target) => sql`
 	select ${transaction.id} as id,
 		${signedCents} as was,
 		${transaction.cardId} as card_id,
 		(${transaction.appliedToLoanId} is not null
-			or exists (select 1 from ${loan} where ${loan.transactionId} = ${transaction.id})) as locked
+			or exists (select 1 from ${loan} where ${loan.transactionId} = ${transaction.id})) as locked,
+		${transaction.transferId} is not null as transfer
 	from ${transaction}
 	where ${transaction.id} = ${id} and ${transaction.userEmail} = ${userEmail}
 `;
 
-type Answer = { found: boolean; locked: boolean; done: number };
+type Answer = { found: boolean; transfer: boolean; done: number };
 
 const outcome = (row: Answer | undefined): WriteOutcome =>
-	!row?.found ? 'missing' : row.done > 0 ? 'done' : 'locked';
+	!row?.found ? 'missing' : row.done > 0 ? 'done' : row.transfer ? 'transfer' : 'locked';
 
 /** The three figures every write answers with, whatever it did. */
 const said = sql`
 	select exists (select 1 from target) as found,
-		coalesce((select locked from target), false) as locked,
+		coalesce((select transfer from target), false) as transfer,
 		(select count(*) from written)::int as done
 `;
 
@@ -80,7 +85,7 @@ export async function updateTransaction(
 					else ${utcMidnight(edit.date, timeZone)}
 				end,
 				"updatedAt" = ${nowUtc}
-			where ${transaction.id} = (select id from target where not locked)
+			where ${transaction.id} = (select id from target where not locked and not transfer)
 			returning ${signedCents} as cents
 		),
 		moved as (
@@ -121,7 +126,7 @@ export async function deleteTransaction(
 		with target as (${target({ userEmail, id })}),
 		written as (
 			delete from ${transaction}
-			where ${transaction.id} = (select id from target where not locked)
+			where ${transaction.id} = (select id from target where not locked and not transfer)
 			returning ${signedCents} as cents
 		),
 		credited as (

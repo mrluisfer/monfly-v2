@@ -26,8 +26,9 @@
 
 	const held = $derived(accounts.reduce((sum, a) => sum + a.balance, 0));
 	const out = $derived(accounts.reduce((sum, a) => sum + a.tracked, 0));
-	// Income on an account is what's left of its net movement once its spending is put back.
-	const came = $derived(accounts.reduce((sum, a) => sum + a.change + a.tracked, 0));
+	// Income on an account is what's left of its net movement once its spending
+	// is put back and what moved between the accounts is taken out.
+	const came = $derived(accounts.reduce((sum, a) => sum + a.change - a.moved + a.tracked, 0));
 
 	const FIGURE = 'tabular truncate font-display text-[2rem] leading-none font-light tracking-tight';
 </script>

@@ -69,6 +69,7 @@
 		for (const row of transactions) {
 			const bucket = out[monthOf(row.date)];
 			if (!bucket) continue; // outside the window
+			if (row.transfer) continue; // moved between accounts: neither received nor spent
 			if (row.type === 'income') bucket.received += row.amount;
 			else bucket.spent += row.amount;
 			bucket.count += 1;

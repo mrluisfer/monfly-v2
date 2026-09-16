@@ -15,7 +15,12 @@
 		todayKey,
 		type Currency
 	} from '$lib/finance';
-	import { addTransactionMutation, editTransactionMutation } from '$lib/queries';
+	import {
+		addTransactionMutation,
+		addTransferMutation,
+		editTransactionMutation,
+		editTransferMutation
+	} from '$lib/queries';
 	import type { TransactionDraft } from '$lib/transaction-panel';
 	import {
 		MAX_AMOUNT,
@@ -25,6 +30,7 @@
 	} from '$lib/transactions';
 	import { EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
 	import CategoryIcon from './CategoryIcon.svelte';
+	import TransferAccounts from './TransferAccounts.svelte';
 
 	/**
 	 * The panel with its fields open: what a transaction is worth, which way it
@@ -36,6 +42,10 @@
 	 * what its amount does to that balance. An existing row's account is the
 	 * unassigned card's to give, since only that endpoint knows the rule about
 	 * the balance an account was opened with.
+	 *
+	 * A transfer (`draft.type`) is the same form with the two accounts in place
+	 * of which way and what for: it has no direction, being both, and no
+	 * category of its own. It writes both of its sides at once, new or changed.
 	 */
 	type Props = {
 		/** The row being changed, or nothing at all to write a new one. */
@@ -43,7 +53,7 @@
 		currency: Currency;
 		/** The viewer's zone: the day is read and written in it. */
 		timeZone: string;
-		/** The user's active accounts — offered on a new transaction only. */
+		/** The user's active accounts — offered on a new transaction, and either end of a transfer. */
 		accounts?: { id: string; name: string }[];
 		/** Each account's colour, by id: the dots beside their names. */
 		colors?: Record<string, PaletteColor>;
@@ -82,7 +92,12 @@
 	const queryClient = useQueryClient();
 	const add = createMutation(() => addTransactionMutation(queryClient));
 	const edit = createMutation(() => editTransactionMutation(queryClient));
-	const save = $derived(row ? edit : add);
+	const addTransfer = createMutation(() => addTransferMutation(queryClient));
+	const editTransfer = createMutation(() => editTransferMutation(queryClient));
+
+	/** Money moved between two of their accounts, rather than in or out. */
+	const transfer = $derived(draft.type === 'transfer');
+	const save = $derived(transfer ? (row ? editTransfer : addTransfer) : row ? edit : add);
 
 	/** No account yet: `Select` holds strings, so the absence needs a name. */
 	const NONE = 'none';
@@ -93,6 +108,9 @@
 	 * 404.
 	 */
 	const account = $derived(accounts.some((a) => a.id === draft.account) ? draft.account : null);
+
+	/** A transfer's end, while it is still one of theirs. */
+	const held = (id: string | null) => (accounts.some((a) => a.id === id) ? id : null);
 
 	/** Today as the viewer's zone reads it: nothing can have happened later. */
 	const today = $derived(todayKey(timeZone));
@@ -107,6 +125,30 @@
 			problem = 'Enter an amount, like 7,540.';
 		} else if (cents > MAX_AMOUNT) {
 			problem = `The most it can be is ${formatMoney(MAX_AMOUNT, currency)}.`;
+		} else if (transfer) {
+			const from = held(draft.account);
+			const to = held(draft.to);
+			if (!from || !to || from === to) {
+				problem = 'Pick the account it leaves and a different one it lands in.';
+			} else if (!isDateKey(draft.date)) {
+				problem = 'Pick the day it moved.';
+			} else if (draft.date > today) {
+				problem = "A transfer can't be dated after today.";
+			} else {
+				problem = null;
+				const entry = {
+					amount: cents,
+					from,
+					to,
+					description: draft.description.trim() || null,
+					date: draft.date
+				};
+				if (row?.transfer) {
+					editTransfer.mutate({ id: row.transfer.id, entry }, { onSuccess: onDone });
+				} else {
+					addTransfer.mutate(entry, { onSuccess: onDone });
+				}
+			}
 		} else if (draft.category.trim() === '') {
 			problem = 'Give it a category.';
 		} else if (draft.category.length > MAX_CATEGORY) {
@@ -119,7 +161,7 @@
 			problem = null;
 			const written = {
 				amount: cents,
-				type: draft.type,
+				type: draft.type === 'income' ? ('income' as const) : ('expense' as const),
 				category: draft.category.trim(),
 				description: draft.description.trim() || null,
 				date: draft.date
@@ -156,33 +198,36 @@
 </script>
 
 <form class="mt-6 border-t border-line pt-6" novalidate onsubmit={submit} use:deal>
-	<div data-deal>
-		<span class={label}>Which way</span>
-		<!-- The trends the ledger's own filter wears for the same two, in the
-		     colours their figures are written in: the rose money out is drawn in,
-		     the green money in. -->
-		<Segmented
-			bind:value={draft.type}
-			label="Which way the money went"
-			options={[
-				{
-					value: 'expense',
-					label: 'Money out',
-					icon: { icon: ColorTrendingDown, set: 'color' },
-					chip: 'bg-spent/12 text-spent'
-				},
-				{
-					value: 'income',
-					label: 'Money in',
-					icon: { icon: ColorTrendingUp, set: 'color' },
-					chip: 'bg-positive/12 text-positive'
-				}
-			]}
-			class="w-full"
-		/>
-	</div>
+	{#if !transfer}
+		<div data-deal>
+			<span class={label}>Which way</span>
+			<!-- The trends the ledger's own filter wears for the same two, in the
+			     colours their figures are written in: the rose money out is drawn in,
+			     the green money in. -->
+			<Segmented
+				value={draft.type === 'income' ? 'income' : 'expense'}
+				onValueChange={(next) => (draft.type = next)}
+				label="Which way the money went"
+				options={[
+					{
+						value: 'expense',
+						label: 'Money out',
+						icon: { icon: ColorTrendingDown, set: 'color' },
+						chip: 'bg-spent/12 text-spent'
+					},
+					{
+						value: 'income',
+						label: 'Money in',
+						icon: { icon: ColorTrendingUp, set: 'color' },
+						chip: 'bg-positive/12 text-positive'
+					}
+				]}
+				class="w-full"
+			/>
+		</div>
+	{/if}
 
-	<div class="mt-4" data-deal>
+	<div class={transfer ? '' : 'mt-4'} data-deal>
 		<label class={label} for="{uid}-amount">Amount</label>
 		<div class={field}>
 			<span class="text-fg-muted" aria-hidden="true">{currencySymbol(currency)}</span>
@@ -206,27 +251,33 @@
 		</div>
 	</div>
 
-	<div class="mt-4" data-deal>
-		<label class={label} for="{uid}-category">Category</label>
-		<!-- The categories already on record, each in the chip the ledger draws it
-		     in, and a name none of them has at the head of the list, marked new:
-		     picking an old one and writing a new one are the same gesture. The chip
-		     follows what is typed, so a category arrives wearing its glyph and its
-		     colour before it has been saved once. -->
-		<Combobox
-			id="{uid}-category"
-			options={categories}
-			bind:value={draft.category}
-			maxlength={MAX_CATEGORY}
-			placeholder="Groceries"
-		>
-			{#snippet leading(name)}
-				<CategoryIcon category={name} color={categoryColor(name, categoryChoices)} animated />
-			{/snippet}
-		</Combobox>
-	</div>
+	{#if transfer}
+		<div class="mt-4" data-deal>
+			<TransferAccounts {accounts} {colors} bind:from={draft.account} bind:to={draft.to} />
+		</div>
+	{:else}
+		<div class="mt-4" data-deal>
+			<label class={label} for="{uid}-category">Category</label>
+			<!-- The categories already on record, each in the chip the ledger draws it
+			     in, and a name none of them has at the head of the list, marked new:
+			     picking an old one and writing a new one are the same gesture. The chip
+			     follows what is typed, so a category arrives wearing its glyph and its
+			     colour before it has been saved once. -->
+			<Combobox
+				id="{uid}-category"
+				options={categories}
+				bind:value={draft.category}
+				maxlength={MAX_CATEGORY}
+				placeholder="Groceries"
+			>
+				{#snippet leading(name)}
+					<CategoryIcon category={name} color={categoryColor(name, categoryChoices)} animated />
+				{/snippet}
+			</Combobox>
+		</div>
+	{/if}
 
-	{#if !row && accounts.length > 0}
+	{#if !row && !transfer && accounts.length > 0}
 		<div class="mt-4" data-deal>
 			<span class={label}>Account</span>
 			<Select
@@ -286,9 +337,9 @@
 		</button>
 		<PillButton type="submit" size="sm" disabled={save.isPending}>
 			{#if save.isPending}
-				{row ? 'Saving…' : 'Adding…'}
+				{row ? 'Saving…' : transfer ? 'Moving…' : 'Adding…'}
 			{:else}
-				{row ? 'Save changes' : 'Add transaction'}
+				{row ? 'Save changes' : transfer ? 'Move money' : 'Add transaction'}
 			{/if}
 		</PillButton>
 	</div>

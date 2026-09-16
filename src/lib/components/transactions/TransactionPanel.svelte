@@ -2,6 +2,7 @@
 	import MovingEye from '@jis3r/icons/icons/eye';
 	import MovingPencil from '@jis3r/icons/icons/pencil';
 	import MovingPlus from '@jis3r/icons/icons/plus';
+	import MovingSendHorizontal from '@jis3r/icons/icons/send-horizontal';
 	import X from '@lucide/svelte/icons/x';
 	import gsap from 'gsap';
 	import {
@@ -12,6 +13,7 @@
 		IconButton,
 		Notice,
 		Orb,
+		PALETTE,
 		type FigureSize,
 		type PaletteColor
 	} from '$lib/components/ui';
@@ -29,7 +31,8 @@
 	 * does one of three things, and says which at the top: it reads a row, it
 	 * edits that row, or — with no row at all — it writes a new one. All three
 	 * are the same card in the same place, so there is one panel to learn
-	 * rather than a page of its own for adding.
+	 * rather than a page of its own for adding. A transfer is one of them too:
+	 * the draft's type, or the row's, says so.
 	 */
 	type Props = {
 		/** The row on show, or nothing at all: then the panel writes a new one. */
@@ -79,12 +82,16 @@
 	/** What the panel is showing, whatever mode: a row, or a new transaction. */
 	const subject = $derived(row?.id ?? 'new');
 
+	/** Money moved between two accounts: the row read, or the one being written. */
+	const moving = $derived(row ? row.transfer !== null : draft.type === 'transfer');
+
 	/** What the figure is worth: the row as recorded, or the draft as typed. */
 	const typed = $derived(parseMoney(draft.amount) ?? 0);
 	const amount = $derived(
 		fields ? (draft.type === 'income' ? typed : -typed) : row ? signedAmount(row) : 0
 	);
-	const income = $derived(fields ? draft.type === 'income' : row?.type === 'income');
+	// A transfer is neither in nor out, so it never wears green: one side of it is income only to v1.
+	const income = $derived(!moving && (fields ? draft.type === 'income' : row?.type === 'income'));
 
 	/** The figure has the caret: it shows what is being typed, not what it formats to. */
 	let writingFigure = $state(false);
@@ -108,9 +115,12 @@
 	 * and in editing alike: it already moved the balance one way, and that is
 	 * half of what the panel says about it. One being written has none — which
 	 * way it goes is the choice right below, still being made, and a sign over
-	 * it would be the answer before the question.
+	 * it would be the answer before the question. Neither has a transfer, which
+	 * is out of one account and into another at once.
 	 */
-	const shown = $derived(writing ? formatMoney(Math.abs(amount), currency) : signed(amount));
+	const shown = $derived(
+		writing || moving ? formatMoney(Math.abs(amount), currency) : signed(amount)
+	);
 
 	/**
 	 * The largest type it still fits the card in. Across the whole 23rem column
@@ -122,11 +132,16 @@
 
 	const facts = $derived(
 		row
-			? [
-					{ label: 'Date', value: full },
-					{ label: 'Category', value: row.category },
-					{ label: 'Kind', value: row.type === 'income' ? 'Money in' : 'Money out' }
-				]
+			? row.transfer
+				? [
+						{ label: 'Date', value: full },
+						{ label: 'Kind', value: 'Between your accounts' }
+					]
+				: [
+						{ label: 'Date', value: full },
+						{ label: 'Category', value: row.category },
+						{ label: 'Kind', value: row.type === 'income' ? 'Money in' : 'Money out' }
+					]
 			: []
 	);
 
@@ -137,8 +152,8 @@
 	let held: string | null = null;
 	let easing: ReturnType<typeof animate> | null = null;
 
-	/** What it is showing: a row, its fields, or the new transaction's. */
-	const showing = $derived(row ? `${row.id}:${editing}` : 'new');
+	/** What it is showing: a row, its fields, or a new transaction's or transfer's. */
+	const showing = $derived(row ? `${row.id}:${editing}` : `new:${moving}`);
 
 	/**
 	 * The panel keeps its place while what's in it changes — the fields opening
@@ -212,6 +227,7 @@
 	$effect(() => {
 		fields;
 		writing;
+		moving;
 
 		if (!turned) {
 			turned = true;
@@ -244,17 +260,21 @@
 				     under: the eye in blue while it reads a row, the pencil in violet
 				     while it edits one, the plus in lime — what's new — while it writes
 				     one. Lime is too light for a glyph on white, so there it inverts,
-				     as the budget's chip does. -->
+				     as the budget's chip does. A new transfer wears sending, in the
+				     lavender its rows are drawn in. -->
 				<p class="flex items-center gap-2.5 text-[0.9375rem] text-fg-muted">
 					<span
 						class={cn(
 							'relative grid size-7 shrink-0 place-items-center rounded-lg transition-colors duration-300',
-							writing
-								? 'bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime'
-								: editing
-									? 'bg-violet/12 text-violet'
-									: 'bg-blue/12 text-blue'
+							writing && moving
+								? 'bg-[color-mix(in_oklab,var(--tint)_15%,transparent)] text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:bg-[color-mix(in_oklab,var(--tint)_20%,transparent)] dark:text-(--tint)'
+								: writing
+									? 'bg-lime/30 text-[color-mix(in_oklab,var(--lime)_40%,var(--ink))] dark:bg-lime/15 dark:text-lime'
+									: editing
+										? 'bg-violet/12 text-violet'
+										: 'bg-blue/12 text-blue'
 						)}
+						style="--tint: {PALETTE.lavender.css}"
 						aria-hidden="true"
 					>
 						<!-- The halo the turn swells out of, in the mode's own colour. -->
@@ -265,7 +285,13 @@
 						{#key showing}
 							<span class="relative flex" in:pop={{ scale: 0.5, bounce: 0.5, duration: 0.45 }}>
 								<AnimatedIcon
-									icon={writing ? MovingPlus : editing ? MovingPencil : MovingEye}
+									icon={writing
+										? moving
+											? MovingSendHorizontal
+											: MovingPlus
+										: editing
+											? MovingPencil
+											: MovingEye}
 									set="moving"
 									trigger="mount"
 								/>
@@ -273,9 +299,9 @@
 						{/key}
 					</span>
 					{#if row}
-						{row.type === 'income' ? 'Received' : 'Spent'}
+						{row.transfer ? 'Moved' : row.type === 'income' ? 'Received' : 'Spent'}
 					{:else}
-						New transaction
+						{moving ? 'New transfer' : 'New transaction'}
 					{/if}
 				</p>
 			</div>
@@ -308,7 +334,9 @@
 				{#if onClose}
 					<IconButton
 						size="sm"
-						aria-label={writing ? 'Discard this transaction' : 'Close details'}
+						aria-label={writing
+							? `Discard this ${moving ? 'transfer' : 'transaction'}`
+							: 'Close details'}
 						onclick={onClose}
 					>
 						<X />
@@ -361,6 +389,12 @@
 			{#if row.description}
 				<p class="mt-1 text-[0.9375rem] leading-relaxed text-fg-muted">{row.description}</p>
 			{/if}
+		{:else if moving}
+			<!-- What a transfer does to the figures, said once, as adding one is. -->
+			<Notice id="new-transfer" title="Moving money" class="mt-6">
+				From one of your accounts to another. Both balances move and your total stays where it is:
+				money that changed places isn't counted as income or spending.
+			</Notice>
 		{:else}
 			<!-- What writing one does, said once: put away, it stays away in this browser. -->
 			<Notice id="new-transaction" title="Adding a transaction" class="mt-6">
@@ -371,18 +405,21 @@
 
 		{#if fields}
 			<!-- The same fields either way: a new one writes them from nothing, a row
-			     opens on what it already holds. -->
-			<TransactionEditor
-				{row}
-				{currency}
-				{timeZone}
-				{accounts}
-				{colors}
-				{categories}
-				{categoryChoices}
-				{draft}
-				onDone={() => (writing ? onClose?.() : onEditingChange?.(false))}
-			/>
+			     opens on what it already holds. Turning between a transaction and a
+			     transfer deals the fields in again, as opening them does. -->
+			{#key moving}
+				<TransactionEditor
+					{row}
+					{currency}
+					{timeZone}
+					{accounts}
+					{colors}
+					{categories}
+					{categoryChoices}
+					{draft}
+					onDone={() => (writing ? onClose?.() : onEditingChange?.(false))}
+				/>
+			{/key}
 		{:else if row}
 			<dl class="mt-6 grid gap-3 border-t border-line pt-6">
 				{#each facts as fact (fact.label)}
@@ -391,22 +428,46 @@
 						<dd class="text-right text-[0.9375rem]">{fact.value}</dd>
 					</div>
 				{/each}
-				<div class="flex items-baseline justify-between gap-4">
-					<dt class="text-sm text-fg-muted">Account</dt>
-					<dd class="text-right text-[0.9375rem]">
-						{#if row.account}
-							<span class="inline-flex items-center gap-2">
-								<Orb color={colors[row.account.id] ?? 'blue'} class="size-4 shrink-0" />
-								{row.account.name}
-							</span>
-						{:else}
-							<span class="text-fg-subtle">None yet</span>
-						{/if}
-					</dd>
-				</div>
+				{#if row.transfer}
+					<!-- Either side reads as the whole move: where it left, where it landed. -->
+					{#each [{ label: 'From', account: row.transfer.from }, { label: 'To', account: row.transfer.to }] as end (end.label)}
+						<div class="flex items-baseline justify-between gap-4">
+							<dt class="text-sm text-fg-muted">{end.label}</dt>
+							<dd class="text-right text-[0.9375rem]">
+								{#if end.account}
+									<span class="inline-flex items-center gap-2">
+										<Orb color={colors[end.account.id] ?? 'blue'} class="size-4 shrink-0" />
+										{end.account.name}
+									</span>
+								{:else}
+									<span class="text-fg-subtle">No longer active</span>
+								{/if}
+							</dd>
+						</div>
+					{/each}
+				{:else}
+					<div class="flex items-baseline justify-between gap-4">
+						<dt class="text-sm text-fg-muted">Account</dt>
+						<dd class="text-right text-[0.9375rem]">
+							{#if row.account}
+								<span class="inline-flex items-center gap-2">
+									<Orb color={colors[row.account.id] ?? 'blue'} class="size-4 shrink-0" />
+									{row.account.name}
+								</span>
+							{:else}
+								<span class="text-fg-subtle">None yet</span>
+							{/if}
+						</dd>
+					</div>
+				{/if}
 			</dl>
 
-			{#if !row.account}
+			{#if row.transfer}
+				<p class="mt-6 text-sm leading-relaxed text-fg-muted">
+					Money that changed places between your accounts: it moved both balances, but not your
+					total, and it isn't counted as income or spending.
+				</p>
+			{:else if !row.account}
 				<p class="mt-6 text-sm leading-relaxed text-fg-muted">
 					It has no account, so it moved your total but no balance. Give it one below and it joins
 					that account's balance.

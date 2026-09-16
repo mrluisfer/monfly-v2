@@ -114,9 +114,15 @@ export const transaction = pgTable(
 			name: 'Transaction_appliedToLoanId_fkey',
 			onDelete: 'set null',
 			onUpdate: 'cascade'
-		})
+		}),
+		// Set from v2 on both sides of a transfer between two of the user's
+		// accounts — the expense leaving one, the income landing in the other —
+		// and the same on both: it's what makes them one move rather than a
+		// purchase and a payday. v1 ignores it and sees the two rows.
+		transferId: text()
 	},
 	(table) => [
+		index('Transaction_transferId_idx').using('btree', table.transferId.asc().nullsLast()),
 		index('Transaction_appliedToLoanId_idx').using(
 			'btree',
 			table.appliedToLoanId.asc().nullsLast()

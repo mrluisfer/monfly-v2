@@ -26,9 +26,12 @@ export {
 export { monthSpendingQuery, spendingKeys } from './spending';
 export {
 	addTransactionMutation,
+	addTransferMutation,
 	assignAccountMutation,
 	deleteTransactionMutation,
+	deleteTransferMutation,
 	editTransactionMutation,
+	editTransferMutation,
 	transactionKeys,
 	transactionsQuery,
 	unassignedQuery

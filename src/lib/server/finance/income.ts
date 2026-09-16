@@ -10,7 +10,7 @@ import type { Currency } from '../../finance/money';
 import { localDate } from '../../finance/period';
 import type { db as appDb } from '../db';
 import { transaction } from '../db/schema';
-import { amountCents, utcMidnight } from './fragments';
+import { amountCents, notTransfer, utcMidnight } from './fragments';
 
 type Input = {
 	/** The stored `User.email` — `profile.email`, never the Auth0 spelling. */
@@ -29,7 +29,8 @@ const PREFIX: Record<IncomeUnit, string> = { week: 'w', month: 'm', quarter: 'q'
 /**
  * One user's income for a period, bucketed on their own calendar: this month
  * by week, this quarter by month, this year by quarter or month, all time by
- * year. Every bucket is returned, empty ones at 0. Read-only.
+ * year. Every bucket is returned, empty ones at 0. Money moved in from
+ * another of their accounts wasn't earned, so it isn't here. Read-only.
  */
 export async function getIncome(
 	db: Pick<typeof appDb, 'select'>,
@@ -44,7 +45,11 @@ export async function getIncome(
 		year: sql<number>`extract(year from ${local})::int`
 	};
 
-	const conditions: SQL[] = [eq(transaction.userEmail, userEmail), eq(transaction.type, 'income')];
+	const conditions: SQL[] = [
+		eq(transaction.userEmail, userEmail),
+		eq(transaction.type, 'income'),
+		notTransfer
+	];
 	const range = incomeRange(period, today);
 	if (range) {
 		conditions.push(

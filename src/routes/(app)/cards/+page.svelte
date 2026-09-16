@@ -29,6 +29,7 @@
 	import { CategoryBars } from '$lib/components/transactions';
 	import { Card, Sparkle } from '$lib/components/ui';
 	import { DEFAULT_CURRENCY, todayKey } from '$lib/finance';
+	import { transferDraft, type TransactionDraft } from '$lib/transaction-panel';
 	import {
 		accountsQuery,
 		archivedAccountsQuery,
@@ -90,6 +91,8 @@
 
 	let editing = $state(false);
 	let creating = $state(false);
+	/** A transfer's fields while the panel moves money from the open account, or null. */
+	let transfer = $state<TransactionDraft | null>(null);
 
 	/**
 	 * The account in the panel: the one picked while it's still active, else
@@ -111,17 +114,28 @@
 		selectedId = id;
 		editing = false;
 		creating = false;
+		transfer = null;
 	}
 
 	function edit(id: string) {
 		selectedId = id;
 		editing = true;
 		creating = false;
+		transfer = null;
+	}
+
+	/** The panel moves money from this account, towards the next one along. */
+	function move(id: string) {
+		selectedId = id;
+		editing = false;
+		creating = false;
+		transfer = transferDraft(data.timeZone, accounts, id);
 	}
 
 	function writeNew() {
 		creating = !creating;
 		editing = false;
+		transfer = null;
 	}
 
 	/** A new account lands in the panel; giving one up goes back to whichever was open. */
@@ -130,10 +144,11 @@
 		if (id) selectedId = id;
 	}
 
-	/** Escape closes the fields — an edit, or a new account — when nothing over them answered it first. */
+	/** Escape closes the fields — an edit, a transfer or a new account — when nothing over them answered it first. */
 	function dismiss(event: KeyboardEvent) {
 		if (event.key !== 'Escape' || event.defaultPrevented) return;
 		if (creating && accounts.length > 0) creating = false;
+		else if (transfer) transfer = null;
 		else if (editing) editing = false;
 	}
 
@@ -207,9 +222,10 @@
 									{place}
 									color={colors[account.id]}
 									{currency}
-									open={!adding && !editing && selected?.id === account.id}
+									open={!adding && !editing && !transfer && selected?.id === account.id}
 									onView={() => show(account.id)}
 									onEdit={() => edit(account.id)}
+									onTransfer={accounts.length > 1 ? () => move(account.id) : undefined}
 									onProblem={(message) => (problem = message)}
 								/>
 							{/snippet}
@@ -249,13 +265,23 @@
 				<AccountPanel
 					account={adding ? null : selected}
 					{editing}
+					transfer={adding ? null : transfer}
 					{accounts}
 					color={selected ? colors[selected.id] : 'blue'}
+					{colors}
 					choices={choices.data?.account}
 					{currency}
+					timeZone={data.timeZone}
 					balances={selected ? balancesOf(selected.id) : []}
 					{span}
-					onEditingChange={(next) => (editing = next)}
+					onEditingChange={(next) => {
+						editing = next;
+						transfer = null;
+					}}
+					onTransferChange={(next) => {
+						if (next && selected) move(selected.id);
+						else transfer = null;
+					}}
 					onDone={done}
 				/>
 			{/if}

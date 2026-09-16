@@ -6,10 +6,12 @@ import type {
 	TransactionEdit,
 	TransactionList,
 	TransactionNew,
+	TransferEntry,
 	UnassignedList
 } from '$lib/transactions';
 import { accountKeys } from './accounts';
 import { getJson, sendJson, type Fetch } from './http';
+import { savingsKeys } from './savings';
 
 export const transactionKeys = {
 	all: ['transactions'] as const,
@@ -138,4 +140,47 @@ export const deleteTransactionMutation = (queryClient: QueryClient) =>
 				queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
 				queryClient.invalidateQueries({ queryKey: accountKeys.all })
 			])
+	});
+
+/**
+ * Everything a transfer moves, read again: both sides in the ledger, two
+ * account balances, and the savings goal when one of them is its account.
+ */
+const afterTransfer = (queryClient: QueryClient) =>
+	Promise.all([
+		queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
+		queryClient.invalidateQueries({ queryKey: accountKeys.all }),
+		queryClient.invalidateQueries({ queryKey: savingsKeys.all })
+	]);
+
+/** Moves money from one account to another: two rows, two balances, the total untouched. */
+export const addTransferMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: (entry: TransferEntry) => sendJson<{ id: string }>('/api/transfers', 'POST', entry),
+		onSuccess: () => afterTransfer(queryClient)
+	});
+
+/** Rewrites a transfer whole, by the id its two sides share. */
+export const editTransferMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: ({ id, entry }: { id: string; entry: TransferEntry }) =>
+			sendJson<{ id: string }>(`/api/transfers/${id}`, 'PATCH', entry),
+		onSuccess: () => afterTransfer(queryClient)
+	});
+
+/**
+ * Removes a transfer: both of its sides leave every cached ledger at once, as
+ * a deleted transaction does, and the balances they moved follow.
+ */
+export const deleteTransferMutation = (queryClient: QueryClient) =>
+	mutationOptions({
+		mutationFn: (id: string) =>
+			sendJson<{ id: string }>(`/api/transfers/${id}`, 'DELETE', undefined),
+		onSuccess: (_answer, id) =>
+			queryClient.setQueriesData<CachedList>({ queryKey: transactionKeys.all }, (list) =>
+				list && 'totals' in list
+					? { ...list, transactions: list.transactions.filter((t) => t.transfer?.id !== id) }
+					: list
+			),
+		onSettled: () => afterTransfer(queryClient)
 	});
