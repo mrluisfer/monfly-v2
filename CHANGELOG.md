@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/mrluisfer/monfly-v2/compare/v1.14.0...v1.15.0) (2026-09-17)
+
+
+### Features
+
+* transaction time, balance after the amount, and transfers in the account tip ([#52](https://github.com/mrluisfer/monfly-v2/issues/52)) ([dbc5887](https://github.com/mrluisfer/monfly-v2/commit/dbc5887a6d53d31a9d8364f132f9f820e982b80c))
+
 ## [1.14.0](https://github.com/mrluisfer/monfly-v2/compare/v1.13.0...v1.14.0) (2026-09-16)
 
 
