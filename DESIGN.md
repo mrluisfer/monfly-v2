@@ -672,7 +672,9 @@ It's deterministic: the seed is `avatarSeed`, else the name, else the email
   row at even widths — a 12-hour clock's "p.m." needs its half — native pickers
   both. A new transaction or transfer opens on now; an edit on the row's own
   moment, in the viewer's zone. A time later than now on today is refused on
-  saving, in words, as a day after today is.
+  saving, in words, as a day after today is. Reading a row, the panel says both
+  as facts of their own: _Date_ ("Wednesday, September 16, 2026"), then _Time_
+  ("5:23 PM").
 - **An amount says what it does to the account.** Under the transactions
   panel's _Amount_, once there is an account to move — the one a transfer
   leaves, a new transaction's, or the one an old one sits on — a line gives
