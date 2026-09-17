@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/mrluisfer/monfly-v2/compare/v1.18.0...v1.19.0) (2026-09-17)
+
+
+### Features
+
+* arrange your own tabs, and icons that move when you point at them ([#62](https://github.com/mrluisfer/monfly-v2/issues/62)) ([5db5d06](https://github.com/mrluisfer/monfly-v2/commit/5db5d0605721edce1b77d0a2d7c7389f68f50b06))
+
 ## [1.18.0](https://github.com/mrluisfer/monfly-v2/compare/v1.17.0...v1.18.0) (2026-09-17)
 
 
