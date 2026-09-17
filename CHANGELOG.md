@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/mrluisfer/monfly-v2/compare/v1.15.1...v1.16.0) (2026-09-17)
+
+
+### Features
+
+* the transaction panel reads the time a row happened ([#56](https://github.com/mrluisfer/monfly-v2/issues/56)) ([c067d7b](https://github.com/mrluisfer/monfly-v2/commit/c067d7b607c38ea9d01a470e3935747c60eb856e))
+
 ## [1.15.1](https://github.com/mrluisfer/monfly-v2/compare/v1.15.0...v1.15.1) (2026-09-17)
 
 
