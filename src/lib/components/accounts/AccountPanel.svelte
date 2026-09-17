@@ -98,6 +98,9 @@
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${money(Math.abs(cents))}`;
 
+	/** What arrived this month from their other accounts; `movedOut` is what left for them. */
+	const movedIn = $derived(account ? account.moved + account.movedOut : 0);
+
 	/** The dial's ends: the lowest and highest the balance has been over the range, today's included. */
 	const bounds = $derived.by(() => {
 		const values = balances.filter((b): b is number => b !== null);
@@ -346,10 +349,12 @@
 			/>
 
 			<!-- This month on the account, one fact per column: in, out, and what it came to.
-			     Money moved between the accounts is none of the three; the dial's change
-			     above counts it, and the line under them says how much it was. -->
+			     Money moved to and from their other accounts counts in all three — it did
+			     arrive here, or leave — so Net is the dial's change above; the line under
+			     them says how much of it was. The spending and income figures elsewhere
+			     leave it out, where it would count the same money twice. -->
 			<dl class="mt-8 grid grid-cols-3 gap-4 border-t border-line pt-6">
-				{#each [{ label: 'In', value: account.change - account.moved + account.tracked, tone: 'text-positive' }, { label: 'Out', value: account.tracked, tone: '' }, { label: 'Net', value: account.change - account.moved, tone: '' }] as fact (fact.label)}
+				{#each [{ label: 'In', value: account.change + account.tracked + account.movedOut, tone: 'text-positive' }, { label: 'Out', value: account.tracked + account.movedOut, tone: '' }, { label: 'Net', value: account.change, tone: '' }] as fact (fact.label)}
 					<div class="min-w-0">
 						<dt class="text-sm text-fg-muted">{fact.label} this month</dt>
 						<dd class="@container mt-1">
@@ -368,13 +373,27 @@
 					</div>
 				{/each}
 			</dl>
-			{#if account.moved !== 0}
-				<p class="mt-4 text-sm text-fg-muted">
-					<span
-						class="tabular text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)"
-						style="--tint: {PALETTE.lavender.css}">{signed(account.moved)}</span
-					>
-					moved between your accounts this month.
+			<!-- How much of In and Out was theirs moving between accounts, each part in
+			     the lavender transfers wear: "Includes $500.00 moved in from and
+			     $2,000.00 out to your other accounts." -->
+			{#if movedIn !== 0 || account.movedOut !== 0}
+				<p class="mt-4 text-sm text-fg-muted" style="--tint: {PALETTE.lavender.css}">
+					Includes
+					{#if movedIn !== 0}
+						<span
+							class="tabular text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)"
+							>{money(movedIn)}</span
+						> moved in from
+					{/if}
+					{#if movedIn !== 0 && account.movedOut !== 0}and{/if}
+					{#if account.movedOut !== 0}
+						<span
+							class="tabular text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)"
+							>{money(account.movedOut)}</span
+						>
+						{movedIn !== 0 ? 'out to' : 'moved out to'}
+					{/if}
+					your other accounts.
 				</p>
 			{/if}
 

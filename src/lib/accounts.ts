@@ -48,6 +48,12 @@ export type Account = {
 	 */
 	moved: Cents;
 	/**
+	 * What left it for another of their accounts in `AccountList.month`, as a
+	 * positive amount: everything out of it is `tracked + movedOut`, and what
+	 * arrived from one is `moved + movedOut`.
+	 */
+	movedOut: Cents;
+	/**
 	 * Entries waiting on the person — for now, its transactions with no
 	 * description. A detailed review view will define this properly.
 	 */
