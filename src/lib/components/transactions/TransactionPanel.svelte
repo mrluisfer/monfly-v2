@@ -19,7 +19,13 @@
 	} from '$lib/components/ui';
 	import { animate } from 'motion';
 	import { moneyField } from '$lib/actions';
-	import { formatMoney, MAX_MONEY_LENGTH, parseMoney, type Currency } from '$lib/finance';
+	import {
+		formatMoney,
+		MAX_MONEY_LENGTH,
+		parseMoney,
+		type Cents,
+		type Currency
+	} from '$lib/finance';
 	import { pop } from '$lib/transitions';
 	import type { TransactionDraft } from '$lib/transaction-panel';
 	import { signedAmount, type TransactionRow } from '$lib/transactions';
@@ -41,8 +47,8 @@
 		/** The viewer's zone: the date is drawn in it. */
 		timeZone: string;
 		colors?: Record<string, PaletteColor>;
-		/** The user's active accounts: a new transaction can name one. */
-		accounts?: { id: string; name: string }[];
+		/** The user's active accounts: a new transaction can name one, and the fields say what it leaves each holding. */
+		accounts?: { id: string; name: string; balance: Cents }[];
 		/** Every category the record names, most used first: the category field suggests them. */
 		categories?: string[];
 		/** Colours people picked for their categories (`User.colors.category`). */

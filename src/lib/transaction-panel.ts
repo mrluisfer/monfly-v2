@@ -1,4 +1,4 @@
-import { isDateKey, todayKey, toMoneyInput } from './finance';
+import { isDateKey, isTimeKey, timeKey, todayKey, toMoneyInput } from './finance';
 import type { TransactionRow } from './transactions';
 
 /**
@@ -10,15 +10,15 @@ import type { TransactionRow } from './transactions';
  *
  * One JSON document per signed-in user, under `panelKey(User.id)`:
  *
- *     { "v": 2, "mode": "view", "id": "<transaction id>" }
- *     { "v": 2, "mode": "edit", "id": "<transaction id>", "draft": TransactionDraft }
- *     { "v": 2, "mode": "new", "draft": TransactionDraft }
+ *     { "v": 3, "mode": "view", "id": "<transaction id>" }
+ *     { "v": 3, "mode": "edit", "id": "<transaction id>", "draft": TransactionDraft }
+ *     { "v": 3, "mode": "new", "draft": TransactionDraft }
  *
  * Changing the shape means bumping `PANEL_VERSION`. A document of another
  * version is dropped on the next read rather than migrated: it is a draft,
  * cheap to lose across a release.
  */
-export const PANEL_VERSION = 2;
+export const PANEL_VERSION = 3;
 
 /** Per user, so another Monfly account in the same browser never opens on it. */
 export const panelKey = (userId: string) => `monfly:transactions-panel:${userId}`;
@@ -45,6 +45,8 @@ export type TransactionDraft = {
 	description: string;
 	/** The day, `YYYY-MM-DD`, or `''` while the date field is cleared. */
 	date: string;
+	/** The time that day, `HH:MM`, or `''` while the time field is cleared. */
+	time: string;
 	/**
 	 * A new transaction's account id, or null for none; an edit never changes
 	 * it. For a transfer, the account the money leaves.
@@ -59,13 +61,14 @@ export type PanelState =
 	| { mode: 'edit'; id: string; draft: TransactionDraft }
 	| { mode: 'new'; draft: TransactionDraft };
 
-/** A new transaction's fields: today, money out, and nothing else — the two most of them are. */
+/** A new transaction's fields: now, money out, and nothing else — the two most of them are. */
 export const blankDraft = (timeZone: string): TransactionDraft => ({
 	amount: '',
 	type: 'expense',
 	category: '',
 	description: '',
 	date: todayKey(timeZone),
+	time: timeKey(timeZone),
 	account: null,
 	to: null
 });
@@ -95,6 +98,7 @@ export const rowDraft = (row: TransactionRow, timeZone: string): TransactionDraf
 	category: row.category,
 	description: row.description ?? '',
 	date: todayKey(timeZone, new Date(row.date)),
+	time: timeKey(timeZone, new Date(row.date)),
 	account: row.transfer?.from?.id ?? null,
 	to: row.transfer?.to?.id ?? null
 });
@@ -120,7 +124,7 @@ export function readPanel(userId: string): PanelState | null {
 	if (mode === 'view' && typeof id === 'string') return { mode, id };
 
 	if (typeof draft !== 'object' || draft === null) return null;
-	const { amount, type, category, description, date, account, to } = draft as Record<
+	const { amount, type, category, description, date, time, account, to } = draft as Record<
 		string,
 		unknown
 	>;
@@ -131,12 +135,22 @@ export function readPanel(userId: string): PanelState | null {
 		typeof category !== 'string' ||
 		typeof description !== 'string' ||
 		(date !== '' && !isDateKey(date)) ||
+		(time !== '' && !isTimeKey(time)) ||
 		(account !== null && typeof account !== 'string') ||
 		(to !== null && typeof to !== 'string')
 	) {
 		return null;
 	}
-	const fields: TransactionDraft = { amount, type: kind, category, description, date, account, to };
+	const fields: TransactionDraft = {
+		amount,
+		type: kind,
+		category,
+		description,
+		date,
+		time,
+		account,
+		to
+	};
 
 	if (mode === 'edit' && typeof id === 'string') return { mode, id, draft: fields };
 	if (mode === 'new') return { mode, draft: fields };

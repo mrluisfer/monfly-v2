@@ -1,5 +1,5 @@
 import type { Cents, Currency } from './finance/money';
-import { isDateKey, type DateKey, type MonthKey } from './finance/period';
+import { isDateKey, isTimeKey, type DateKey, type MonthKey, type TimeKey } from './finance/period';
 
 /**
  * A transaction v1 recorded with no account (`cardId` null), as
@@ -117,6 +117,8 @@ export type TransactionEdit = {
 	description: string | null;
 	/** The day it happened, `YYYY-MM-DD`, as the viewer's zone reads it. */
 	date: DateKey;
+	/** The time it happened that day, `HH:MM`, in the viewer's zone. */
+	time: TimeKey;
 };
 
 /** The most a transaction may be: v1's form stops a cent short of a million. */
@@ -129,10 +131,14 @@ export const MAX_DESCRIPTION = 1000;
 export const isAmount = (value: unknown): value is Cents =>
 	typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= MAX_AMOUNT;
 
-/** A complete edit, as the endpoint takes it. `today` refuses a day that hasn't come. */
+/**
+ * A complete edit, as the endpoint takes it. `today` refuses a day that hasn't
+ * come; a time later than now on today is the field's to catch, since a
+ * browser's clock can run a minute ahead of the server's.
+ */
 export function isTransactionEdit(value: unknown, today: DateKey): value is TransactionEdit {
 	if (typeof value !== 'object' || value === null) return false;
-	const { amount, type, category, description, date } = value as Record<string, unknown>;
+	const { amount, type, category, description, date, time } = value as Record<string, unknown>;
 	return (
 		isAmount(amount) &&
 		(type === 'income' || type === 'expense') &&
@@ -142,7 +148,8 @@ export function isTransactionEdit(value: unknown, today: DateKey): value is Tran
 		(description === null ||
 			(typeof description === 'string' && description.length <= MAX_DESCRIPTION)) &&
 		isDateKey(date) &&
-		date <= today
+		date <= today &&
+		isTimeKey(time)
 	);
 }
 
@@ -179,6 +186,8 @@ export type TransferEntry = {
 	description: string | null;
 	/** The day it moved, `YYYY-MM-DD`, as the viewer's zone reads it. */
 	date: DateKey;
+	/** The time it moved that day, `HH:MM`, in the viewer's zone. */
+	time: TimeKey;
 };
 
 /** What every transfer is filed under, on both sides: `$lib/categories` draws it as a transfer. */
@@ -187,10 +196,10 @@ export const TRANSFER_CATEGORY = 'Transfer';
 const isAccountId = (value: unknown): value is string =>
 	typeof value === 'string' && value.length > 0 && value.length <= 64;
 
-/** A complete transfer, as the endpoints take it. `today` refuses a day that hasn't come. */
+/** A complete transfer, as the endpoints take it. `today` refuses a day that hasn't come, as an edit's does. */
 export function isTransferEntry(value: unknown, today: DateKey): value is TransferEntry {
 	if (typeof value !== 'object' || value === null) return false;
-	const { amount, from, to, description, date } = value as Record<string, unknown>;
+	const { amount, from, to, description, date, time } = value as Record<string, unknown>;
 	return (
 		isAmount(amount) &&
 		isAccountId(from) &&
@@ -199,6 +208,7 @@ export function isTransferEntry(value: unknown, today: DateKey): value is Transf
 		(description === null ||
 			(typeof description === 'string' && description.length <= MAX_DESCRIPTION)) &&
 		isDateKey(date) &&
-		date <= today
+		date <= today &&
+		isTimeKey(time)
 	);
 }
