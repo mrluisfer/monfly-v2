@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { TRANSFER_CATEGORY, type TransferEntry } from '../../transactions';
 import type { db as appDb } from '../db';
 import { card, transaction, user } from '../db/schema';
-import { EXPENSE, INCOME, nowUtc, signedCents, utcMidnight } from '../finance/fragments';
+import { EXPENSE, INCOME, nowUtc, signedCents, utcAt } from '../finance/fragments';
 
 /**
  * Money moved between two of the user's own accounts: two transactions that
@@ -56,7 +56,7 @@ export async function createTransfer(
 	const id = crypto.randomUUID();
 	const out = crypto.randomUUID();
 	const into = crypto.randomUUID();
-	const day = utcMidnight(entry.date, timeZone);
+	const day = utcAt(entry.date, entry.time, timeZone);
 
 	const { rows } = await db.execute<{ done: number }>(sql`
 		with ok as (${bothActive({ userEmail, ...entry })}),
@@ -81,10 +81,10 @@ export async function createTransfer(
 }
 
 /**
- * Rewrites a transfer — its amount, its two accounts, its day and its note —
+ * Rewrites a transfer — its amount, its two accounts, its day, time and note —
  * taking both sides out of the balances they moved and putting them into the
- * ones they move now. A day it is already on keeps the time it was recorded
- * at, as a transaction's edit does. `refused` when the new accounts don't
+ * ones they move now. A day and minute it is already on keep the moment it was
+ * recorded at, as a transaction's edit does. `refused` when the new accounts don't
  * hold up, or when a side is missing: a transfer with one side is no longer
  * one to rewrite, only to remove.
  */
@@ -108,9 +108,9 @@ export async function updateTransfer(
 				"cardId" = case when ${transaction.type} = ${INCOME} then ${entry.to} else ${entry.from} end,
 				"description" = ${entry.description},
 				"date" = case
-					when to_char(${transaction.date} at time zone 'UTC' at time zone ${timeZone}, 'YYYY-MM-DD') = ${entry.date}
+					when to_char(${transaction.date} at time zone 'UTC' at time zone ${timeZone}, 'YYYY-MM-DD HH24:MI') = ${`${entry.date} ${entry.time}`}
 					then ${transaction.date}
-					else ${utcMidnight(entry.date, timeZone)}
+					else ${utcAt(entry.date, entry.time, timeZone)}
 				end,
 				"updatedAt" = ${nowUtc}
 			where ${transaction.id} in (select id from sides) and exists (select 1 from ok)

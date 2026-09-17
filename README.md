@@ -328,6 +328,12 @@ that reads data:
   `tz` cookie and the hook exposes `locals.timeZone` — UTC until the cookie
   exists, which is how v1 drew every month. Postgres turns local midnights
   into UTC bounds with `AT TIME ZONE`.
+- **A transaction is dated to the minute, not the day.** The endpoints take a
+  `date` (`YYYY-MM-DD`) and a `time` (`HH:MM`) in the viewer's zone and store
+  that moment (`utcAt`); an edit that keeps both keeps the stored moment to the
+  millisecond. They refuse a day after today, but not a minute later than now
+  on today — that's the field's to catch, since a browser's clock can run a
+  little ahead of the server's. Rows v2 wrote before this sit at local midnight.
 - **Transaction `type` is `income` or `expense`; `amount` is always positive.**
   The `Budget`, `RecurringBill`, `Pot` and `MonthlySummary` tables exist only
   in the schema: v1 never implemented them, and they hold no rows.

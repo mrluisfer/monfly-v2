@@ -3,16 +3,19 @@
 	import ColorTrendingUp from '@animated-color-icons/lucide-svelte/TrendingUp.svelte';
 	import { createMutation, useQueryClient } from '@tanstack/svelte-query';
 	import { animate, stagger } from 'motion';
-	import { moneyField } from '$lib/actions';
+	import { countUp, moneyField } from '$lib/actions';
 	import { categoryColor } from '$lib/categories';
 	import { Combobox, PillButton, Segmented, Select, type PaletteColor } from '$lib/components/ui';
 	import {
 		currencySymbol,
 		formatMoney,
 		isDateKey,
+		isTimeKey,
 		MAX_MONEY_LENGTH,
 		parseMoney,
+		timeKey,
 		todayKey,
+		type Cents,
 		type Currency
 	} from '$lib/finance';
 	import {
@@ -26,6 +29,7 @@
 		MAX_AMOUNT,
 		MAX_CATEGORY,
 		MAX_DESCRIPTION,
+		signedAmount,
 		type TransactionRow
 	} from '$lib/transactions';
 	import { EASE_OUT_QUINT, prefersReducedMotion } from '$lib/utils';
@@ -53,8 +57,11 @@
 		currency: Currency;
 		/** The viewer's zone: the day is read and written in it. */
 		timeZone: string;
-		/** The user's active accounts — offered on a new transaction, and either end of a transfer. */
-		accounts?: { id: string; name: string }[];
+		/**
+		 * The user's active accounts — offered on a new transaction, and either end
+		 * of a transfer — with their balances now: what the amount leaves them at.
+		 */
+		accounts?: { id: string; name: string; balance: Cents }[];
 		/** Each account's colour, by id: the dots beside their names. */
 		colors?: Record<string, PaletteColor>;
 		/**
@@ -112,8 +119,45 @@
 	/** A transfer's end, while it is still one of theirs. */
 	const held = (id: string | null) => (accounts.some((a) => a.id === id) ? id : null);
 
+	/**
+	 * The account whose balance the amount moves, said under it: the one a
+	 * transfer leaves, the one a new transaction is on, or the one an old one
+	 * already sits on.
+	 */
+	const moving = $derived(
+		accounts.find((a) => a.id === (row && !transfer ? row.account?.id : draft.account)) ?? null
+	);
+
+	/**
+	 * What that balance will be once saved, as the amount is typed. It already
+	 * holds whatever the row being changed moved on it, so that comes out
+	 * before the new figure goes in.
+	 */
+	const after = $derived.by(() => {
+		if (!moving) return 0;
+		const cents = parseMoney(draft.amount) ?? 0;
+		let was = 0;
+		if (row?.transfer) {
+			if (row.transfer.from?.id === moving.id) was -= row.amount;
+			if (row.transfer.to?.id === moving.id) was += row.amount;
+		} else if (row?.account?.id === moving.id) {
+			was = signedAmount(row);
+		}
+		return moving.balance - was + (draft.type === 'income' ? cents : -cents);
+	});
+
 	/** Today as the viewer's zone reads it: nothing can have happened later. */
 	const today = $derived(todayKey(timeZone));
+
+	/**
+	 * The day and time picked are still to come, read off the clock as it is
+	 * when saving: a panel left open past midnight has a new today.
+	 */
+	function ahead() {
+		const now = new Date();
+		const day = todayKey(timeZone, now);
+		return draft.date > day || (draft.date === day && draft.time > timeKey(timeZone, now));
+	}
 
 	let problem = $state<string | null>(null);
 	const message = $derived(problem ?? (save.error ? `Couldn't save: ${save.error.message}` : null));
@@ -132,8 +176,10 @@
 				problem = 'Pick the account it leaves and a different one it lands in.';
 			} else if (!isDateKey(draft.date)) {
 				problem = 'Pick the day it moved.';
-			} else if (draft.date > today) {
-				problem = "A transfer can't be dated after today.";
+			} else if (!isTimeKey(draft.time)) {
+				problem = 'Pick the time it moved.';
+			} else if (ahead()) {
+				problem = "A transfer can't be dated later than now.";
 			} else {
 				problem = null;
 				const entry = {
@@ -141,7 +187,8 @@
 					from,
 					to,
 					description: draft.description.trim() || null,
-					date: draft.date
+					date: draft.date,
+					time: draft.time
 				};
 				if (row?.transfer) {
 					editTransfer.mutate({ id: row.transfer.id, entry }, { onSuccess: onDone });
@@ -155,8 +202,10 @@
 			problem = `A category runs to ${MAX_CATEGORY} characters.`;
 		} else if (!isDateKey(draft.date)) {
 			problem = 'Pick the day it happened.';
-		} else if (draft.date > today) {
-			problem = "A transaction can't be dated after today.";
+		} else if (!isTimeKey(draft.time)) {
+			problem = 'Pick the time it happened.';
+		} else if (ahead()) {
+			problem = "A transaction can't be dated later than now.";
 		} else {
 			problem = null;
 			const written = {
@@ -164,7 +213,8 @@
 				type: draft.type === 'income' ? ('income' as const) : ('expense' as const),
 				category: draft.category.trim(),
 				description: draft.description.trim() || null,
-				date: draft.date
+				date: draft.date,
+				time: draft.time
 			};
 			if (row) edit.mutate({ id: row.id, edit: written }, { onSuccess: onDone });
 			else add.mutate({ ...written, accountId: account }, { onSuccess: onDone });
@@ -244,11 +294,39 @@
 				maxlength={MAX_MONEY_LENGTH}
 				placeholder="0"
 				aria-invalid={problem !== null}
-				aria-describedby={message ? `${uid}-message` : undefined}
+				aria-describedby={[moving && `${uid}-balance`, message && `${uid}-message`]
+					.filter(Boolean)
+					.join(' ') || undefined}
 				class="{entry} tabular font-display text-lg"
 			/>
 			<span class="text-sm text-fg-subtle">{currency}</span>
 		</div>
+		{#if moving}
+			<!-- What the account holds now, and — while the amount would change it —
+			     what it's left holding, counting over as the amount is typed. -->
+			<p
+				id="{uid}-balance"
+				class="mt-1.5 flex min-h-5 items-center gap-1 px-4 text-xs text-fg-muted"
+			>
+				<span class="truncate">{moving.name}</span>
+				<span class="tabular shrink-0 font-medium text-fg"
+					>{formatMoney(moving.balance, currency)}</span
+				>
+				{#if after !== moving.balance}
+					<span class="shrink-0 text-fg-subtle" aria-hidden="true">→</span>
+					<span class="sr-only">after this,</span>
+					<span
+						class="tabular shrink-0 font-medium text-fg"
+						use:countUp={{
+							value: after,
+							initial: false,
+							duration: 0.45,
+							format: (n) => formatMoney(Math.round(n), currency)
+						}}>{formatMoney(after, currency)}</span
+					>
+				{/if}
+			</p>
+		{/if}
 	</div>
 
 	{#if transfer}
@@ -293,16 +371,27 @@
 		</div>
 	{/if}
 
-	<div class="mt-4" data-deal>
-		<label class={label} for="{uid}-date">Date</label>
-		<div class={field}>
-			<input
-				id="{uid}-date"
-				bind:value={draft.date}
-				type="date"
-				max={today}
-				class="{entry} tabular"
-			/>
+	<!-- The day and the time it happened, side by side at even widths: one
+	     moment, written in two fields the browser already knows how to pick.
+	     A 12-hour clock's "p.m." needs the half as much as the date does. -->
+	<div class="mt-4 grid grid-cols-2 gap-3" data-deal>
+		<div>
+			<label class={label} for="{uid}-date">Date</label>
+			<div class={field}>
+				<input
+					id="{uid}-date"
+					bind:value={draft.date}
+					type="date"
+					max={today}
+					class="{entry} tabular"
+				/>
+			</div>
+		</div>
+		<div>
+			<label class={label} for="{uid}-time">Time</label>
+			<div class={field}>
+				<input id="{uid}-time" bind:value={draft.time} type="time" class="{entry} tabular" />
+			</div>
 		</div>
 	</div>
 

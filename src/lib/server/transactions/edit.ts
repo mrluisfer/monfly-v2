@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { TransactionEdit, TransactionNew } from '../../transactions';
 import type { db as appDb } from '../db';
 import { card, loan, transaction, user } from '../db/schema';
-import { nowUtc, signedCents, utcMidnight } from '../finance/fragments';
+import { nowUtc, signedCents, utcAt } from '../finance/fragments';
 
 /**
  * Writing one transaction — adding, changing, removing — the way v1 does it:
@@ -63,9 +63,10 @@ const said = sql`
  * one an account is `assignAccount`, which knows the rule about the balance an
  * account was opened with.
  *
- * A day it is already on keeps the time it was recorded at, so an edit that
- * leaves the date alone doesn't quietly move the row within its day; a new day
- * lands at local midnight in the viewer's zone, where the table draws it.
+ * A day and minute it is already on keep the moment it was recorded at, to the
+ * millisecond, so an edit that leaves them alone doesn't quietly move the row
+ * within its minute; a new one lands on it in the viewer's zone, where the
+ * table draws it.
  */
 export async function updateTransaction(
 	db: Pick<typeof appDb, 'execute'>,
@@ -80,9 +81,9 @@ export async function updateTransaction(
 				"category" = ${edit.category},
 				"description" = ${edit.description},
 				"date" = case
-					when to_char(${transaction.date} at time zone 'UTC' at time zone ${timeZone}, 'YYYY-MM-DD') = ${edit.date}
+					when to_char(${transaction.date} at time zone 'UTC' at time zone ${timeZone}, 'YYYY-MM-DD HH24:MI') = ${`${edit.date} ${edit.time}`}
 					then ${transaction.date}
-					else ${utcMidnight(edit.date, timeZone)}
+					else ${utcAt(edit.date, edit.time, timeZone)}
 				end,
 				"updatedAt" = ${nowUtc}
 			where ${transaction.id} = (select id from target where not locked and not transfer)
@@ -177,7 +178,7 @@ export async function createTransaction(
 			insert into ${transaction}
 				("id", "userEmail", "amount", "type", "category", "description", "date", "cardId", "createdAt", "updatedAt")
 			select ${id}, ${userEmail}, ${entry.amount}::numeric / 100, ${entry.type}, ${entry.category},
-				${entry.description}, ${utcMidnight(entry.date, timeZone)},
+				${entry.description}, ${utcAt(entry.date, entry.time, timeZone)},
 				(select id from account), ${nowUtc}, ${nowUtc}
 			-- An account it doesn't have can't be missing; one it names has to be there.
 			where ${entry.accountId}::text is null or exists (select 1 from account)

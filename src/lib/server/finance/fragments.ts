@@ -42,3 +42,9 @@ export function utcMidnight(localDate: string, timeZone: string) {
 	const localMidnight = `${localDate} 00:00:00`;
 	return sql`((${localMidnight}::timestamp at time zone ${timeZone}) at time zone 'UTC')`;
 }
+
+/** `localTime` ("17:05") on `localDate` in `timeZone`, as the UTC wall-clock timestamp `date` stores. */
+export function utcAt(localDate: string, localTime: string, timeZone: string) {
+	const local = `${localDate} ${localTime}:00`;
+	return sql`((${local}::timestamp at time zone ${timeZone}) at time zone 'UTC')`;
+}

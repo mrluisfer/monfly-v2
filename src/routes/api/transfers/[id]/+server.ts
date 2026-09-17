@@ -25,7 +25,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	if (!isTransferEntry(body, todayKey(locals.timeZone))) {
 		error(
 			400,
-			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, two different account ids as from and to, a description or null, and a date of YYYY-MM-DD no later than today`
+			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, two different account ids as from and to, a description or null, and a date of YYYY-MM-DD no later than today, a time of HH:MM`
 		);
 	}
 

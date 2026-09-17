@@ -50,7 +50,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (!isTransactionNew(body, todayKey(locals.timeZone))) {
 		error(
 			400,
-			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, a type of "income" or "expense", a category, a description or null, a date of YYYY-MM-DD no later than today, and an accountId or null`
+			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, a type of "income" or "expense", a category, a description or null, a date of YYYY-MM-DD no later than today, a time of HH:MM, and an accountId or null`
 		);
 	}
 

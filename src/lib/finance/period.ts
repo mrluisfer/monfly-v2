@@ -140,3 +140,23 @@ export function todayKey(timeZone: string, now = new Date()): DateKey {
 	const { year, month, day } = localDate(timeZone, now);
 	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` as DateKey;
 }
+
+/** A time of day as `HH:MM`, on the 24-hour clock — what a time field holds. */
+export type TimeKey = `${string}:${string}`;
+
+const TIME_KEY = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const isTimeKey = (value: unknown): value is TimeKey =>
+	typeof value === 'string' && TIME_KEY.test(value);
+
+/** The time of day as seen from `timeZone`, to the minute: `'17:05'`. */
+export function timeKey(timeZone: string, now = new Date()): TimeKey {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		hour: '2-digit',
+		minute: '2-digit',
+		hourCycle: 'h23'
+	}).formatToParts(now);
+	const get = (type: string) => parts.find((p) => p.type === type)?.value;
+	return `${get('hour')}:${get('minute')}` as TimeKey;
+}

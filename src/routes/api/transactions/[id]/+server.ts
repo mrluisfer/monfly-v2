@@ -44,7 +44,7 @@ export const PATCH: RequestHandler = async ({ locals, params, request }) => {
 	if (!isTransactionEdit(body, todayKey(locals.timeZone))) {
 		error(
 			400,
-			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, a type of "income" or "expense", a category, a description or null, and a date of YYYY-MM-DD no later than today`
+			`Send an amount in whole cents from 1 to ${MAX_AMOUNT}, a type of "income" or "expense", a category, a description or null, and a date of YYYY-MM-DD no later than today, a time of HH:MM`
 		);
 	}
 

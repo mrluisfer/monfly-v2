@@ -544,6 +544,37 @@
 	});
 </script>
 
+<!-- One end of a transfer, in its tip: the account's orb — a dashed ring where it
+     is no longer active — its whole name, the card behind it, and which end it is.
+     The end the money leaves runs its line on down from under the orb. -->
+{#snippet transferEnd(label: string, end: { id: string; name: string } | null, leaves = false)}
+	{@const detail = end ? (accountById[end.id] as Account | undefined) : undefined}
+	<div class="flex items-stretch gap-2">
+		<span class="flex shrink-0 flex-col items-center" aria-hidden="true">
+			{#if end}
+				<Orb color={colors[end.id] ?? 'blue'} class="mt-px size-4 shrink-0" />
+			{:else}
+				<span class="mt-px size-4 shrink-0 rounded-full border border-dashed border-line-strong"
+				></span>
+			{/if}
+			{#if leaves}
+				<span class="mt-1 flex-1 border-l border-dashed border-line-strong"></span>
+			{/if}
+		</span>
+		<div class="min-w-0 flex-1">
+			{#if end}
+				<p class="font-medium break-words">{end.name}</p>
+			{:else}
+				<p class="text-fg-subtle">No longer active</p>
+			{/if}
+			{#if detail && identity(detail)}
+				<p class="mt-0.5 text-fg-muted">{identity(detail)}</p>
+			{/if}
+		</div>
+		<span class="shrink-0 text-fg-muted">{label}</span>
+	</div>
+{/snippet}
+
 <div class={cn('flex flex-col', className)}>
 	<!-- Search — it reads the category and the note together — then the tools
 	     that narrow and shape the list, then what's left of it. -->
@@ -729,44 +760,75 @@
 									{@const detail = accountById[account.id] as Account | undefined}
 									<!-- The column cuts a long name short; under the pointer or focus the
 									     account tells the rest above it: its whole name, the card behind
-									     it, and where its money stands this month. -->
+									     it, and where its money stands this month. A transfer's side
+									     tells the whole move instead — where the money left and where it
+									     landed, joined by the line it runs down in the fields
+									     (`TransferAccounts`) with what moved beside it — since its other
+									     side can sit rows or pages away. -->
 									<Tooltip side="top" delay={150} class="px-3 py-2.5">
 										{#snippet content()}
-											<div class="grid w-56 gap-2 font-normal">
-												<div class="flex items-start gap-2">
-													<Orb color={colors[account.id] ?? 'blue'} class="mt-px size-4 shrink-0" />
-													<div class="min-w-0">
-														<p class="font-medium break-words">{account.name}</p>
-														{#if detail && identity(detail)}
-															<p class="mt-0.5 text-fg-muted">{identity(detail)}</p>
-														{/if}
+											{#if t.transfer}
+												<div class="grid w-64 gap-2.5 font-normal">
+													<p class="text-fg-muted">Moved between your accounts</p>
+													<div class="grid">
+														{@render transferEnd('From', t.transfer.from, true)}
+														<div class="flex items-stretch gap-2">
+															<span
+																class="flex w-4 shrink-0 justify-center pb-1"
+																aria-hidden="true"
+															>
+																<span class="border-l border-dashed border-line-strong"></span>
+															</span>
+															<span
+																class="tabular py-2 font-medium text-[oklch(from_var(--tint)_0.55_calc(c*1.7)_h)] dark:text-(--tint)"
+																style="--tint: {PALETTE.lavender.css}"
+															>
+																{formatMoney(t.amount, currency)}
+															</span>
+														</div>
+														{@render transferEnd('To', t.transfer.to)}
 													</div>
 												</div>
-												{#if detail}
-													<dl class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-														<dt class="text-fg-muted">Bank balance</dt>
-														<dd class="tabular text-right">
-															{formatMoney(detail.balance, currency)}
-														</dd>
-														<dt class="text-fg-muted">Tracked this month</dt>
-														<dd class="tabular text-right">
-															{formatMoney(detail.tracked, currency)}
-														</dd>
-														<dt class="text-fg-muted">Net this month</dt>
-														<dd
-															class={cn(
-																'tabular text-right',
-																detail.change > 0 && 'text-positive',
-																detail.change < 0 && 'text-spent'
-															)}
-														>
-															{signed(detail.change)}
-														</dd>
-													</dl>
-												{:else}
-													<p class="text-fg-muted">No longer among your active accounts.</p>
-												{/if}
-											</div>
+											{:else}
+												<div class="grid w-56 gap-2 font-normal">
+													<div class="flex items-start gap-2">
+														<Orb
+															color={colors[account.id] ?? 'blue'}
+															class="mt-px size-4 shrink-0"
+														/>
+														<div class="min-w-0">
+															<p class="font-medium break-words">{account.name}</p>
+															{#if detail && identity(detail)}
+																<p class="mt-0.5 text-fg-muted">{identity(detail)}</p>
+															{/if}
+														</div>
+													</div>
+													{#if detail}
+														<dl class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+															<dt class="text-fg-muted">Bank balance</dt>
+															<dd class="tabular text-right">
+																{formatMoney(detail.balance, currency)}
+															</dd>
+															<dt class="text-fg-muted">Tracked this month</dt>
+															<dd class="tabular text-right">
+																{formatMoney(detail.tracked, currency)}
+															</dd>
+															<dt class="text-fg-muted">Net this month</dt>
+															<dd
+																class={cn(
+																	'tabular text-right',
+																	detail.change > 0 && 'text-positive',
+																	detail.change < 0 && 'text-spent'
+																)}
+															>
+																{signed(detail.change)}
+															</dd>
+														</dl>
+													{:else}
+														<p class="text-fg-muted">No longer among your active accounts.</p>
+													{/if}
+												</div>
+											{/if}
 										{/snippet}
 										{#snippet children({ props })}
 											<!-- svelte-ignore a11y_no_noninteractive_tabindex — focus is how keyboard users reach the details. -->
