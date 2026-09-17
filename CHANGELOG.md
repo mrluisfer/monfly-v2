@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.0](https://github.com/mrluisfer/monfly-v2/compare/v1.16.0...v1.17.0) (2026-09-17)
+
+
+### Features
+
+* recent transactions on the dashboard show the time ([#58](https://github.com/mrluisfer/monfly-v2/issues/58)) ([417b73e](https://github.com/mrluisfer/monfly-v2/commit/417b73ea3c4ddb8cb1e1911ca4d107e98435b0d6))
+
 ## [1.16.0](https://github.com/mrluisfer/monfly-v2/compare/v1.15.1...v1.16.0) (2026-09-17)
 
 
