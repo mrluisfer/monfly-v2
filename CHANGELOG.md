@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/mrluisfer/monfly-v2/compare/v1.17.0...v1.18.0) (2026-09-17)
+
+
+### Features
+
+* an insights view to turn the numbers over ([#60](https://github.com/mrluisfer/monfly-v2/issues/60)) ([77b09f5](https://github.com/mrluisfer/monfly-v2/commit/77b09f5a89ea082fdccdd678c3fe724268a80071))
+
 ## [1.17.0](https://github.com/mrluisfer/monfly-v2/compare/v1.16.0...v1.17.0) (2026-09-17)
 
 
