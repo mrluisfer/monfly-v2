@@ -349,9 +349,11 @@ chart on the left and a 23rem panel beside them (`$lib/components/accounts`).
   mode moves money from the account on show: the send toggle before the pencil
   (held down in lavender, as the pencil is in violet), or _Move money_ in its
   `⋯`, opens the ledger panel's transfer fields with it as _From_, under a
-  lavender chip, _Moving money_. Its _In_, _Out_ and _Net this month_ leave
-  transfers out, and a lavender figure under them says what was moved between
-  the accounts; the dial's change, which is the balance's, counts it.
+  lavender chip, _Moving money_. Its _In_, _Out_ and _Net this month_ are what
+  really arrived and left, transfers included, so _Net_ is the dial's change;
+  under them a line says how much of it was theirs moving, each part in
+  lavender — "Includes $500.00 moved in from and $2,000.00 out to your other
+  accounts" ([0022](docs/decisions/0022-account-figures-count-transfers.md)).
 - **The dial** (`BalanceGauge`) is a credit score's, read as money: 240° open
   at the foot, from the lowest balance over the range at its left to the
   highest at its right. The account's colour fills it to today's balance,

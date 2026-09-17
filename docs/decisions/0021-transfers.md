@@ -1,6 +1,6 @@
 # 0021. A transfer is two transactions that share an id
 
-Status: accepted · 2026-09-16 · builds on [0009](0009-savings-account-link.md)
+Status: accepted · 2026-09-16 · builds on [0009](0009-savings-account-link.md) · account figures revised by [0022](0022-account-figures-count-transfers.md)
 
 **Context** — Moving money between two of your own accounts took two
 transactions written by hand: an expense on one, income on the other. Each
@@ -33,7 +33,8 @@ migration `20260916220358_transfers`, additive).
   account's _Tracked_ and the savings account's charges leave transfers out.
   Balances, an account's net `change` and the history keep them — the money did
   move. `Account.moved` is the transfers' share of `change`, so income on an
-  account is `change − moved + tracked`.
+  account is `change − moved + tracked`. (An account's own _In_, _Out_ and
+  _Net_ now count its transfers: [0022](0022-account-figures-count-transfers.md).)
 - The savings widget's transfer writes a `transferId` too, so it stops counting
   as spending.
 

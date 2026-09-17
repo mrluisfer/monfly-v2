@@ -24,7 +24,8 @@ record and mark the old one superseded.
 - [0018. The dashboard's choices are kept per browser, in cookies](0018-dashboard-choices-in-cookies.md)
 - [0019. A balance set by hand is kept as an adjustment](0019-balance-adjustments.md)
 - [0020. An account's brand icon is read from its name, and kept only when picked](0020-account-brand-icons.md)
-- [0021. A transfer is two transactions that share an id](0021-transfers.md)
+- [0021. A transfer is two transactions that share an id](0021-transfers.md) — account figures revised by 0022
+- [0022. An account's own In, Out and Net count its transfers](0022-account-figures-count-transfers.md)
 
 ## Template
 
