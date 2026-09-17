@@ -25,6 +25,7 @@ export { default as Segmented } from './Segmented.svelte';
 export { default as Select } from './Select.svelte';
 export { default as ShareBar, type ShareSegment } from './ShareBar.svelte';
 export { default as ShareBarPicker } from './ShareBarPicker.svelte';
+export { default as Slider } from './Slider.svelte';
 export { default as Sparkle } from './Sparkle.svelte';
 export { default as Switch } from './Switch.svelte';
 export { default as ThemeToggle } from './ThemeToggle.svelte';
