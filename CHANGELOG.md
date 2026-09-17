@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/mrluisfer/monfly-v2/compare/v1.15.0...v1.15.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* an account's In, Out and Net count its transfers ([#54](https://github.com/mrluisfer/monfly-v2/issues/54)) ([21b457d](https://github.com/mrluisfer/monfly-v2/commit/21b457d8cd2d97af365e68e6178a04ba42b608db))
+
 ## [1.15.0](https://github.com/mrluisfer/monfly-v2/compare/v1.14.0...v1.15.0) (2026-09-17)
 
 
