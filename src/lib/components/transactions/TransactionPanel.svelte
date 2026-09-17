@@ -112,6 +112,14 @@
 				}).format(new Date(row.date))
 			: ''
 	);
+	/** The time of day it happened, as the fields write it: a fact of its own under the day. */
+	const time = $derived(
+		row
+			? new Intl.DateTimeFormat('en-US', { timeZone, hour: 'numeric', minute: '2-digit' }).format(
+					new Date(row.date)
+				)
+			: ''
+	);
 
 	const signed = (cents: number) =>
 		`${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatMoney(Math.abs(cents), currency)}`;
@@ -141,10 +149,12 @@
 			? row.transfer
 				? [
 						{ label: 'Date', value: full },
+						{ label: 'Time', value: time },
 						{ label: 'Kind', value: 'Between your accounts' }
 					]
 				: [
 						{ label: 'Date', value: full },
+						{ label: 'Time', value: time },
 						{ label: 'Category', value: row.category },
 						{ label: 'Kind', value: row.type === 'income' ? 'Money in' : 'Money out' }
 					]
