@@ -222,7 +222,13 @@
 									</span>
 								{/snippet}
 							</Tooltip>
-							<DateLabel date={row.date} {timeZone} unroll={false} class="text-sm text-fg-muted" />
+							<DateLabel
+								date={row.date}
+								{timeZone}
+								unroll={false}
+								time
+								class="text-sm text-fg-muted"
+							/>
 						</li>
 					{/each}
 				</ul>
