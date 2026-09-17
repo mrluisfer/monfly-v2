@@ -38,3 +38,18 @@
 		</ul>
 	{/snippet}
 </Story>
+
+<!-- Moving where that set draws the glyph — the transfer shuttles, an unknown kind's
+     tag leans — and Animated Color Icons for the rest. Each row is its own host. -->
+<Story name="Animated">
+	{#snippet template()}
+		<ul class="grid gap-3">
+			{#each CATEGORIES as category (category)}
+				<li data-icon-host class="flex items-center gap-3 text-[0.9375rem]">
+					<CategoryIcon {category} color={categoryColor(category)} animated />
+					{category}
+				</li>
+			{/each}
+		</ul>
+	{/snippet}
+</Story>

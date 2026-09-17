@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { requireMonflyUser } from '$lib/server/auth';
 import { db } from '$lib/server/db';
-import { getPinnedShortcuts, setShortcutPinned } from '$lib/server/preferences';
+import { getPinnedShortcuts, setShortcutOrder, setShortcutPinned } from '$lib/server/preferences';
 import { isShortcutId, isShortcutSource } from '$lib/shortcuts';
 import type { RequestHandler } from './$types';
 
@@ -39,4 +39,29 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
 	return json(await setShortcutPinned(db, profile.id, { id, pinned, source }), {
 		headers: NO_STORE
 	});
+};
+
+/**
+ * Arranges the pinned shortcuts — `{ "order": ["overview", "insights"] }` — as
+ * dragging a header tab does. It only reorders what's already pinned: an id
+ * that isn't, or that `order` leaves out, is no way to pin or unpin one. Use
+ * PATCH for that. Answers with every pinned id, in their new order.
+ */
+export const PUT: RequestHandler = async ({ locals, request }) => {
+	const profile = await requireMonflyUser(locals);
+
+	if (!request.headers.get('content-type')?.startsWith('application/json')) {
+		error(415, 'Send the order as JSON');
+	}
+	const body: unknown = await request.json().catch(() => undefined);
+	const { order } = (typeof body === 'object' && body !== null ? body : {}) as Record<
+		string,
+		unknown
+	>;
+	if (!Array.isArray(order) || !order.every(isShortcutId)) {
+		error(400, 'order must be an array of the shortcut ids in $lib/shortcuts');
+	}
+	if (new Set(order).size !== order.length) error(400, 'order must not repeat a shortcut');
+
+	return json(await setShortcutOrder(db, profile.id, order), { headers: NO_STORE });
 };

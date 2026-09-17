@@ -1,5 +1,19 @@
-<script lang="ts">
+<script module lang="ts">
 	import type { Component } from 'svelte';
+
+	/**
+	 * A drawing that moves and the set that plays it — this component's two
+	 * arguments, kept together because neither is any use without the other.
+	 * A table of glyphs holds these where its entries come from both sets.
+	 */
+	export type Glyph = {
+		icon: Component<{ size?: number; strokeWidth?: number; animate?: boolean }>;
+		set: 'moving' | 'color';
+	};
+</script>
+
+<script lang="ts">
+	import { inView } from 'motion';
 	import { cn, prefersReducedMotion } from '$lib/utils';
 
 	/**
@@ -23,9 +37,10 @@
 		strokeWidth?: number;
 		/**
 		 * What plays it. `control`: hover or focus on the nearest control. `mount`:
-		 * once, as it appears — the chip heading a popover. `none`: only `play`.
+		 * once, as it appears — the chip heading a popover. `visible`: once, as it
+		 * scrolls into view — a card's emblem down a long page. `none`: only `play`.
 		 */
-		trigger?: 'control' | 'mount' | 'none';
+		trigger?: 'control' | 'mount' | 'visible' | 'none';
 		/** Plays while true, whatever the trigger. */
 		play?: boolean;
 		class?: string;
@@ -41,8 +56,12 @@
 		class: className
 	}: Props = $props();
 
-	/** What counts as a control: what a person points at or tabs to. */
-	const CONTROL = 'button, a, [role^="menuitem"], [role="option"], [tabindex]';
+	/**
+	 * What counts as a control: what a person points at or tabs to, plus any
+	 * surface that asks to play its glyphs — a chip in a pill that reads rather
+	 * than acts, where the gesture is the whole point of pointing at it.
+	 */
+	const CONTROL = 'button, a, [role^="menuitem"], [role="option"], [tabindex], [data-icon-host]';
 
 	let root = $state<HTMLElement>();
 	let engaged = $state(false);
@@ -52,10 +71,30 @@
 	$effect(() => {
 		if (!root || trigger === 'none') return;
 
-		if (trigger === 'mount') {
-			engaged = true;
-			const done = setTimeout(() => (engaged = false), 900);
-			return () => clearTimeout(done);
+		if (trigger === 'mount' || trigger === 'visible') {
+			let done: ReturnType<typeof setTimeout>;
+			const once = () => {
+				engaged = true;
+				done = setTimeout(() => (engaged = false), 900);
+			};
+
+			// A page you scroll mounts what's below the fold with it, so `mount`
+			// would spend the gesture where nobody is looking. `visible` waits for
+			// the glyph to arrive, landing it with the figure counting up beside it.
+			if (trigger === 'mount') {
+				once();
+				return () => clearTimeout(done);
+			}
+
+			let stop: (() => void) | undefined;
+			stop = inView(root, () => {
+				once();
+				stop?.();
+			});
+			return () => {
+				stop?.();
+				clearTimeout(done);
+			};
 		}
 
 		const control = root.parentElement?.closest<HTMLElement>(CONTROL);

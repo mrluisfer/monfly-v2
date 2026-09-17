@@ -19,6 +19,7 @@ export { incomeKeys, incomeQuery } from './income';
 export { addSavingsMutation, savingsKeys, savingsQuery, setSavingsGoalMutation } from './savings';
 export {
 	setShortcutMutation,
+	setShortcutOrderMutation,
 	shortcutActivityQuery,
 	shortcutKeys,
 	shortcutsQuery

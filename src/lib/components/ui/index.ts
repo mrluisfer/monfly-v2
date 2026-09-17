@@ -1,4 +1,4 @@
-export { default as AnimatedIcon } from './AnimatedIcon.svelte';
+export { default as AnimatedIcon, type Glyph } from './AnimatedIcon.svelte';
 export { default as Avatar } from './Avatar.svelte';
 export { default as Badge } from './Badge.svelte';
 export { default as Blob, BLOB_COLOR, type BlobColor } from './Blob.svelte';

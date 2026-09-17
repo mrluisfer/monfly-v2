@@ -92,6 +92,19 @@ export const isShortcutId = (value: unknown): value is ShortcutId =>
 export const inHeader = (shortcut: Shortcut, pinned: readonly string[]) =>
 	pinned.includes(shortcut.id);
 
+/**
+ * The tabs the header draws, in the order they were pinned or dragged into.
+ * `User.shortcuts` holds that order — pinning appends, so one taken away and
+ * put back comes back at the end — and reading it here rather than filtering
+ * the catalog is what keeps it. Overview is home, so it leads wherever the
+ * array happens to hold it; an id the catalog no longer knows is dropped.
+ */
+export const headerTabs = (pinned: readonly string[]): Shortcut[] => {
+	const byId = new Map<string, Shortcut>(SHORTCUTS.map((shortcut) => [shortcut.id, shortcut]));
+	const tabs = pinned.flatMap((id) => byId.get(id) ?? []);
+	return [...tabs.filter((tab) => tab.locked), ...tabs.filter((tab) => !tab.locked)];
+};
+
 /** Where a shortcut was pinned or taken away: this page's switch, a header tab's ✕, or Overview's lock. */
 export const SHORTCUT_SOURCES = ['page', 'header', 'lock'] as const;
 export type ShortcutSource = (typeof SHORTCUT_SOURCES)[number];

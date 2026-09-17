@@ -66,6 +66,45 @@ export async function setShortcutPinned(
 }
 
 /**
+ * Puts the pinned shortcuts in the given order. Dragging a tab is a whole-array
+ * move, so unlike pinning it can't be written one id at a time — but it still
+ * reorders what the row holds rather than replacing it: the stored array is
+ * sorted by where each id falls in `order`, and anything `order` doesn't
+ * mention keeps its place at the end. So a shortcut pinned on another device
+ * while a tab was being dragged survives the drop instead of being dropped with
+ * it. Nothing is added or taken away, so this writes no `ShortcutEvent`: the
+ * history is of pinning, not of arranging. Validate `order` first.
+ */
+export async function setShortcutOrder(
+	db: Pick<typeof appDb, 'execute'>,
+	userId: string,
+	order: readonly ShortcutId[]
+): Promise<string[]> {
+	const current = sql`coalesce(${user.shortcuts}, ARRAY['overview', 'transactions']::text[])`;
+	// Each id is bound on its own rather than the array handed over whole: the
+	// HTTP driver's array serialisation stays out of it, and so does any doubt
+	// about what reaches Postgres.
+	const asked = order.length
+		? sql`ARRAY[${sql.join(
+				order.map((id) => sql`${id}::text`),
+				sql`, `
+			)}]`
+		: sql`ARRAY[]::text[]`;
+
+	const { rows } = await db.execute<{ shortcuts: string[] | null }>(sql`
+		update ${user} set "shortcuts" = (
+			select coalesce(array_agg(held.id order by wanted.at nulls last, held.id), ARRAY[]::text[])
+			from unnest(${current}) as held(id)
+			left join unnest(${asked}) with ordinality as wanted(id, at)
+				on wanted.id = held.id
+		)
+		where ${user.id} = ${userId}
+		returning ${user.shortcuts} as shortcuts
+	`);
+	return rows[0]?.shortcuts ?? [];
+}
+
+/**
  * The last `ACTIVITY_WEEKS` weeks of changes, counted by week, by shortcut and
  * by source — in the database, not by loading the rows. Weeks start on Monday
  * in the viewer's zone, and one with nothing in it still gets its zeros; so

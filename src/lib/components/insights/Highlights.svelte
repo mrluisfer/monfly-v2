@@ -148,18 +148,25 @@
 {#if items.length > 0}
 	<ul bind:this={list} class={cn('flex flex-wrap gap-2', className)} aria-label="Highlights">
 		{#each items as item (item.key)}
+			<!-- The pill reads rather than acts, but its glyph plays as you point at it. -->
 			<li
+				data-icon-host
 				class="flex h-11 max-w-full min-w-0 items-center gap-2.5 rounded-full border border-line bg-card py-1.5 pr-4 pl-1.5"
 			>
 				{#if item.category}
-					<CategoryIcon category={item.category} color={item.color} class="size-8 rounded-full" />
+					<CategoryIcon
+						category={item.category}
+						color={item.color}
+						animated
+						class="size-8 rounded-full"
+					/>
 				{:else if item.icon}
 					<span
 						class="chip grid size-8 shrink-0 place-items-center rounded-full"
 						style="--tint: {PALETTE[item.color].css}"
 						aria-hidden="true"
 					>
-						<AnimatedIcon icon={item.icon} set="color" trigger="mount" />
+						<AnimatedIcon icon={item.icon} set="color" />
 					</span>
 				{/if}
 				<span class="shrink-0 text-sm text-fg-muted">{item.label}</span>

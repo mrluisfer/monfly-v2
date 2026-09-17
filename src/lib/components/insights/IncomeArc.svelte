@@ -139,7 +139,7 @@
 
 <Card class={cn('flex flex-col p-7', className)}>
 	<div class="flex items-center gap-2.5">
-		<Sparkle color="lime" animated burst={stretch.span.label} class="size-5 shrink-0" />
+		<Sparkle color="mint" animated burst={stretch.span.label} class="size-5 shrink-0" />
 		<h2 class="font-display text-2xl font-medium">Where income went</h2>
 	</div>
 	<p class="mt-1.5 text-[0.9375rem] text-fg-muted">

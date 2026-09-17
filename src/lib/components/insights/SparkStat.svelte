@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ArrowDownRight from '@lucide/svelte/icons/arrow-down-right';
-	import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
+	import MovingArrowDownRight from '@jis3r/icons/icons/arrow-down-right';
+	import MovingArrowUpRight from '@jis3r/icons/icons/arrow-up-right';
 	import type { Component } from 'svelte';
 	import { countUp, morph } from '$lib/actions';
 	import { areaPath, monotonePath } from '$lib/components/accounts/chart';
@@ -84,14 +84,15 @@
 	);
 </script>
 
-<Card class={cn('flex flex-col justify-between gap-5 p-6', className)}>
+<!-- The card reads rather than acts; pointing anywhere on it plays its glyphs. -->
+<Card data-icon-host class={cn('flex flex-col justify-between gap-5 p-6', className)}>
 	<div class="flex items-center gap-2.5">
 		<span
 			class="chip grid size-8 shrink-0 place-items-center rounded-lg"
 			style="--tint: {PALETTE[color].css}"
 			aria-hidden="true"
 		>
-			<AnimatedIcon {icon} set="color" trigger="mount" />
+			<AnimatedIcon {icon} set="color" />
 		</span>
 		<h3 class="text-[0.9375rem] text-fg-muted">{label}</h3>
 	</div>
@@ -114,9 +115,9 @@
 				{:else}
 					<span class={cn('tabular flex shrink-0 items-center font-medium', tone)}>
 						{#if change >= 0}
-							<ArrowUpRight class="size-4 stroke-[1.75]" aria-hidden="true" />
+							<AnimatedIcon icon={MovingArrowUpRight} set="moving" />
 						{:else}
-							<ArrowDownRight class="size-4 stroke-[1.75]" aria-hidden="true" />
+							<AnimatedIcon icon={MovingArrowDownRight} set="moving" />
 						{/if}
 						{signedPercent(change, 0)}
 					</span>

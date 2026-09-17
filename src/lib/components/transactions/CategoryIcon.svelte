@@ -29,7 +29,8 @@
 	aria-hidden="true"
 >
 	{#if animated}
-		<AnimatedIcon icon={categoryGlyph(category)} set="color" />
+		{@const glyph = categoryGlyph(category)}
+		<AnimatedIcon icon={glyph.icon} set={glyph.set} />
 	{:else}
 		<Glyph class="size-4 stroke-[1.75]" />
 	{/if}

@@ -2,6 +2,7 @@
 	import ColorBanknote from '@animated-color-icons/lucide-svelte/Banknote.svelte';
 	import ColorHash from '@animated-color-icons/lucide-svelte/Hash.svelte';
 	import ColorReceipt from '@animated-color-icons/lucide-svelte/Receipt.svelte';
+	import MovingFileText from '@jis3r/icons/icons/file-text';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { untrack } from 'svelte';
 	import { browser } from '$app/environment';
@@ -21,7 +22,7 @@
 		WhatCounts,
 		WhatIf
 	} from '$lib/components/insights';
-	import { Select } from '$lib/components/ui';
+	import { AnimatedIcon, PillButton, Select } from '$lib/components/ui';
 	import {
 		DEFAULT_CURRENCY,
 		currentMonth,
@@ -48,6 +49,7 @@
 		type Lens
 	} from '$lib/insights';
 	import { accountsQuery, colorChoicesQuery, transactionsQuery } from '$lib/queries';
+	import { prefersReducedMotion } from '$lib/utils';
 
 	let { data } = $props();
 
@@ -140,6 +142,23 @@
 
 	const money = (cents: number) => formatMoney(cents, currency);
 	const whole = (n: number) => String(Math.round(n));
+
+	// ── Down to the statement ────────────────────────────────────────────
+
+	let statement = $state<HTMLElement>();
+
+	/**
+	 * Takes the page down to the statement, where the CSV is downloaded — it
+	 * doesn't download anything itself. Focus follows the jump, or a keyboard
+	 * would carry on tabbing from the hero it just left.
+	 */
+	function toStatement() {
+		statement?.scrollIntoView({
+			behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+			block: 'start'
+		});
+		statement?.focus({ preventScroll: true });
+	}
 </script>
 
 <svelte:head><title>Insights · Monfly</title></svelte:head>
@@ -175,6 +194,11 @@
 				total={all.length}
 			/>
 			<Select label="Period" options={periods} bind:value={period} />
+			<!-- Dashed, because it goes somewhere rather than doing something. -->
+			<PillButton dashed onclick={toStatement}>
+				<AnimatedIcon icon={MovingFileText} set="moving" />
+				See my CSV
+			</PillButton>
 		</div>
 	</section>
 
@@ -277,7 +301,14 @@
 			<AccountFlows {stretch} accounts={accountList} {colors} {currency} class="h-full" />
 		</div>
 
-		<div class="xl:col-span-3" use:reveal={{ delay: 0.05 }}>
+		<!-- Where "See my CSV" lands: clear of the sticky header, and focusable so
+		     the jump carries the keyboard with it. -->
+		<div
+			bind:this={statement}
+			tabindex="-1"
+			class="scroll-mt-24 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue xl:col-span-3"
+			use:reveal={{ delay: 0.05 }}
+		>
 			<Statement {stretch} {currency} categoryChoices={choices.data?.category} />
 		</div>
 	</div>
