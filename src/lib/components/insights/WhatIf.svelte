@@ -125,13 +125,13 @@
 
 <Card class={cn('flex flex-col p-7', className)}>
 	<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-		<div class="flex min-w-0 items-start gap-3">
+		<div data-icon-host class="flex min-w-0 items-start gap-3">
 			<!-- Violet: this is configuration, and nothing it touches is kept. -->
 			<span
 				class="grid size-9 shrink-0 place-items-center rounded-xl bg-violet/12 text-violet"
 				aria-hidden="true"
 			>
-				<AnimatedIcon icon={ColorFlaskConical} set="color" trigger="mount" size={18} />
+				<AnimatedIcon icon={ColorFlaskConical} set="color" size={18} />
 			</span>
 			<div class="min-w-0">
 				<h2 class="font-display text-2xl font-medium">What if</h2>
@@ -159,8 +159,8 @@
 		<!-- ── The sliders ──────────────────────────────────────────────── -->
 		<div class="grid content-start gap-5">
 			<div>
-				<div class="flex items-center gap-3">
-					<CategoryIcon category="Income" color="mint" />
+				<div data-icon-host class="flex items-center gap-3">
+					<CategoryIcon category="Income" color="mint" animated />
 					<span class="min-w-0 flex-1 truncate text-[0.9375rem]">Everything received</span>
 					<span class={cn('tabular text-sm', income === 0 ? 'text-fg-subtle' : 'font-medium')}
 						>{change(income)}</span
@@ -183,8 +183,8 @@
 				{@const color = categoryColor(category.name, categoryChoices)}
 				{@const value = changes[category.name] ?? 0}
 				<div>
-					<div class="flex items-center gap-3">
-						<CategoryIcon category={category.name} {color} />
+					<div data-icon-host class="flex items-center gap-3">
+						<CategoryIcon category={category.name} {color} animated />
 						<span class="min-w-0 flex-1 truncate text-[0.9375rem]">{category.name}</span>
 						<span class={cn('tabular text-sm', value === 0 ? 'text-fg-subtle' : 'font-medium')}
 							>{change(value)}</span

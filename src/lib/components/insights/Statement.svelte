@@ -133,12 +133,13 @@
 						</thead>
 						<tbody class="tabular">
 							{#each stretch.categories as category (category.name)}
-								<tr class="border-b border-line">
+								<tr data-icon-host class="border-b border-line">
 									<th scope="row" class="{cell} text-left font-normal">
 										<span class="flex items-center gap-3">
 											<CategoryIcon
 												category={category.name}
 												color={categoryColor(category.name, categoryChoices)}
+												animated
 											/>
 											<span class="max-w-56 truncate">{category.name}</span>
 										</span>

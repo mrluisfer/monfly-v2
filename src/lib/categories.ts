@@ -1,4 +1,3 @@
-import ColorArrowLeftRight from '@animated-color-icons/lucide-svelte/ArrowLeftRight.svelte';
 import ColorBanknote from '@animated-color-icons/lucide-svelte/Banknote.svelte';
 import ColorCar from '@animated-color-icons/lucide-svelte/Car.svelte';
 import ColorCreditCard from '@animated-color-icons/lucide-svelte/CreditCard.svelte';
@@ -12,9 +11,10 @@ import ColorPlane from '@animated-color-icons/lucide-svelte/Plane.svelte';
 import ColorShirt from '@animated-color-icons/lucide-svelte/Shirt.svelte';
 import ColorShoppingCart from '@animated-color-icons/lucide-svelte/ShoppingCart.svelte';
 import ColorSmartphone from '@animated-color-icons/lucide-svelte/Smartphone.svelte';
-import ColorTag from '@animated-color-icons/lucide-svelte/Tag.svelte';
 import ColorUtensilsCrossed from '@animated-color-icons/lucide-svelte/UtensilsCrossed.svelte';
 import ColorZap from '@animated-color-icons/lucide-svelte/Zap.svelte';
+import MovingArrowLeftRight from '@jis3r/icons/icons/arrow-left-right';
+import MovingTag from '@jis3r/icons/icons/tag';
 import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
 import Banknote from '@lucide/svelte/icons/banknote';
 import Car from '@lucide/svelte/icons/car';
@@ -32,6 +32,7 @@ import Smartphone from '@lucide/svelte/icons/smartphone';
 import Tag from '@lucide/svelte/icons/tag';
 import UtensilsCrossed from '@lucide/svelte/icons/utensils-crossed';
 import Zap from '@lucide/svelte/icons/zap';
+import type { Glyph } from './components/ui/AnimatedIcon.svelte';
 import { PALETTE_COLORS, type PaletteColor } from './components/ui/palette';
 
 /**
@@ -49,8 +50,8 @@ import { PALETTE_COLORS, type PaletteColor } from './components/ui/palette';
  */
 type Kind = {
 	icon: typeof Tag;
-	/** The same drawing from the animated set, for where the glyph moves. */
-	animated: typeof ColorTag;
+	/** The same drawing from an animated set, for where the glyph moves. */
+	animated: Glyph;
 	color: PaletteColor;
 	/** Lowercase, accent-free fragments; a name containing any of them is this kind. */
 	words: string[];
@@ -59,97 +60,97 @@ type Kind = {
 const KINDS: Kind[] = [
 	{
 		icon: ArrowLeftRight,
-		animated: ColorArrowLeftRight,
+		animated: { icon: MovingArrowLeftRight, set: 'moving' },
 		color: 'lavender',
 		words: ['transferencia', 'transfer', 'traspaso', 'envio', 'deposito']
 	},
 	{
 		icon: Banknote,
-		animated: ColorBanknote,
+		animated: { icon: ColorBanknote, set: 'color' },
 		color: 'mint',
 		words: ['ingreso', 'sueldo', 'salario', 'nomina', 'pago recibido', 'income', 'salary']
 	},
 	{
 		icon: PiggyBank,
-		animated: ColorPiggyBank,
+		animated: { icon: ColorPiggyBank, set: 'color' },
 		color: 'teal',
 		words: ['ahorro', 'saving', 'inversion', 'invest']
 	},
 	{
 		icon: UtensilsCrossed,
-		animated: ColorUtensilsCrossed,
+		animated: { icon: ColorUtensilsCrossed, set: 'color' },
 		color: 'coral',
 		words: ['comida', 'food', 'restaurante', 'cena', 'desayuno', 'almuerzo', 'taco', 'cafe']
 	},
 	{
 		icon: ShoppingCart,
-		animated: ColorShoppingCart,
+		animated: { icon: ColorShoppingCart, set: 'color' },
 		color: 'peach',
 		words: ['despensa', 'super', 'mercado', 'grocer', 'oxxo', 'tienda', 'compra', 'shopping']
 	},
 	{
 		icon: Car,
-		animated: ColorCar,
+		animated: { icon: ColorCar, set: 'color' },
 		color: 'sky',
 		words: ['uber', 'taxi', 'gasolina', 'transporte', 'transport', 'didi', 'metro', 'auto']
 	},
 	{
 		icon: Smartphone,
-		animated: ColorSmartphone,
+		animated: { icon: ColorSmartphone, set: 'color' },
 		color: 'blue',
 		words: ['telcel', 'recarga', 'celular', 'telefono', 'movil', 'phone', 'at&t']
 	},
 	{
 		icon: Zap,
-		animated: ColorZap,
+		animated: { icon: ColorZap, set: 'color' },
 		color: 'lemon',
 		words: ['servicio', 'luz', 'agua', 'gas', 'internet', 'cfe', 'utilit']
 	},
 	{
 		icon: CreditCard,
-		animated: ColorCreditCard,
+		animated: { icon: ColorCreditCard, set: 'color' },
 		color: 'violet',
 		words: ['suscripcion', 'subscription', 'spotify', 'netflix', 'icloud', 'claude', 'plan']
 	},
 	{
 		icon: Gamepad2,
-		animated: ColorGamepad2,
+		animated: { icon: ColorGamepad2, set: 'color' },
 		color: 'pink',
 		words: ['juego', 'game', 'entretenimiento', 'steam', 'cine']
 	},
 	{
 		icon: House,
-		animated: ColorHouse,
+		animated: { icon: ColorHouse, set: 'color' },
 		color: 'lime',
 		words: ['casa', 'hogar', 'renta', 'hipoteca', 'home', 'rent']
 	},
 	{
 		icon: HeartPulse,
-		animated: ColorHeartPulse,
+		animated: { icon: ColorHeartPulse, set: 'color' },
 		color: 'rose',
 		words: ['salud', 'medico', 'farmacia', 'doctor', 'health']
 	},
 	{
 		icon: Shirt,
-		animated: ColorShirt,
+		animated: { icon: ColorShirt, set: 'color' },
 		color: 'pink',
 		words: ['ropa', 'clothes', 'zapato', 'moda']
 	},
 	{
 		icon: GraduationCap,
-		animated: ColorGraduationCap,
+		animated: { icon: ColorGraduationCap, set: 'color' },
 		color: 'sky',
 		words: ['educacion', 'escuela', 'curso', 'libro', 'school', 'course']
 	},
 	{
 		icon: Plane,
-		animated: ColorPlane,
+		animated: { icon: ColorPlane, set: 'color' },
 		color: 'teal',
 		words: ['viaje', 'vuelo', 'hotel', 'travel', 'flight']
 	},
 	{
 		icon: Gift,
-		animated: ColorGift,
+		animated: { icon: ColorGift, set: 'color' },
 		color: 'lavender',
 		words: ['regalo', 'gift', 'donacion', 'propina']
 	}
@@ -170,8 +171,9 @@ const kindOf = (name: string) => {
 /** The glyph a category wears — a plain tag for a kind we don't know. */
 export const categoryIcon = (name: string) => kindOf(name)?.icon ?? Tag;
 
-/** The same glyph where it moves: `AnimatedIcon` with `set="color"`. */
-export const categoryGlyph = (name: string) => kindOf(name)?.animated ?? ColorTag;
+/** The same glyph where it moves, with the set that plays it. */
+export const categoryGlyph = (name: string): Glyph =>
+	kindOf(name)?.animated ?? { icon: MovingTag, set: 'moving' };
 
 /**
  * FNV-1a over the name, so a category we don't recognise still keeps one

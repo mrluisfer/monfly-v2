@@ -7,12 +7,21 @@
 	type Props = {
 		/** Appends the mockup's solid triangle, for dropdown-style pills. It flips while open. */
 		caret?: boolean;
+		/** Dashes the rim to mark **navigation**, as `IconButton` does; solid marks actions. */
+		dashed?: boolean;
 		size?: 'sm' | 'md';
 		class?: string;
 		children: Snippet;
 	} & Omit<HTMLButtonAttributes, 'class'>;
 
-	let { caret = false, size = 'md', class: className, children, ...rest }: Props = $props();
+	let {
+		caret = false,
+		dashed = false,
+		size = 'md',
+		class: className,
+		children,
+		...rest
+	}: Props = $props();
 </script>
 
 <button
@@ -22,6 +31,7 @@
 		'press font-sans whitespace-nowrap hover:bg-sunken',
 		'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue',
 		size === 'sm' ? 'h-9 px-4 text-sm' : 'h-11 px-5 text-[0.9375rem]',
+		dashed && 'border-dashed',
 		className
 	)}
 	{...rest}

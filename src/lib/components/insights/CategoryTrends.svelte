@@ -158,7 +158,7 @@
 	<div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
 		<div class="min-w-0">
 			<div class="flex items-center gap-2.5">
-				<Sparkle color="lime" animated burst={stretch.span.label} class="size-5 shrink-0" />
+				<Sparkle color="coral" animated burst={stretch.span.label} class="size-5 shrink-0" />
 				<h2 class="font-display text-2xl font-medium">Categories over time</h2>
 			</div>
 			<p class="mt-1.5 text-[0.9375rem] text-fg-muted">

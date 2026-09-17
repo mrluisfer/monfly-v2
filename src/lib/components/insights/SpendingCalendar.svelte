@@ -316,7 +316,7 @@
 								pick && pick !== category.name && 'opacity-55'
 							)}
 						>
-							<CategoryIcon category={category.name} {color} />
+							<CategoryIcon category={category.name} {color} animated />
 							<span class="truncate text-[0.9375rem]">{category.name}</span>
 							<span class="tabular text-sm text-fg-muted">{percent(share, 0)}</span>
 							<ShareBar

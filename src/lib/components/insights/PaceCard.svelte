@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ColorCalendarDays from '@animated-color-icons/lucide-svelte/CalendarDays.svelte';
-	import CircleArrowDown from '@lucide/svelte/icons/circle-arrow-down';
-	import CircleArrowUp from '@lucide/svelte/icons/circle-arrow-up';
+	import MovingCalendarDays from '@jis3r/icons/icons/calendar-days';
+	import MovingCircleArrowDown from '@jis3r/icons/icons/circle-arrow-down';
+	import MovingCircleArrowUp from '@jis3r/icons/icons/circle-arrow-up';
 	import { fade } from 'svelte/transition';
 	import { countUp, morph } from '$lib/actions';
 	import { monotonePath, niceTicks } from '$lib/components/accounts/chart';
@@ -182,9 +182,9 @@
 							)}
 						>
 							{#if figure.change >= 0}
-								<CircleArrowUp class="size-4 stroke-[1.75]" aria-hidden="true" />
+								<AnimatedIcon icon={MovingCircleArrowUp} set="moving" />
 							{:else}
-								<CircleArrowDown class="size-4 stroke-[1.75]" aria-hidden="true" />
+								<AnimatedIcon icon={MovingCircleArrowDown} set="moving" />
 							{/if}
 							{signedPercent(figure.change)}
 							<span class="sr-only">{vs}</span>
@@ -343,7 +343,7 @@
 							aria-hidden="true"
 						>
 							<p class="flex items-center gap-2 border-b border-line px-3 py-2 text-sm font-medium">
-								<AnimatedIcon icon={ColorCalendarDays} set="color" trigger="mount" />
+								<AnimatedIcon icon={MovingCalendarDays} set="moving" trigger="mount" />
 								{reading.title}
 							</p>
 							<dl

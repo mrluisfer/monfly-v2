@@ -1,11 +1,18 @@
 <script lang="ts">
-	import ColorGauge from '@animated-color-icons/lucide-svelte/Gauge.svelte';
-	import ColorHandCoins from '@animated-color-icons/lucide-svelte/HandCoins.svelte';
 	import ColorPiggyBank from '@animated-color-icons/lucide-svelte/PiggyBank.svelte';
 	import ColorReceipt from '@animated-color-icons/lucide-svelte/Receipt.svelte';
+	import MovingGauge from '@jis3r/icons/icons/gauge';
+	import MovingHandCoins from '@jis3r/icons/icons/hand-coins';
 	import { RadioGroup } from 'bits-ui';
 	import { countUp } from '$lib/actions';
-	import { AnimatedIcon, Card, Segmented, Sparkle, type PaletteColor } from '$lib/components/ui';
+	import {
+		AnimatedIcon,
+		Card,
+		Segmented,
+		Sparkle,
+		type Glyph,
+		type PaletteColor
+	} from '$lib/components/ui';
 	import {
 		daysInMonth,
 		formatMoney,
@@ -53,24 +60,37 @@
 		value: Metric;
 		label: string;
 		color: PaletteColor;
-		icon: typeof ColorGauge;
+		/** Moving Icons where it draws this glyph's own motion, else the colour set. */
+		glyph: Glyph;
 		/** Said under the title: "What went out". */
 		what: string;
 	}[] = [
-		{ value: 'spent', label: 'Spent', color: 'rose', icon: ColorReceipt, what: 'What went out' },
+		{
+			value: 'spent',
+			label: 'Spent',
+			color: 'rose',
+			glyph: { icon: ColorReceipt, set: 'color' },
+			what: 'What went out'
+		},
 		{
 			value: 'received',
 			label: 'Received',
 			color: 'mint',
-			icon: ColorHandCoins,
+			glyph: { icon: MovingHandCoins, set: 'moving' },
 			what: 'What came in'
 		},
-		{ value: 'kept', label: 'Kept', color: 'blue', icon: ColorPiggyBank, what: 'What stayed' },
+		{
+			value: 'kept',
+			label: 'Kept',
+			color: 'blue',
+			glyph: { icon: ColorPiggyBank, set: 'color' },
+			what: 'What stayed'
+		},
 		{
 			value: 'rate',
 			label: 'Savings rate',
 			color: 'violet',
-			icon: ColorGauge,
+			glyph: { icon: MovingGauge, set: 'moving' },
 			what: 'The share of income kept'
 		}
 	];
@@ -276,7 +296,7 @@
 						class="grid size-7 shrink-0 place-items-center rounded-lg bg-sunken text-fg-muted transition-colors duration-300 group-data-[state=checked]:bg-fg group-data-[state=checked]:text-card"
 						aria-hidden="true"
 					>
-						<AnimatedIcon icon={tile.icon} set="color" />
+						<AnimatedIcon icon={tile.glyph.icon} set={tile.glyph.set} />
 					</span>
 					<span class="text-[0.9375rem] text-fg-muted">{tile.label}</span>
 				</span>
