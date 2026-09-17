@@ -10,6 +10,7 @@
 			date: '2026-09-02T22:45:00.000Z',
 			timeZone: 'America/Mexico_City',
 			unroll: true,
+			time: false,
 			class: 'text-sm text-fg-muted'
 		}
 	});
@@ -22,3 +23,6 @@
 
 <!-- For a column too narrow to keep room for the whole date. -->
 <Story name="Short only" args={{ unroll: false }} />
+
+<!-- The same narrow column with the time under the day, read at a glance: the dashboard's recent transactions. -->
+<Story name="Short with the time" args={{ unroll: false, time: true }} />

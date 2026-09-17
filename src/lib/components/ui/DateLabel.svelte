@@ -63,10 +63,16 @@
 		 * still read out whole.
 		 */
 		unroll?: boolean;
+		/**
+		 * The time of day under the short date, a size down and quieter — "Sep 2"
+		 * over "4:45 PM" — where the moment is read at a glance rather than under
+		 * the pointer, and the column is as narrow as the date alone.
+		 */
+		time?: boolean;
 		class?: string;
 	};
 
-	let { date, timeZone, unroll = true, class: className }: Props = $props();
+	let { date, timeZone, unroll = true, time = false, class: className }: Props = $props();
 
 	const at = $derived(new Date(date));
 	const format = $derived(formats(timeZone));
@@ -110,7 +116,10 @@
 	class={cn('tabular relative whitespace-nowrap', className)}
 	onpointerenter={() => extend(true)}
 	onpointerleave={() => extend(false)}
-	><span aria-hidden="true">{short}</span><span class="sr-only">{whole}</span>{#if unroll}<span
+	><span aria-hidden="true"
+		>{short}{#if time}<span class="block text-xs text-fg-subtle">{format.time.format(at)}</span
+			>{/if}</span
+	><span class="sr-only">{whole}</span>{#if unroll}<span
 			bind:this={layer}
 			class="whole"
 			aria-hidden="true">{whole}</span
