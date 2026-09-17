@@ -277,6 +277,22 @@
 		</div>
 	{/if}
 
+	{#if !row && !transfer && accounts.length > 0}
+		<div class="mt-4" data-deal>
+			<span class={label}>Account</span>
+			<Select
+				label="Account"
+				value={account ?? NONE}
+				onValueChange={(next) => (draft.account = next === NONE ? null : next)}
+				options={[
+					{ value: NONE, label: 'No account yet' },
+					...accounts.map((a) => ({ value: a.id, label: a.name, color: colors[a.id] ?? 'blue' }))
+				]}
+				class="w-full justify-between"
+			/>
+		</div>
+	{/if}
+
 	<div class={transfer ? '' : 'mt-4'} data-deal>
 		<label class={label} for="{uid}-amount">Amount</label>
 		<div class={field}>
@@ -352,22 +368,6 @@
 					<CategoryIcon category={name} color={categoryColor(name, categoryChoices)} animated />
 				{/snippet}
 			</Combobox>
-		</div>
-	{/if}
-
-	{#if !row && !transfer && accounts.length > 0}
-		<div class="mt-4" data-deal>
-			<span class={label}>Account</span>
-			<Select
-				label="Account"
-				value={account ?? NONE}
-				onValueChange={(next) => (draft.account = next === NONE ? null : next)}
-				options={[
-					{ value: NONE, label: 'No account yet' },
-					...accounts.map((a) => ({ value: a.id, label: a.name, color: colors[a.id] ?? 'blue' }))
-				]}
-				class="w-full justify-between"
-			/>
 		</div>
 	{/if}
 
