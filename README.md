@@ -437,6 +437,9 @@ that reads data:
 - **Never hoist the QueryClient to module scope.** On the server that shares one
   cache across every visitor. It is created in `(app)/+layout.ts`.
 - Charts, when they land, aggregate in the database — not by loading rows into JS.
+  The exception is `/insights`, which re-slices the ledger's own record on every
+  gesture and works its figures out in the browser (`$lib/insights`,
+  [0023](docs/decisions/0023-insights-read-the-ledger-in-the-browser.md)).
 
 ## Gotchas
 

@@ -215,6 +215,18 @@
 		background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 6px);
 	}
 
+	/* A palette colour at a glyph's weight, for a line, a dot or a fill: set
+	   `--tint`, read `--ink-tint`. On white the hue is kept, the lightness
+	   dropped and the chroma pushed, so pastels and lime read as strongly as
+	   blue; on dark the colour is bright enough as it is. */
+	.ink-tint {
+		--ink-tint: oklch(from var(--tint) 0.6 calc(c * 1.6) h);
+	}
+
+	.dark .ink-tint {
+		--ink-tint: var(--tint);
+	}
+
 	/* 1px outlines in the mockup are near-black, not gray */
 	.outline-hairline {
 		border-color: var(--hairline);
@@ -232,6 +244,29 @@
 	.press:active:not(:disabled) {
 		scale: 0.95;
 		transition-duration: 200ms, 200ms, 200ms, 90ms;
+	}
+}
+
+/* A chart's lines draw themselves left to right as it scrolls into view, as
+   the balance chart's unroll: tied to the scroll rather than a clock, so a
+   chart already on screen is already drawn. Whole without scroll timelines
+   or under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+	@supports (animation-timeline: view()) {
+		.draw-on-view {
+			animation: draw-on-view both var(--ease-out-quint);
+			animation-timeline: view();
+			animation-range: entry 15% cover 45%;
+		}
+	}
+}
+
+@keyframes draw-on-view {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
 	}
 }
 

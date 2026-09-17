@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { RadioGroup } from 'bits-ui';
-	import gsap from 'gsap';
-	import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
-	import type { Action } from 'svelte/action';
 	import { fade } from 'svelte/transition';
+	import { morph } from '$lib/actions';
 	import {
 		HISTORY_RANGE_LABEL,
 		HISTORY_RANGE_SPAN,
@@ -14,7 +12,7 @@
 	import { Orb, OrbitRing, PALETTE, Sparkle, Tooltip, type PaletteColor } from '$lib/components/ui';
 	import { formatMoney, formatMoneyCompact, type Currency } from '$lib/finance';
 	import { pop } from '$lib/transitions';
-	import { cn, prefersReducedMotion } from '$lib/utils';
+	import { cn } from '$lib/utils';
 	import { areaPath, dayNumber, monotonePath, niceTicks } from './chart';
 
 	/**
@@ -112,50 +110,6 @@
 			};
 		})
 	);
-
-	/**
-	 * A line takes its new range by morphing into it (GSAP MorphSVG) rather
-	 * than being redrawn — the same account, moved. It starts from whatever
-	 * the last morph had got to, so a quick second change never jumps.
-	 */
-	const curve = /[CL]/;
-	const morph: Action<SVGPathElement, string> = (node, initial) => {
-		let target = initial;
-		let drawn = initial;
-		return {
-			update(next) {
-				if (next === target) return;
-				const from = drawn;
-				target = next;
-				gsap.killTweensOf(node);
-				// A line of one point — an account added today — is a bare `M x,y`,
-				// which MorphSVG reads as a CSS selector and throws on. Only lines
-				// with a curve in them morph; anything else simply takes its place.
-				if (!curve.test(from) || !curve.test(next) || prefersReducedMotion()) {
-					drawn = next;
-					node.setAttribute('d', next);
-					return;
-				}
-				gsap.registerPlugin(MorphSVGPlugin);
-				gsap.fromTo(
-					node,
-					{ morphSVG: from },
-					{
-						morphSVG: next,
-						duration: 0.9,
-						ease: 'power3.inOut',
-						onUpdate: () => {
-							drawn = node.getAttribute('d') ?? next;
-						},
-						onComplete: () => {
-							drawn = next;
-						}
-					}
-				);
-			},
-			destroy: () => gsap.killTweensOf(node)
-		};
-	};
 
 	const dayFormat = new Intl.DateTimeFormat('en-US', {
 		month: 'short',
