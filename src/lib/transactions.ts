@@ -61,9 +61,9 @@ export type TransactionRow = {
 	/** The account it was recorded on, or null while it has none. */
 	account: { id: string; name: string } | null;
 	/**
-	 * It pays off a loan, or a loan was opened from it. Loans are v1's, with
-	 * rules of their own — how much is paid, whether it's settled — so v2 reads
-	 * these rows but leaves changing them to v1.
+	 * It pays off a loan, or a loan was opened from it. A loan has rules of its
+	 * own — how much is paid, whether it's settled — so the ledger reads these
+	 * rows but leaves changing them to the loan (`/api/loans`).
 	 */
 	loanLinked: boolean;
 	/**

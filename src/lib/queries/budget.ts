@@ -1,11 +1,13 @@
 import { mutationOptions, type QueryClient } from '@tanstack/svelte-query';
-import type { Cents, MonthSpending } from '$lib/finance';
+import type { BudgetMonth, Cents, MonthSpending } from '$lib/finance';
+import { budgetKeys } from './budgets';
 import { sendJson } from './http';
 import { spendingKeys } from './spending';
 
 /**
- * Sets the monthly budget; null clears it. Every cached month shows the new
- * budget at once — it is one standing value — and a refetch then confirms it.
+ * Sets the monthly budget; null clears it. Every cached month — the
+ * dashboard's and the budgets page's — shows the new budget at once, since it
+ * is one standing value, and a refetch then confirms it.
  */
 export const setBudgetMutation = (queryClient: QueryClient) =>
 	mutationOptions({
@@ -16,6 +18,13 @@ export const setBudgetMutation = (queryClient: QueryClient) =>
 				{ queryKey: spendingKeys.all },
 				(month) => month && { ...month, budget }
 			);
-			return queryClient.invalidateQueries({ queryKey: spendingKeys.all });
+			queryClient.setQueriesData<BudgetMonth>(
+				{ queryKey: budgetKeys.all },
+				(month) => month && { ...month, budget }
+			);
+			return Promise.all([
+				queryClient.invalidateQueries({ queryKey: spendingKeys.all }),
+				queryClient.invalidateQueries({ queryKey: budgetKeys.all })
+			]);
 		}
 	});

@@ -1,7 +1,8 @@
 /**
  * Which lines the accounts total leaves out — account ids, and `unknown` for
- * the card-less line. Kept per browser in a cookie that the dashboard's server
- * load reads, as the Income card keeps its view, so the total is rendered
+ * the card-less line. Kept per browser in a cookie that the server loads of
+ * the two pages drawing the total read — the dashboard's and the
+ * transactions page's — as the Income card keeps its view, so the total is rendered
  * without them after a reload or a trip to another page, and nothing shifts on
  * hydration. None of it touches the shared database.
  */

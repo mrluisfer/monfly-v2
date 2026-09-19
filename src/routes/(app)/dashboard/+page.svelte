@@ -72,7 +72,11 @@
 					{#if value === 'tips'}
 						<DeskFreedomTip />
 					{:else if value === 'loans'}
-						<LoansCard />
+						<LoansCard
+							timeZone={data.timeZone}
+							open={aside === 'loans'}
+							enabled={data.profile !== null}
+						/>
 					{:else}
 						<RecentTransactionsCard
 							timeZone={data.timeZone}

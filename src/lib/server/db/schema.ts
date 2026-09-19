@@ -354,3 +354,32 @@ export const shortcutEvent = pgTable(
 		check('ShortcutEvent_source_check', sql`${table.source} in ('page', 'header', 'lock')`)
 	]
 );
+
+/**
+ * What a month of one category is measured against: a standing limit, the
+ * same every month, as the monthly budget on `User` is. The category is its
+ * name as transactions store it — v1's free text, matched exactly — so one
+ * row per name. Integer cents, set from the budgets page (PUT /api/budgets).
+ * v2's alone; v1 never reads it. Its own table rather than v1's `Budget`,
+ * which holds dated ranges in `double precision` and a spent figure kept by
+ * hand: see docs/decisions/0024-category-budgets.md.
+ */
+export const categoryBudget = pgTable(
+	'CategoryBudget',
+	{
+		id: id(),
+		userEmail: userEmail('CategoryBudget'),
+		category: text().notNull(),
+		limitCents: integer().notNull(),
+		createdAt: createdAt(),
+		updatedAt: updatedAt()
+	},
+	(table) => [
+		uniqueIndex('CategoryBudget_userEmail_category_key').using(
+			'btree',
+			table.userEmail.asc().nullsLast(),
+			table.category.asc().nullsLast()
+		),
+		check('CategoryBudget_limitCents_check', sql`${table.limitCents} > 0`)
+	]
+);

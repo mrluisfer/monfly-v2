@@ -328,12 +328,12 @@
 				     panel never leaves you guessing which of the two you are in. Its
 				     pencil holds its own gesture meanwhile, as the Income card's gear
 				     does while its settings are open. Disabled on a loan payment,
-				     where it turns to dashes: those rules live in v1. -->
+				     where it turns to dashes: it's changed with its loan. -->
 					<IconButton
 						size="sm"
 						aria-pressed={editing}
 						aria-label={row.loanLinked
-							? 'Editing a loan payment happens in Monfly v1'
+							? 'A loan payment is changed with its loan, on the Loans page'
 							: editing
 								? 'Stop editing'
 								: 'Edit transaction'}
@@ -492,8 +492,13 @@
 
 			{#if row.loanLinked}
 				<p class="mt-6 text-sm leading-relaxed text-fg-muted">
-					It pays off a loan. Monfly v1 keeps what a loan is owed and what settles it, so this one
-					is changed there.
+					It belongs to a loan, which keeps what it's owed and what settles it — so it's changed
+					there: a payment is undone from its loan on the
+					<a
+						href="/loans"
+						class="font-medium text-fg underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+						>Loans page</a
+					>.
 				</p>
 			{/if}
 		{/if}

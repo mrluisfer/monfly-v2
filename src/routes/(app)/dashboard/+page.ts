@@ -4,6 +4,7 @@ import {
 	accountsQuery,
 	colorChoicesQuery,
 	expenseBreakdownQuery,
+	expensesQuery,
 	incomeQuery,
 	monthSpendingQuery,
 	savingsQuery
@@ -15,7 +16,8 @@ import type { PageLoad } from './$types';
  * renders real figures and hydration reuses them instead of refetching.
  * Widgets read the same cache entries through createQuery. A failed prefetch
  * isn't fatal: its widget falls back or retries on the client. The Income
- * card's period and settings come from the server load (a cookie).
+ * card's period and settings come from the server load (a cookie); both its
+ * tabs are read for that period, so switching them never waits.
  */
 export const load: PageLoad = async ({ parent, fetch, data }) => {
 	const { queryClient, profile, timeZone } = await parent();
@@ -30,6 +32,7 @@ export const load: PageLoad = async ({ parent, fetch, data }) => {
 			queryClient.prefetchQuery(colorChoicesQuery(fetch)),
 			queryClient.prefetchQuery(accountsQuery(undefined, fetch)),
 			queryClient.prefetchQuery(incomeQuery(period, unit, fetch)),
+			queryClient.prefetchQuery(expensesQuery(period, unit, fetch)),
 			queryClient.prefetchQuery(savingsQuery(fetch))
 		]);
 	}

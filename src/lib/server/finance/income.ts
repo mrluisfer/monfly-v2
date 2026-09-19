@@ -10,7 +10,7 @@ import type { Currency } from '../../finance/money';
 import { localDate } from '../../finance/period';
 import type { db as appDb } from '../db';
 import { transaction } from '../db/schema';
-import { amountCents, notTransfer, utcMidnight } from './fragments';
+import { EXPENSE, INCOME, amountCents, notTransfer, utcMidnight } from './fragments';
 
 type Input = {
 	/** The stored `User.email` — `profile.email`, never the Auth0 spelling. */
@@ -32,8 +32,23 @@ const PREFIX: Record<IncomeUnit, string> = { week: 'w', month: 'm', quarter: 'q'
  * year. Every bucket is returned, empty ones at 0. Money moved in from
  * another of their accounts wasn't earned, so it isn't here. Read-only.
  */
-export async function getIncome(
+export function getIncome(db: Pick<typeof appDb, 'select'>, input: Input) {
+	return bucketed(db, INCOME, input);
+}
+
+/**
+ * What one user spent over a period, in the same buckets as their income, so
+ * the Income card's Spent tab draws the same bars. Money moved out to another
+ * of their accounts wasn't spent, so it isn't here either. Read-only.
+ */
+export function getExpenses(db: Pick<typeof appDb, 'select'>, input: Input) {
+	return bucketed(db, EXPENSE, input);
+}
+
+/** One `type` of transaction over a period, bucketed: `getIncome` and `getExpenses`. */
+async function bucketed(
 	db: Pick<typeof appDb, 'select'>,
+	type: typeof INCOME | typeof EXPENSE,
 	{ userEmail, period, unit, timeZone, currency, now = new Date() }: Input
 ): Promise<IncomeSummary> {
 	const today = localDate(timeZone, now);
@@ -47,7 +62,7 @@ export async function getIncome(
 
 	const conditions: SQL[] = [
 		eq(transaction.userEmail, userEmail),
-		eq(transaction.type, 'income'),
+		eq(transaction.type, type),
 		notTransfer
 	];
 	const range = incomeRange(period, today);

@@ -47,6 +47,15 @@ export const SHORTCUTS = [
 		locked: false
 	},
 	{
+		id: 'loans',
+		href: '/loans',
+		label: 'Loans',
+		description:
+			'Money you lent and borrowed: who owes what, what falls due when, and every payment that settles it.',
+		color: 'lemon',
+		locked: false
+	},
+	{
 		id: 'budgets',
 		href: '/budgets',
 		label: 'Budgets',

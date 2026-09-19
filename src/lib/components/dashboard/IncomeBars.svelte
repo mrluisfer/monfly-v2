@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { countUp } from '$lib/actions';
 	import { PALETTE, Tooltip, type PaletteColor } from '$lib/components/ui';
 	import { cn } from '$lib/utils';
 
@@ -28,6 +29,11 @@
 		upcoming?: boolean;
 		/** Many narrow bars — a year by month: smaller figures. */
 		dense?: boolean;
+		/**
+		 * Writes a figure from its value. Given, a bar that stays counts its
+		 * figure over to a new value (GSAP) as it eases to its new height.
+		 */
+		format?: (value: number) => string;
 		/** The detail shown on hover or focus of a bar that has happened. */
 		tip?: Snippet<[Bar]>;
 		class?: string;
@@ -38,6 +44,7 @@
 		figures = true,
 		upcoming = true,
 		dense = false,
+		format,
 		tip,
 		class: className
 	}: Props = $props();
@@ -97,11 +104,17 @@
 									dense ? 'text-[0.6875rem]' : 'text-sm'
 								)}
 							>
-								{bar.valueLabel}
+								{#if format}
+									<span use:countUp={{ value: bar.value, format, initial: false }}
+										>{bar.valueLabel}</span
+									>
+								{:else}
+									{bar.valueLabel}
+								{/if}
 							</span>
-							<!-- Solid accent cap -->
+							<!-- Solid accent cap: a new colour eases in with the new height. -->
 							<span
-								class="absolute inset-x-0 -top-px block h-[3px]"
+								class="absolute inset-x-0 -top-px block h-[3px] transition-colors duration-700 ease-[var(--ease-out-quint)]"
 								style="background: {PALETTE[bar.color].css}"
 							></span>
 						{/if}

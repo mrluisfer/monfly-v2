@@ -49,7 +49,10 @@ export type IncomeBucket = {
 	future: boolean;
 };
 
-/** Income for a period, bucketed for the chart, as `GET /api/income` returns it. */
+/**
+ * Income for a period, bucketed for the chart, as `GET /api/income` returns it
+ * — and what was spent, in the same shape, from `GET /api/expenses`.
+ */
 export type IncomeSummary = {
 	period: IncomePeriod;
 	/** What each bucket covers: one of `INCOME_UNITS[period]`. */
