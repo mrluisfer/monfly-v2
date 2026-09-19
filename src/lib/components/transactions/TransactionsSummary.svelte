@@ -4,8 +4,7 @@
 	import { cn } from '$lib/utils';
 
 	/**
-	 * The headline figures. They cover the whole record, always — narrowing the
-	 * list to a month is a question about the list, not about what someone has.
+	 * What the ledger holds, beside the hero's total balance (`AccountsTotal`).
 	 *
 	 * They count over, as every figure on the dashboard does. The action owns
 	 * the text from mount on, so each figure is one expression and nothing
@@ -13,8 +12,6 @@
 	 * never left writing into one that was swapped out underneath it.
 	 */
 	type Props = {
-		/** Everything the accounts hold, plus what the total carries beyond them. */
-		balance: Cents;
 		received: Cents;
 		spent: Cents;
 		count: number;
@@ -22,7 +19,7 @@
 		class?: string;
 	};
 
-	let { balance, received, spent, count, currency, class: className }: Props = $props();
+	let { received, spent, count, currency, class: className }: Props = $props();
 
 	const money = (cents: number) => formatMoney(cents, currency);
 	const whole = (value: number) => String(Math.round(value));
@@ -30,17 +27,11 @@
 	const FIGURE = 'tabular truncate font-display text-[2rem] leading-none font-light tracking-tight';
 </script>
 
-<dl class={cn('grid gap-x-10 gap-y-6 sm:grid-cols-2 xl:grid-cols-4', className)}>
+<!-- Columns by the room it has, not the viewport's: beside the total it can be
+     short of three, and each figure keeps 12rem before it wraps to the next line. -->
+<dl class={cn('grid grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] gap-x-10 gap-y-6', className)}>
 	<div class="min-w-0">
-		<dt class="text-[0.9375rem] text-fg-muted">Total balance</dt>
-		<dd class="mt-1">
-			<p class={FIGURE} use:countUp={{ value: balance, format: money, whenVisible: true }}>
-				{money(balance)}
-			</p>
-		</dd>
-	</div>
-	<div class="min-w-0">
-		<dt class="text-[0.9375rem] text-fg-muted">Received</dt>
+		<dt class="text-sm text-fg-muted">Received</dt>
 		<dd class="mt-1">
 			<p
 				class={cn(FIGURE, 'text-positive')}
@@ -51,7 +42,7 @@
 		</dd>
 	</div>
 	<div class="min-w-0">
-		<dt class="text-[0.9375rem] text-fg-muted">Spent</dt>
+		<dt class="text-sm text-fg-muted">Spent</dt>
 		<dd class="mt-1">
 			<p class={FIGURE} use:countUp={{ value: spent, format: money, whenVisible: true }}>
 				{money(spent)}
@@ -59,7 +50,7 @@
 		</dd>
 	</div>
 	<div class="min-w-0">
-		<dt class="text-[0.9375rem] text-fg-muted">Transactions</dt>
+		<dt class="text-sm text-fg-muted">Transactions</dt>
 		<dd class="mt-1">
 			<p class={FIGURE} use:countUp={{ value: count, format: whole, whenVisible: true }}>
 				{whole(count)}

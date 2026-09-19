@@ -19,13 +19,14 @@ export type CountUpParams = {
  * <span use:countUp={{ value: 12480, format: formatCurrency }}></span>
  */
 export const countUp: Action<HTMLElement, CountUpParams> = (node, params) => {
-	const format = params.format ?? ((n: number) => String(Math.round(n)));
 	const counter = { n: 0 };
 	let tween: gsap.core.Tween | undefined;
 	let observer: IntersectionObserver | undefined;
 
+	// Always in the latest format: a chart's figures shorten when it gets crowded.
 	const render = () => {
-		node.textContent = format(counter.n);
+		const text = (params.format ?? ((n: number) => String(Math.round(n))))(counter.n);
+		if (node.textContent !== text) node.textContent = text;
 	};
 
 	function run(to: number, duration: number) {
@@ -77,6 +78,8 @@ export const countUp: Action<HTMLElement, CountUpParams> = (node, params) => {
 			const moved = next.value !== params.value;
 			params = next;
 			if (moved) run(next.value, next.duration ?? 0.8);
+			// A figure that stays is still rewritten if its format changed.
+			else render();
 		},
 		destroy() {
 			tween?.kill();

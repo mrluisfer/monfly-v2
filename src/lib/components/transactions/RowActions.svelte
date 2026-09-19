@@ -42,8 +42,8 @@
 	 * and Amount columns' own pastels, and red for the one that can't be
 	 * undone.
 	 *
-	 * Rows that pay off a loan are read here and changed in v1, where the
-	 * loan's own rules live: those two items grey out and say so. A side of a
+	 * Rows that pay off a loan are read here and changed with their loan, where
+	 * its own rules live: those two items grey out and say so. A side of a
 	 * transfer is edited and deleted as the whole transfer.
 	 */
 	type Props = {

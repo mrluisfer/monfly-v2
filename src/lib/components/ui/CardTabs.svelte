@@ -18,6 +18,12 @@
 		label: string;
 		/** The open tab's card, drawn with that tab's value. */
 		panel: Snippet<[T]>;
+		/**
+		 * One panel for every tab, drawn with the open tab's value: what's in the
+		 * card stays and moves to the next tab's figures, rather than another
+		 * panel rising in its place. For tabs that show one thing two ways.
+		 */
+		shared?: boolean;
 		class?: string;
 	};
 
@@ -27,6 +33,7 @@
 		onValueChange,
 		label,
 		panel,
+		shared = false,
 		class: className
 	}: Props = $props();
 
@@ -82,14 +89,14 @@
 	 * contents rise into it just behind the surface. bits-ui swaps panels by
 	 * marking one active and the other not, so this waits for that, then
 	 * animates the panel now open. Not on the first draw — the page's own
-	 * reveal has it.
+	 * reveal has it — and not in a shared panel, whose contents move themselves.
 	 */
 	let swapped = false;
 
 	$effect(() => {
 		value; // the open tab
 
-		if (!swapped) {
+		if (!swapped || shared) {
 			swapped = true;
 			return;
 		}
@@ -113,6 +120,21 @@
 	});
 </script>
 
+{#snippet content(tab: T)}
+	<!-- The panel is an ordinary Card. Invisible takes it out of sight, the
+	     pointer, the tab order and the accessibility tree, as hidden did. -->
+	<Tabs.Content
+		value={tab}
+		class="col-start-1 row-start-1 min-h-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue data-[state=inactive]:invisible"
+	>
+		{#snippet child({ props })}
+			<Card {...props} hidden={undefined}>
+				{@render panel(tab)}
+			</Card>
+		{/snippet}
+	</Tabs.Content>
+{/snippet}
+
 <!--
 	A card that a small strip of tabs sits on, the header's tabs in miniature:
 	the ones you're not on are sunken pills resting above the card, the one you
@@ -122,7 +144,7 @@
 	edge, with no wedge of canvas under its corner. The card is as tall as its
 	tallest panel whichever tab is open, so switching never moves what's around
 	it: a panel that should fit the card rather than size it (a long list) lets
-	its rows scroll.
+	its rows scroll. Shared, there's one panel, drawn with the open tab.
 -->
 <Tabs.Root
 	bind:value={
@@ -163,21 +185,15 @@
 	</div>
 
 	<!-- Every panel is laid out in the one cell, so the tallest sets the card's
-	     height; the ones you're not on are invisible rather than removed. -->
+	     height; the ones you're not on are invisible rather than removed. A
+	     shared panel follows the open tab instead, and is never swapped out. -->
 	<div bind:this={panels} class="grid min-h-0 flex-1 grid-cols-1 grid-rows-1">
-		{#each options as option (option.value)}
-			<!-- The panel is an ordinary Card. Invisible takes it out of sight, the
-			     pointer, the tab order and the accessibility tree, as hidden did. -->
-			<Tabs.Content
-				value={option.value}
-				class="col-start-1 row-start-1 min-h-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue data-[state=inactive]:invisible"
-			>
-				{#snippet child({ props })}
-					<Card {...props} hidden={undefined}>
-						{@render panel(option.value)}
-					</Card>
-				{/snippet}
-			</Tabs.Content>
-		{/each}
+		{#if shared}
+			{@render content(value)}
+		{:else}
+			{#each options as option (option.value)}
+				{@render content(option.value)}
+			{/each}
+		{/if}
 	</div>
 </Tabs.Root>

@@ -3,11 +3,11 @@
 	import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
 	import { accountColors, featuredAccounts } from '$lib/accounts';
+	import { AccountsTotal } from '$lib/components/accounts';
 	import { AnimatedIcon, Card, IconButton } from '$lib/components/ui';
 	import { accountsQuery, colorChoicesQuery, setColorMutation } from '$lib/queries';
 	import AccountBlock from './AccountBlock.svelte';
 	import AccountsEditor from './AccountsEditor.svelte';
-	import AccountsTotal from './AccountsTotal.svelte';
 
 	/**
 	 * The accounts column: an overview card — the header, every account's

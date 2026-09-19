@@ -4,6 +4,7 @@ import ColorCreditCard from '@animated-color-icons/lucide-svelte/CreditCard.svel
 import ColorGamepad2 from '@animated-color-icons/lucide-svelte/Gamepad2.svelte';
 import ColorGift from '@animated-color-icons/lucide-svelte/Gift.svelte';
 import ColorGraduationCap from '@animated-color-icons/lucide-svelte/GraduationCap.svelte';
+import ColorHandCoins from '@animated-color-icons/lucide-svelte/HandCoins.svelte';
 import ColorHeartPulse from '@animated-color-icons/lucide-svelte/HeartPulse.svelte';
 import ColorHouse from '@animated-color-icons/lucide-svelte/House.svelte';
 import ColorPiggyBank from '@animated-color-icons/lucide-svelte/PiggyBank.svelte';
@@ -22,6 +23,7 @@ import CreditCard from '@lucide/svelte/icons/credit-card';
 import Gamepad2 from '@lucide/svelte/icons/gamepad-2';
 import Gift from '@lucide/svelte/icons/gift';
 import GraduationCap from '@lucide/svelte/icons/graduation-cap';
+import HandCoins from '@lucide/svelte/icons/hand-coins';
 import HeartPulse from '@lucide/svelte/icons/heart-pulse';
 import House from '@lucide/svelte/icons/house';
 import PiggyBank from '@lucide/svelte/icons/piggy-bank';
@@ -63,6 +65,13 @@ const KINDS: Kind[] = [
 		animated: { icon: MovingArrowLeftRight, set: 'moving' },
 		color: 'lavender',
 		words: ['transferencia', 'transfer', 'traspaso', 'envio', 'deposito']
+	},
+	{
+		// A loan's payments, filed under "Loan" by the loans page, in the Loans shortcut's colour.
+		icon: HandCoins,
+		animated: { icon: ColorHandCoins, set: 'color' },
+		color: 'lemon',
+		words: ['prestamo', 'loan', 'deuda', 'debt', 'adeudo']
 	},
 	{
 		icon: Banknote,

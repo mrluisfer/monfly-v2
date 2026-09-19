@@ -15,8 +15,8 @@ import { nowUtc, signedCents, utcAt } from '../finance/fragments';
  *
  * Transactions tied to a loan are left alone. A loan has rules of its own —
  * how much of it is paid, whether that settles it, which way it may be paid —
- * and they live in v1. Rather than keep a second copy of them here, the write
- * is refused and v1 stays the place to make it.
+ * and they live with the loan (`../loans`), where a payment is recorded and
+ * undone. Rather than keep a second copy of them here, the write is refused.
  *
  * So is one side of a transfer: changed or removed on its own, it would leave
  * the other side behind and move the total by money that never arrived or

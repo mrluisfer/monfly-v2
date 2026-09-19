@@ -9,7 +9,7 @@ import type { PageLoad } from './$types';
  * second query, fetched when someone filters to one — or here, when the
  * address names one. A new Auth0 user has no account row yet: nothing to read.
  */
-export const load: PageLoad = async ({ parent, fetch, url }) => {
+export const load: PageLoad = async ({ parent, fetch, url, data }) => {
 	const { queryClient, profile, timeZone } = await parent();
 	const month = currentMonth(timeZone);
 	const asked = readLedgerView(url.searchParams, month).month;
@@ -24,5 +24,6 @@ export const load: PageLoad = async ({ parent, fetch, url }) => {
 		]);
 	}
 
-	return { month };
+	// A universal load replaces the server load's result rather than merging with it.
+	return { ...data, month };
 };

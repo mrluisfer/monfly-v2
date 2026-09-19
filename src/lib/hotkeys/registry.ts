@@ -22,6 +22,7 @@ export const HOTKEYS = {
 	goTransactions: { keys: ['g', 't'], label: 'Go to Transactions', href: '/transactions' },
 	goInsights: { keys: ['g', 'i'], label: 'Go to Insights', href: '/insights' },
 	goAccounts: { keys: ['g', 'a'], label: 'Go to Accounts', href: '/cards' },
+	goLoans: { keys: ['g', 'l'], label: 'Go to Loans', href: '/loans' },
 	goBudgets: { keys: ['g', 'b'], label: 'Go to Budgets', href: '/budgets' },
 	goProfile: { keys: ['g', 'p'], label: 'Go to Profile', href: '/profile' },
 	goSettings: { keys: ['g', 's'], label: 'Go to Settings', href: '/settings' }

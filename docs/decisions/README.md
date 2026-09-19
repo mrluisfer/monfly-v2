@@ -27,6 +27,8 @@ record and mark the old one superseded.
 - [0021. A transfer is two transactions that share an id](0021-transfers.md) — account figures revised by 0022
 - [0022. An account's own In, Out and Net count its transfers](0022-account-figures-count-transfers.md)
 - [0023. Insights work their figures out from the ledger, in the browser](0023-insights-read-the-ledger-in-the-browser.md)
+- [0024. A category's monthly limit is a row of its own](0024-category-budgets.md)
+- [0025. v2 writes loans, with v1's rules](0025-loans-written-in-v2.md)
 
 ## Template
 

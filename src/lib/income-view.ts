@@ -8,14 +8,24 @@ import {
 	type YearUnit
 } from './finance';
 
+/** The Income card's two tabs: what came in, and what went out. */
+export const INCOME_TABS = ['income', 'spent'] as const;
+export type IncomeTab = (typeof INCOME_TABS)[number];
+
+const isIncomeTab = (value: unknown): value is IncomeTab =>
+	INCOME_TABS.includes(value as IncomeTab);
+
 /**
- * What the Income card shows and how: the period picked beside its gear, and
- * the settings behind the gear. They're kept per browser in a cookie that the
+ * What the Income card shows and how: its open tab, the period picked beside
+ * its gear, and the settings behind the gear — one period and one set of
+ * settings for both tabs. They're kept per browser in a cookie that the
  * dashboard's server load reads, so the page is rendered on the chosen period
  * and view — after a reload or a trip to another page — and nothing shifts on
  * hydration. None of it touches the shared database.
  */
 export type IncomeView = {
+	/** The tab the card opens on: the last one opened. */
+	tab: IncomeTab;
 	/** The period the card opens on: the last one picked. */
 	period: IncomePeriod;
 	/** Each bar of "This year": a quarter (the default) or a month. */
@@ -27,13 +37,14 @@ export type IncomeView = {
 };
 
 export const DEFAULT_INCOME_VIEW: IncomeView = {
+	tab: 'income',
 	period: DEFAULT_INCOME_PERIOD,
 	yearBy: 'quarter',
 	figures: true,
 	upcoming: true
 };
 
-/** Written by the Income card's period and settings, read by the dashboard's server load. */
+/** Written by the Income card's tabs, period and settings, read by the dashboard's server load. */
 export const INCOME_VIEW_COOKIE = 'income-view';
 
 /** The view a cookie holds, each setting checked on its own: a missing or unknown one keeps its default. */
@@ -46,6 +57,7 @@ export function parseIncomeView(raw: string | undefined): IncomeView {
 		// Not JSON: every default.
 	}
 	return {
+		tab: isIncomeTab(stored.tab) ? stored.tab : DEFAULT_INCOME_VIEW.tab,
 		period: isIncomePeriod(stored.period) ? stored.period : DEFAULT_INCOME_VIEW.period,
 		yearBy: isIncomeUnit('year', stored.yearBy)
 			? (stored.yearBy as YearUnit)

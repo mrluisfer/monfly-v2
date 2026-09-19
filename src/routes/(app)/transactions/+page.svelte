@@ -12,6 +12,7 @@
 	import { page } from '$app/state';
 	import { reveal } from '$lib/actions';
 	import { accountColors } from '$lib/accounts';
+	import { AccountsTotal } from '$lib/components/accounts';
 	import {
 		AccountBalances,
 		ActivityBars,
@@ -156,13 +157,6 @@
 	const rows = $derived(list.data?.transactions ?? []);
 	const currency = $derived(list.data?.currency ?? DEFAULT_CURRENCY);
 	const totals = $derived(list.data?.totals ?? { received: 0, spent: 0, count: 0 });
-
-	// v1 keeps the total; the accounts hold part of it and the unknown line the
-	// rest, so together they are what someone actually has.
-	const balance = $derived.by(() => {
-		const held = (accounts.data?.accounts ?? []).reduce((sum, a) => sum + a.balance, 0);
-		return held + (accounts.data?.unassigned?.balance ?? 0);
-	});
 
 	// The same colour each account wears on the dashboard, so an orb means the
 	// same thing in both places.
@@ -328,8 +322,11 @@
 <svelte:window onkeydown={dismiss} />
 
 <div class="flex flex-col gap-4 px-4 pb-6 sm:px-6 lg:px-8">
-	<!-- ── Hero band: the title takes only the room it needs, so the figures
-	     never run under it ────────────────────────────────────────────── -->
+	<!-- ── Hero band: one row — the title, what someone has on the dashboard's
+	     own 22rem, so the total is drawn the width it was drawn for, then the
+	     ledger's figures. When the row runs short they wrap on the right, the
+	     title keeping its place: among themselves while two still fit beside
+	     the total (2 × 12rem and the gap), under it once they don't ──────── -->
 	<section
 		class="grid items-center gap-x-12 gap-y-8 py-8 lg:grid-cols-[auto_minmax(0,1fr)]"
 		use:reveal
@@ -337,13 +334,25 @@
 		<h1 class="font-display text-5xl leading-none font-light tracking-tight xl:text-6xl">
 			Transactions
 		</h1>
-		<TransactionsSummary
-			{balance}
-			received={totals.received}
-			spent={totals.spent}
-			count={totals.count}
-			{currency}
-		/>
+		<div class="flex flex-wrap items-start gap-x-10 gap-y-8">
+			<!-- The dashboard's total, controls and all: its share bar leaves an
+			     account out of the total, and this browser keeps what it left out. -->
+			<AccountsTotal
+				accounts={accounts.data?.accounts ?? []}
+				unassigned={accounts.data?.unassigned ?? null}
+				{colors}
+				{currency}
+				leftOut={data.leftOut}
+				class="w-[22rem] max-w-full"
+			/>
+			<TransactionsSummary
+				received={totals.received}
+				spent={totals.spent}
+				count={totals.count}
+				{currency}
+				class="grow basis-[26.5rem]"
+			/>
+		</div>
 	</section>
 
 	<!-- ── The ledger on the left, the charts stacked beside it ────────── -->

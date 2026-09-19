@@ -12,10 +12,21 @@ export {
 	setAccountStatusMutation
 } from './accounts';
 export { setBudgetMutation } from './budget';
+export { budgetKeys, budgetMonthQuery, setCategoryBudgetMutation } from './budgets';
 export { colorChoicesQuery, colorKeys, setColorMutation } from './colors';
-export { expenseBreakdownQuery, expenseKeys } from './expenses';
+export { expenseBreakdownQuery, expenseKeys, expensesQuery } from './expenses';
 export { ApiError, getJson, sendJson, type Fetch } from './http';
 export { incomeKeys, incomeQuery } from './income';
+export {
+	addLoanMutation,
+	deleteLoanMutation,
+	editLoanMutation,
+	loanKeys,
+	loansQuery,
+	payLoanMutation,
+	settleLoanMutation,
+	undoPaymentMutation
+} from './loans';
 export { addSavingsMutation, savingsKeys, savingsQuery, setSavingsGoalMutation } from './savings';
 export {
 	setShortcutMutation,

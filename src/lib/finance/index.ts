@@ -1,5 +1,6 @@
 /** The finance domain shared by server and browser: types, months, money. No I/O. */
 export * from './budget';
+export * from './budget-month';
 export * from './expenses';
 export * from './income';
 export * from './money';

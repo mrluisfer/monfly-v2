@@ -7,8 +7,8 @@
 	import { pop } from '$lib/transitions';
 
 	/**
-	 * The gear beside the Income card's period: how its chart is drawn. Every
-	 * change applies at once, and the card remembers it in this browser.
+	 * The gear beside the Income card's period: how its chart is drawn, on both
+	 * tabs. Every change applies at once, and the card remembers it in this browser.
 	 */
 	type Props = {
 		view: IncomeView;
@@ -32,7 +32,7 @@
 <Popover.Root>
 	<Popover.Trigger>
 		{#snippet child({ props })}
-			<IconButton size="sm" {...props} aria-label="Income chart settings">
+			<IconButton size="sm" {...props} aria-label="Chart settings">
 				<!-- The gear plays with the button, as the account menu's does, and
 				     holds while its settings are open. -->
 				<AnimatedIcon icon={MovingSettings} set="moving" play={props['data-state'] === 'open'} />
@@ -59,8 +59,8 @@
 									<AnimatedIcon icon={MovingSettings} set="moving" trigger="mount" />
 								</span>
 								<div class="min-w-0">
-									<p class="text-sm font-medium">Income chart</p>
-									<p class="text-xs text-fg-muted">Saved in this browser.</p>
+									<p class="text-sm font-medium">Chart</p>
+									<p class="text-xs text-fg-muted">Both tabs, saved in this browser.</p>
 								</div>
 							</div>
 

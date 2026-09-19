@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ColorCircleUserRound from '@animated-color-icons/lucide-svelte/CircleUserRound.svelte';
 	import ColorCreditCard from '@animated-color-icons/lucide-svelte/CreditCard.svelte';
+	import ColorHandCoins from '@animated-color-icons/lucide-svelte/HandCoins.svelte';
 	import ColorTarget from '@animated-color-icons/lucide-svelte/Target.svelte';
 	import MovingArrowLeftRight from '@jis3r/icons/icons/arrow-left-right';
 	import MovingChartColumn from '@jis3r/icons/icons/chart-column';
@@ -29,6 +30,7 @@
 		transactions: { icon: MovingArrowLeftRight, set: 'moving' },
 		insights: { icon: MovingChartColumn, set: 'moving' },
 		accounts: { icon: ColorCreditCard, set: 'color' },
+		loans: { icon: ColorHandCoins, set: 'color' },
 		budgets: { icon: ColorTarget, set: 'color' },
 		profile: { icon: ColorCircleUserRound, set: 'color' },
 		settings: { icon: MovingSettings, set: 'moving' }

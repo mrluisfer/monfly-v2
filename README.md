@@ -300,6 +300,7 @@ that reads data:
 | service (server-only) | `src/lib/server/finance/`                                 | Drizzle queries, keyed by the stored `profile.email`                                                                                        |
 | endpoint              | `src/routes/api/months/[month=month]/spending/+server.ts` | JSON over HTTP                                                                                                                              |
 | endpoint              | `src/routes/api/me/budget/+server.ts`                     | PUT the monthly budget — cents, or null to clear                                                                                            |
+| endpoint              | `src/routes/api/budgets/+server.ts`                       | GET a month against the budgets (`?month=`, this one by default); PUT one category's limit — cents, or null to take it away                 |
 | endpoint              | `src/routes/api/expenses/categories/+server.ts`           | expenses by category: `?year=` or all time                                                                                                  |
 | endpoint              | `src/routes/api/me/colors/+server.ts`                     | GET the colour choices; PATCH one (or null to forget)                                                                                       |
 | endpoint              | `src/routes/api/me/shortcuts/+server.ts`                  | GET the pinned shortcuts; PATCH one on or off (Overview is always pinned)                                                                   |
@@ -312,6 +313,10 @@ that reads data:
 | endpoint              | `src/routes/api/transfers/+server.ts`                     | POST money from one active account to another: two transactions, both balances, the total untouched                                         |
 | endpoint              | `src/routes/api/transfers/[id]/+server.ts`                | PATCH a transfer whole (amount, accounts, day, note); DELETE both of its sides                                                              |
 | endpoint              | `src/routes/api/income/+server.ts`                        | income by bucket; `?period=` month, quarter, year or all; `&by=month` splits the year by month                                              |
+| endpoint              | `src/routes/api/expenses/+server.ts`                      | what was spent, in the income chart's buckets and with the same `?period=` and `&by=`                                                       |
+| endpoint              | `src/routes/api/loans/+server.ts`                         | GET every loan with its recorded payments; POST a new one                                                                                   |
+| endpoint              | `src/routes/api/loans/[id]/+server.ts`                    | PATCH a loan whole, or `{ settled }`; DELETE it (409 while payments stand)                                                                  |
+| endpoint              | `src/routes/api/loans/[id]/payments/+server.ts`           | POST a payment — a transaction on an account, or the loan alone; DELETE `…/[paymentId]` undoes one                                          |
 | query                 | `src/lib/queries/`                                        | TanStack `queryOptions`: key factory + fetcher                                                                                              |
 | prefetch              | `src/routes/(app)/dashboard/+page.ts`                     | fills the cache during SSR                                                                                                                  |
 | widget                | `src/lib/components/dashboard/SpentThisMonth.svelte`      | `createQuery` → `MeterStat` (presentation only)                                                                                             |
@@ -341,6 +346,11 @@ that reads data:
   `20260910210000_add_user_monthly_budget`): integer cents, the first money
   column stored the planned way. `PUT /api/me/budget` sets or clears it
   (`BudgetEditor`, the pencil); the spending endpoint returns it with the month.
+- **Category limits live in `CategoryBudget`**: one row per category name, as
+  transactions store it, in integer cents — a standing monthly limit, as the
+  budget is. `PUT /api/budgets` writes or deletes one in a single statement, and
+  `GET /api/budgets` returns them with the month they're measured in
+  ([0024](docs/decisions/0024-category-budgets.md)).
 - **Colour choices live in `User.colors`** (JSONB, v1 migration
   `20260910220000_add_user_colors`): `{ "category": { "<name>": "<palette id>" } }`,
   keyed by names as transactions store them. `PATCH /api/me/colors` changes one
