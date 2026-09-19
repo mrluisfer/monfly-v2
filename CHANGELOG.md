@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.0](https://github.com/mrluisfer/monfly-v2/compare/v1.19.0...v1.20.0) (2026-09-19)
+
+
+### Features
+
+* a budgets page with category limits, and loans run from v2 ([#64](https://github.com/mrluisfer/monfly-v2/issues/64)) ([ea723a8](https://github.com/mrluisfer/monfly-v2/commit/ea723a89f40e696ccca3874d99e676ac56c8aae7))
+
 ## [1.19.0](https://github.com/mrluisfer/monfly-v2/compare/v1.18.0...v1.19.0) (2026-09-17)
 
 
